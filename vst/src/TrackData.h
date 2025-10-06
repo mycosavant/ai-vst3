@@ -16,8 +16,6 @@ struct TrackPage
 	float generationBpm = 126.0f;
 	juce::String generationKey;
 	int generationDuration = 6;
-	std::vector<juce::String> preferredStems = {};
-	juce::String stems;
 
 	double loopStart = 0.0;
 	double loopEnd = 4.0;
@@ -43,8 +41,6 @@ struct TrackPage
 		generationBpm = other.generationBpm;
 		generationKey = other.generationKey;
 		generationDuration = other.generationDuration;
-		preferredStems = other.preferredStems;
-		stems = other.stems;
 		loopStart = other.loopStart;
 		loopEnd = other.loopEnd;
 		useOriginalFile = other.useOriginalFile.load();
@@ -67,8 +63,6 @@ struct TrackPage
 		generationBpm = 126.0f;
 		generationKey.clear();
 		generationDuration = 6;
-		preferredStems.clear();
-		stems.clear();
 		loopStart = 0.0;
 		loopEnd = 4.0;
 		useOriginalFile = false;
@@ -131,12 +125,10 @@ struct TrackData
 	float originalBpm = 126.0f;
 	juce::String prompt;
 	juce::String style;
-	juce::String stems;
 	juce::String generationPrompt;
 	float generationBpm;
 	juce::String generationKey;
 	int generationDuration;
-	std::vector<juce::String> preferredStems = {};
 	juce::String selectedPrompt;
 	std::atomic<bool> useOriginalFile{ false };
 	std::atomic<bool> hasOriginalVersion{ false };
@@ -249,8 +241,6 @@ struct TrackData
 		generationBpm = currentPage.generationBpm;
 		generationKey = currentPage.generationKey;
 		generationDuration = currentPage.generationDuration;
-		preferredStems = currentPage.preferredStems;
-		stems = currentPage.stems;
 
 		useOriginalFile = currentPage.useOriginalFile.load();
 		hasOriginalVersion = currentPage.hasOriginalVersion.load();
@@ -277,8 +267,6 @@ struct TrackData
 		pages[0].generationBpm = generationBpm;
 		pages[0].generationKey = generationKey;
 		pages[0].generationDuration = generationDuration;
-		pages[0].preferredStems = preferredStems;
-		pages[0].stems = stems;
 		pages[0].useOriginalFile = useOriginalFile.load();
 		pages[0].hasOriginalVersion = hasOriginalVersion.load();
 		pages[0].originalStagingBuffer = originalStagingBuffer;
@@ -317,7 +305,6 @@ struct TrackData
 			request.bpm = currentPage.generationBpm;
 			request.key = currentPage.generationKey;
 			request.generationDuration = static_cast<float>(currentPage.generationDuration);
-			request.preferredStems = currentPage.preferredStems;
 		}
 		else
 		{
@@ -325,7 +312,6 @@ struct TrackData
 			request.bpm = generationBpm;
 			request.key = generationKey;
 			request.generationDuration = static_cast<float>(generationDuration);
-			request.preferredStems = preferredStems;
 		}
 		return request;
 	}
@@ -339,7 +325,6 @@ struct TrackData
 			currentPage.generationBpm = request.bpm;
 			currentPage.generationKey = request.key;
 			currentPage.generationDuration = static_cast<int>(request.generationDuration);
-			currentPage.preferredStems = request.preferredStems;
 			syncLegacyProperties();
 		}
 		else
@@ -348,7 +333,6 @@ struct TrackData
 			generationBpm = request.bpm;
 			generationKey = request.key;
 			generationDuration = static_cast<int>(request.generationDuration);
-			preferredStems = request.preferredStems;
 		}
 	}
 

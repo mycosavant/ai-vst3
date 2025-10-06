@@ -1051,20 +1051,6 @@ void TrackComponent::setupUI()
 						currentPage.generationKey = audioProcessor.getGlobalKey();
 						currentPage.generationDuration = audioProcessor.getGlobalDuration();
 
-						currentPage.preferredStems.clear();
-						if (audioProcessor.isGlobalStemEnabled("drums"))
-							currentPage.preferredStems.push_back("drums");
-						if (audioProcessor.isGlobalStemEnabled("bass"))
-							currentPage.preferredStems.push_back("bass");
-						if (audioProcessor.isGlobalStemEnabled("other"))
-							currentPage.preferredStems.push_back("other");
-						if (audioProcessor.isGlobalStemEnabled("vocals"))
-							currentPage.preferredStems.push_back("vocals");
-						if (audioProcessor.isGlobalStemEnabled("guitar"))
-							currentPage.preferredStems.push_back("guitar");
-						if (audioProcessor.isGlobalStemEnabled("piano"))
-							currentPage.preferredStems.push_back("piano");
-
 						track->syncLegacyProperties();
 					}
 					else
@@ -1073,19 +1059,6 @@ void TrackComponent::setupUI()
 						track->generationBpm = audioProcessor.getGlobalBpm();
 						track->generationKey = audioProcessor.getGlobalKey();
 						track->generationDuration = audioProcessor.getGlobalDuration();
-
-						if (audioProcessor.isGlobalStemEnabled("drums"))
-							track->preferredStems.push_back("drums");
-						if (audioProcessor.isGlobalStemEnabled("bass"))
-							track->preferredStems.push_back("bass");
-						if (audioProcessor.isGlobalStemEnabled("other"))
-							track->preferredStems.push_back("other");
-						if (audioProcessor.isGlobalStemEnabled("vocals"))
-							track->preferredStems.push_back("vocals");
-						if (audioProcessor.isGlobalStemEnabled("guitar"))
-							track->preferredStems.push_back("guitar");
-						if (audioProcessor.isGlobalStemEnabled("piano"))
-							track->preferredStems.push_back("piano");
 					}
 				}
 				onGenerateForTrack(trackId);

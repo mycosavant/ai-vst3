@@ -23,7 +23,7 @@ struct SampleBankEntry
 	int numSamples;
 
 	SampleBankEntry() : duration(0.0f), bpm(126.0f), sampleRate(48000.0),
-						numChannels(2), numSamples(0)
+		numChannels(2), numSamples(0)
 	{
 	}
 };
@@ -34,20 +34,19 @@ public:
 	SampleBank();
 	~SampleBank() = default;
 
-	juce::String addSample(const juce::String &prompt,
-						   const juce::File &audioFile,
-						   float bpm = 126.0f,
-						   const juce::String &key = "",
-						   const std::vector<juce::String> &stems = {});
+	juce::String addSample(const juce::String& prompt,
+		const juce::File& audioFile,
+		float bpm = 126.0f,
+		const juce::String& key = "");
 
-	bool removeSample(const juce::String &sampleId);
-	SampleBankEntry *getSample(const juce::String &sampleId);
-	std::vector<SampleBankEntry *> getAllSamples();
+	bool removeSample(const juce::String& sampleId);
+	SampleBankEntry* getSample(const juce::String& sampleId);
+	std::vector<SampleBankEntry*> getAllSamples();
 
 	std::vector<juce::String> getUnusedSamples() const;
 	int removeUnusedSamples();
-	void markSampleAsUsed(const juce::String &sampleId, const juce::String &projectId);
-	void markSampleAsUnused(const juce::String &sampleId, const juce::String &projectId);
+	void markSampleAsUsed(const juce::String& sampleId, const juce::String& projectId);
+	void markSampleAsUnused(const juce::String& sampleId, const juce::String& projectId);
 
 	void saveBankData();
 	void loadBankData();
@@ -60,9 +59,9 @@ private:
 	juce::File bankIndexFile;
 	juce::CriticalSection bankLock;
 
-	juce::String createSafeFilename(const juce::String &prompt, const juce::Time &timestamp);
-	juce::String promptToSnakeCase(const juce::String &prompt);
-	void analyzeSampleFile(SampleBankEntry *entry, const juce::File &audioFile);
+	juce::String createSafeFilename(const juce::String& prompt, const juce::Time& timestamp);
+	juce::String promptToSnakeCase(const juce::String& prompt);
+	void analyzeSampleFile(SampleBankEntry* entry, const juce::File& audioFile);
 	juce::File getBankDirectory();
 	void ensureBankDirectoryExists();
 

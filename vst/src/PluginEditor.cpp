@@ -726,38 +726,16 @@ void DjIaVstEditor::setupUI()
 	configButton.onClick = [this]()
 		{ showConfigDialog(); };
 
-	addAndMakeVisible(stemsLabel);
-	stemsLabel.setText("Stems:", juce::dontSendNotification);
+	addAndMakeVisible(modelSelector);
+	modelSelector.addItem("Standard (1 credit)", 1);
+	modelSelector.addItem("Premium (20 credits)", 2);
+	modelSelector.setSelectedId(1, juce::dontSendNotification);
+	modelSelector.setTooltip("Select generation quality");
 
-	addAndMakeVisible(drumsButton);
-	drumsButton.setButtonText("Drums");
-	drumsButton.setClickingTogglesState(true);
-	drumsButton.setToggleState(audioProcessor.isGlobalStemEnabled("drums"), juce::dontSendNotification);
-
-	addAndMakeVisible(bassButton);
-	bassButton.setButtonText("Bass");
-	bassButton.setClickingTogglesState(true);
-	bassButton.setToggleState(audioProcessor.isGlobalStemEnabled("bass"), juce::dontSendNotification);
-
-	addAndMakeVisible(otherButton);
-	otherButton.setButtonText("Other");
-	otherButton.setClickingTogglesState(true);
-	otherButton.setToggleState(audioProcessor.isGlobalStemEnabled("other"), juce::dontSendNotification);
-
-	addAndMakeVisible(vocalsButton);
-	vocalsButton.setButtonText("Vocals");
-	vocalsButton.setClickingTogglesState(true);
-	vocalsButton.setToggleState(audioProcessor.isGlobalStemEnabled("vocals"), juce::dontSendNotification);
-
-	addAndMakeVisible(guitarButton);
-	guitarButton.setButtonText("Guitar");
-	guitarButton.setClickingTogglesState(true);
-	guitarButton.setToggleState(audioProcessor.isGlobalStemEnabled("guitar"), juce::dontSendNotification);
-
-	addAndMakeVisible(pianoButton);
-	pianoButton.setButtonText("Piano");
-	pianoButton.setClickingTogglesState(true);
-	pianoButton.setToggleState(audioProcessor.isGlobalStemEnabled("piano"), juce::dontSendNotification);
+	addAndMakeVisible(creditsLabel);
+	creditsLabel.setText("Credits: --", juce::dontSendNotification);
+	creditsLabel.setFont(juce::FontOptions(14.0f, juce::Font::bold));
+	creditsLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
 
 	addAndMakeVisible(statusLabel);
 	statusLabel.setText("Ready", juce::dontSendNotification);
@@ -899,34 +877,24 @@ void DjIaVstEditor::addEventListeners()
 			audioProcessor.setGlobalDuration((int)durationSlider.getValue());
 		};
 
-	drumsButton.onClick = [this]()
-		{
-			audioProcessor.updateGlobalStem("drums", drumsButton.getToggleState());
-		};
 
-	bassButton.onClick = [this]()
+	modelSelector.onChange = [this]()
 		{
-			audioProcessor.updateGlobalStem("bass", bassButton.getToggleState());
-		};
+			int selectedId = modelSelector.getSelectedId();
+			juce::String model = (selectedId == 2) ? "premium" : "standard";
 
-	otherButton.onClick = [this]()
-		{
-			audioProcessor.updateGlobalStem("other", otherButton.getToggleState());
-		};
+			audioProcessor.setGlobalModelType(model);
 
-	vocalsButton.onClick = [this]()
-		{
-			audioProcessor.updateGlobalStem("vocals", vocalsButton.getToggleState());
-		};
-
-	guitarButton.onClick = [this]()
-		{
-			audioProcessor.updateGlobalStem("guitar", guitarButton.getToggleState());
-		};
-
-	pianoButton.onClick = [this]()
-		{
-			audioProcessor.updateGlobalStem("piano", pianoButton.getToggleState());
+			if (selectedId == 2 && !audioProcessor.canGeneratePremium) {
+				juce::AlertWindow::showMessageBoxAsync(
+					juce::MessageBoxIconType::WarningIcon,
+					"Insufficient Credits",
+					"You need 20 credits for Premium generation.\n"
+					"Please select Standard or upgrade your plan.",
+					"OK"
+				);
+				modelSelector.setSelectedId(1, juce::dontSendNotification);
+			}
 		};
 
 	promptPresetSelector.onChange = [this]()
@@ -1176,12 +1144,14 @@ void DjIaVstEditor::updateUIFromProcessor()
 
 	keySelector.setText(audioProcessor.getGlobalKey(), juce::dontSendNotification);
 
-	drumsButton.setToggleState(audioProcessor.isGlobalStemEnabled("drums"), juce::dontSendNotification);
-	bassButton.setToggleState(audioProcessor.isGlobalStemEnabled("bass"), juce::dontSendNotification);
-	otherButton.setToggleState(audioProcessor.isGlobalStemEnabled("other"), juce::dontSendNotification);
-	vocalsButton.setToggleState(audioProcessor.isGlobalStemEnabled("vocals"), juce::dontSendNotification);
-	guitarButton.setToggleState(audioProcessor.isGlobalStemEnabled("guitar"), juce::dontSendNotification);
-	pianoButton.setToggleState(audioProcessor.isGlobalStemEnabled("piano"), juce::dontSendNotification);
+	if (audioProcessor.getGlobalModelType() == "premium")
+	{
+		modelSelector.setSelectedId(2, juce::dontSendNotification);
+	}
+	else
+	{
+		modelSelector.setSelectedId(1, juce::dontSendNotification);
+	}
 
 	autoLoadButton.setToggleState(audioProcessor.getAutoLoadEnabled(), juce::dontSendNotification);
 	loadSampleButton.setEnabled(!audioProcessor.getAutoLoadEnabled());
@@ -1255,21 +1225,13 @@ void DjIaVstEditor::layoutConfigSection(juce::Rectangle<int> area, int reducing)
 {
 	auto controlRow = area.removeFromTop(35);
 	auto controlWidth = controlRow.getWidth() / 2;
-
 	keySelector.setBounds(controlRow.removeFromLeft(controlWidth).reduced(reducing));
 	durationSlider.setBounds(controlRow.removeFromLeft(controlWidth).reduced(reducing));
 
-	auto stemsRow = area.removeFromTop(30);
-	auto stemsSection = stemsRow.removeFromLeft(600);
-	stemsLabel.setBounds(stemsSection.removeFromLeft(60));
-	auto stemsArea = stemsSection.reduced(reducing);
-	auto stemWidth = stemsArea.getWidth() / 6;
-	drumsButton.setBounds(stemsArea.removeFromLeft(stemWidth).reduced(reducing));
-	bassButton.setBounds(stemsArea.removeFromLeft(stemWidth).reduced(reducing));
-	vocalsButton.setBounds(stemsArea.removeFromLeft(stemWidth).reduced(reducing));
-	guitarButton.setBounds(stemsArea.removeFromLeft(stemWidth).reduced(reducing));
-	pianoButton.setBounds(stemsArea.removeFromLeft(stemWidth).reduced(reducing));
-	otherButton.setBounds(stemsArea.reduced(reducing));
+	auto modelRow = area.removeFromTop(35);
+	auto modelWidth = modelRow.getWidth() / 2;
+	modelSelector.setBounds(modelRow.removeFromLeft(modelWidth).reduced(reducing));
+	creditsLabel.setBounds(modelRow.reduced(reducing));
 }
 
 void DjIaVstEditor::resized()
@@ -1489,19 +1451,6 @@ void DjIaVstEditor::onGenerateButtonClicked()
 		currentPage.generationBpm = (float)audioProcessor.getHostBpm();
 		currentPage.generationKey = keySelector.getText();
 		currentPage.generationDuration = (int)durationSlider.getValue();
-		currentPage.preferredStems.clear();
-		if (drumsButton.getToggleState())
-			currentPage.preferredStems.push_back("drums");
-		if (bassButton.getToggleState())
-			currentPage.preferredStems.push_back("bass");
-		if (otherButton.getToggleState())
-			currentPage.preferredStems.push_back("other");
-		if (vocalsButton.getToggleState())
-			currentPage.preferredStems.push_back("vocals");
-		if (guitarButton.getToggleState())
-			currentPage.preferredStems.push_back("guitar");
-		if (pianoButton.getToggleState())
-			currentPage.preferredStems.push_back("piano");
 		track->syncLegacyProperties();
 
 		DBG("Global generation for page " << (char)('A' + track->currentPageIndex) << " - Prompt: " << currentPage.selectedPrompt);
@@ -1513,19 +1462,6 @@ void DjIaVstEditor::onGenerateButtonClicked()
 		track->generationKey = keySelector.getText();
 		track->generationDuration = (int)durationSlider.getValue();
 		track->selectedPrompt.clear();
-		track->preferredStems.clear();
-		if (drumsButton.getToggleState())
-			track->preferredStems.push_back("drums");
-		if (bassButton.getToggleState())
-			track->preferredStems.push_back("bass");
-		if (otherButton.getToggleState())
-			track->preferredStems.push_back("other");
-		if (vocalsButton.getToggleState())
-			track->preferredStems.push_back("vocals");
-		if (guitarButton.getToggleState())
-			track->preferredStems.push_back("guitar");
-		if (pianoButton.getToggleState())
-			track->preferredStems.push_back("piano");
 	}
 
 	startGenerationUI(generatingTrackId);
@@ -1971,20 +1907,6 @@ void DjIaVstEditor::generateFromTrackComponent(const juce::String& trackId)
 		currentPage.generationKey = audioProcessor.getGlobalKey();
 		currentPage.generationDuration = audioProcessor.getGlobalDuration();
 
-		currentPage.preferredStems.clear();
-		if (audioProcessor.isGlobalStemEnabled("drums"))
-			currentPage.preferredStems.push_back("drums");
-		if (audioProcessor.isGlobalStemEnabled("bass"))
-			currentPage.preferredStems.push_back("bass");
-		if (audioProcessor.isGlobalStemEnabled("other"))
-			currentPage.preferredStems.push_back("other");
-		if (audioProcessor.isGlobalStemEnabled("vocals"))
-			currentPage.preferredStems.push_back("vocals");
-		if (audioProcessor.isGlobalStemEnabled("guitar"))
-			currentPage.preferredStems.push_back("guitar");
-		if (audioProcessor.isGlobalStemEnabled("piano"))
-			currentPage.preferredStems.push_back("piano");
-
 		track->syncLegacyProperties();
 
 		DBG("Track generation for page " << (char)('A' + track->currentPageIndex) << " - Prompt: " << currentPage.selectedPrompt);
@@ -1994,20 +1916,6 @@ void DjIaVstEditor::generateFromTrackComponent(const juce::String& trackId)
 		track->generationBpm = audioProcessor.getGlobalBpm();
 		track->generationKey = audioProcessor.getGlobalKey();
 		track->generationDuration = audioProcessor.getGlobalDuration();
-
-		track->preferredStems.clear();
-		if (audioProcessor.isGlobalStemEnabled("drums"))
-			track->preferredStems.push_back("drums");
-		if (audioProcessor.isGlobalStemEnabled("bass"))
-			track->preferredStems.push_back("bass");
-		if (audioProcessor.isGlobalStemEnabled("other"))
-			track->preferredStems.push_back("other");
-		if (audioProcessor.isGlobalStemEnabled("vocals"))
-			track->preferredStems.push_back("vocals");
-		if (audioProcessor.isGlobalStemEnabled("guitar"))
-			track->preferredStems.push_back("guitar");
-		if (audioProcessor.isGlobalStemEnabled("piano"))
-			track->preferredStems.push_back("piano");
 	}
 
 	startGenerationUI(currentGeneratingTrackId);

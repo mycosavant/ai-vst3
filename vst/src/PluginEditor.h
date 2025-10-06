@@ -172,6 +172,9 @@ private:
 	MidiLearnableButton nextTrackButton;
 	MidiLearnableButton prevTrackButton;
 
+	juce::ComboBox modelSelector;
+	juce::Label creditsLabel;
+
 	enum MenuIDs
 	{
 		newSession = 1,
