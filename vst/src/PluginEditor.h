@@ -5,6 +5,7 @@
 #include "MidiLearnableComponents.h"
 #include "SampleBankPanel.h"
 #include "CustomLookAndFeel.h"
+#include "DjIaClient.h"
 
 class SequencerComponent;
 
@@ -50,6 +51,7 @@ public:
 
 private:
 	DjIaVstProcessor& audioProcessor;
+	DjIaClient apiClient;
 	CustomLookAndFeel customLookAndFeel;
 	juce::Image logoImage;
 	juce::Image bannerImage;
@@ -95,6 +97,7 @@ private:
 	void checkLocalModelsAndNotify();
 	void notifyTracksPromptUpdate();
 	void generateFromTrackComponent(const juce::String& trackId);
+	void refreshCredits();
 
 	juce::StringArray getAllPrompts() const;
 
@@ -143,13 +146,6 @@ private:
 	juce::TextEditor serverUrlInput;
 	juce::Label apiKeyLabel;
 	juce::TextEditor apiKeyInput;
-	juce::Label stemsLabel;
-	juce::ToggleButton drumsButton;
-	juce::ToggleButton bassButton;
-	juce::ToggleButton otherButton;
-	juce::ToggleButton vocalsButton;
-	juce::ToggleButton guitarButton;
-	juce::ToggleButton pianoButton;
 	juce::TextButton playButton;
 	juce::Slider durationSlider;
 	juce::Label durationLabel;
@@ -172,7 +168,6 @@ private:
 	MidiLearnableButton nextTrackButton;
 	MidiLearnableButton prevTrackButton;
 
-	juce::ComboBox modelSelector;
 	juce::Label creditsLabel;
 
 	enum MenuIDs

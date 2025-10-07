@@ -10,7 +10,7 @@
 #endif
 
 DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
-	: AudioProcessorEditor(&p), audioProcessor(p)
+	: AudioProcessorEditor(&p), audioProcessor(p), apiClient("", "http://localhost:8000")
 {
 	setSize(1300, 800);
 	setLookAndFeel(&customLookAndFeel);
@@ -33,6 +33,7 @@ DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
 		{
 			loadPromptPresets();
 			refreshTracks();
+			refreshCredits();
 			for (auto& trackComp : trackComponents)
 			{
 				if (trackComp->getTrack() && trackComp->getTrack()->showWaveform)
@@ -178,6 +179,7 @@ void DjIaVstEditor::onGenerationComplete(const juce::String& trackId, const juce
 				statusLabel.setText("Ready", juce::dontSendNotification);
 				statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess); });
 	}
+	refreshCredits();
 }
 
 void DjIaVstEditor::refreshTracks()
@@ -292,13 +294,6 @@ void DjIaVstEditor::refreshUIForMode()
 {
 	bool isLocalMode = audioProcessor.getUseLocalModel();
 
-	stemsLabel.setEnabled(!isLocalMode);
-	drumsButton.setEnabled(!isLocalMode);
-	bassButton.setEnabled(!isLocalMode);
-	otherButton.setEnabled(!isLocalMode);
-	vocalsButton.setEnabled(!isLocalMode);
-	guitarButton.setEnabled(!isLocalMode);
-	pianoButton.setEnabled(!isLocalMode);
 	durationSlider.setEnabled(!isLocalMode);
 	durationLabel.setEnabled(!isLocalMode);
 
@@ -705,7 +700,7 @@ void DjIaVstEditor::setupUI()
 	keySelector.setText(audioProcessor.getGlobalKey(), juce::dontSendNotification);
 
 	addAndMakeVisible(durationSlider);
-	durationSlider.setRange(2.0, 10.0, 1.0);
+	durationSlider.setRange(2.0, 30.0, 1.0);
 	durationSlider.setValue(audioProcessor.getGlobalDuration(), juce::dontSendNotification);
 	durationSlider.setColour(juce::Slider::backgroundColourId, juce::Colours::black);
 	durationSlider.setColour(juce::Slider::thumbColourId, ColourPalette::sliderThumb);
@@ -726,16 +721,17 @@ void DjIaVstEditor::setupUI()
 	configButton.onClick = [this]()
 		{ showConfigDialog(); };
 
-	addAndMakeVisible(modelSelector);
-	modelSelector.addItem("Standard (1 credit)", 1);
-	modelSelector.addItem("Premium (20 credits)", 2);
-	modelSelector.setSelectedId(1, juce::dontSendNotification);
-	modelSelector.setTooltip("Select generation quality");
-
 	addAndMakeVisible(creditsLabel);
 	creditsLabel.setText("Credits: --", juce::dontSendNotification);
-	creditsLabel.setFont(juce::FontOptions(14.0f, juce::Font::bold));
-	creditsLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
+	creditsLabel.setFont(juce::FontOptions(14.0f));
+	creditsLabel.setColour(juce::Label::textColourId, ColourPalette::textSecondary);
+	creditsLabel.setTooltip(
+		"Available generation credits\n"
+		"\n"
+		"Cost per generation:\n"
+		"  - Standard: 2 credits (1 LLM + 1 audio)\n"
+		"  - Premium: 21 credits (1 LLM + 20 audio)"
+	);
 
 	addAndMakeVisible(statusLabel);
 	statusLabel.setText("Ready", juce::dontSendNotification);
@@ -817,12 +813,6 @@ void DjIaVstEditor::setupUI()
 	durationSlider.setTooltip("Generation duration in seconds (2-10s)");
 	generateButton.setTooltip("Generate audio loop for selected track (Right-click for MIDI learn)");
 	configButton.setTooltip("Configure API settings and generation mode");
-	drumsButton.setTooltip("Include drums stem in generation");
-	bassButton.setTooltip("Include bass stem in generation");
-	otherButton.setTooltip("Include other instruments stem in generation");
-	vocalsButton.setTooltip("Include vocals stem in generation");
-	guitarButton.setTooltip("Include guitar stem in generation");
-	pianoButton.setTooltip("Include piano stem in generation");
 	autoLoadButton.setTooltip("Automatically load generated samples (disable for manual control)");
 	loadSampleButton.setTooltip("Manually load pending generated sample");
 	addTrackButton.setTooltip("Add a new track to the session");
@@ -875,26 +865,6 @@ void DjIaVstEditor::addEventListeners()
 		{
 			audioProcessor.setLastDuration(durationSlider.getValue());
 			audioProcessor.setGlobalDuration((int)durationSlider.getValue());
-		};
-
-
-	modelSelector.onChange = [this]()
-		{
-			int selectedId = modelSelector.getSelectedId();
-			juce::String model = (selectedId == 2) ? "premium" : "standard";
-
-			audioProcessor.setGlobalModelType(model);
-
-			if (selectedId == 2 && !audioProcessor.canGeneratePremium) {
-				juce::AlertWindow::showMessageBoxAsync(
-					juce::MessageBoxIconType::WarningIcon,
-					"Insufficient Credits",
-					"You need 20 credits for Premium generation.\n"
-					"Please select Standard or upgrade your plan.",
-					"OK"
-				);
-				modelSelector.setSelectedId(1, juce::dontSendNotification);
-			}
 		};
 
 	promptPresetSelector.onChange = [this]()
@@ -1144,15 +1114,6 @@ void DjIaVstEditor::updateUIFromProcessor()
 
 	keySelector.setText(audioProcessor.getGlobalKey(), juce::dontSendNotification);
 
-	if (audioProcessor.getGlobalModelType() == "premium")
-	{
-		modelSelector.setSelectedId(2, juce::dontSendNotification);
-	}
-	else
-	{
-		modelSelector.setSelectedId(1, juce::dontSendNotification);
-	}
-
 	autoLoadButton.setToggleState(audioProcessor.getAutoLoadEnabled(), juce::dontSendNotification);
 	loadSampleButton.setEnabled(!audioProcessor.getAutoLoadEnabled());
 
@@ -1228,10 +1189,8 @@ void DjIaVstEditor::layoutConfigSection(juce::Rectangle<int> area, int reducing)
 	keySelector.setBounds(controlRow.removeFromLeft(controlWidth).reduced(reducing));
 	durationSlider.setBounds(controlRow.removeFromLeft(controlWidth).reduced(reducing));
 
-	auto modelRow = area.removeFromTop(35);
-	auto modelWidth = modelRow.getWidth() / 2;
-	modelSelector.setBounds(modelRow.removeFromLeft(modelWidth).reduced(reducing));
-	creditsLabel.setBounds(modelRow.reduced(reducing));
+	auto creditsRow = area.removeFromTop(35);
+	creditsLabel.setBounds(creditsRow.reduced(reducing));
 }
 
 void DjIaVstEditor::resized()
@@ -2373,5 +2332,42 @@ void DjIaVstEditor::refreshMixerChannels()
 	if (mixerPanel)
 	{
 		mixerPanel->refreshAllChannels();
+	}
+}
+
+void DjIaVstEditor::refreshCredits()
+{
+	juce::String currentApiKey = audioProcessor.getApiKey();
+	juce::String currentServerUrl = audioProcessor.getServerUrl();
+
+	if (currentApiKey.isEmpty())
+	{
+		creditsLabel.setText("Credits: No API Key", juce::dontSendNotification);
+		return;
+	}
+
+	if (currentServerUrl.isEmpty())
+	{
+		creditsLabel.setText("Credits: No Server", juce::dontSendNotification);
+		return;
+	}
+
+	apiClient.setApiKey(currentApiKey);
+	apiClient.setBaseUrl(currentServerUrl);
+
+	auto creditsInfo = apiClient.checkCredits(audioProcessor.getRequestTimeout());
+
+	if (creditsInfo.success)
+	{
+		juce::String creditsText = "Credits: " + juce::String(creditsInfo.creditsRemaining) +
+			" / " + juce::String(creditsInfo.creditsTotal);
+		creditsLabel.setText(creditsText, juce::dontSendNotification);
+
+		audioProcessor.setCreditsRemaining(creditsInfo.creditsRemaining);
+		audioProcessor.canGenerateStandard = creditsInfo.canGenerateStandard;
+	}
+	else
+	{
+		creditsLabel.setText("Credits: Error", juce::dontSendNotification);
 	}
 }

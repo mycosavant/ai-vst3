@@ -1441,7 +1441,6 @@ void DjIaVstProcessor::generateLoop(const DjIaClient::LoopRequest& request, cons
 		else
 		{
 			DjIaClient::LoopRequest apiRequest = request;
-			apiRequest.modelType = globalModelType;
 			generateLoopAPI(apiRequest, trackId);
 		}
 	}
@@ -2538,7 +2537,6 @@ void DjIaVstProcessor::getStateInformation(juce::MemoryBlock& destData)
 	state.setProperty("hostBpmEnabled", juce::var(hostBpmEnabled), nullptr);
 	state.setProperty("lastDuration", juce::var(lastDuration), nullptr);
 	state.setProperty("selectedTrackId", juce::var(selectedTrackId), nullptr);
-	state.setProperty("globalModelType", globalModelType, nullptr);
 	state.setProperty("lastKeyIndex", juce::var(lastKeyIndex), nullptr);
 	state.setProperty("isGenerating", juce::var(isGenerating), nullptr);
 	state.setProperty("autoLoadEnabled", juce::var(autoLoadEnabled.load()), nullptr);
@@ -2612,7 +2610,6 @@ void DjIaVstProcessor::setStateInformation(const void* data, int sizeInBytes)
 	lastPresetIndex = state.getProperty("lastPresetIndex", -1);
 	hostBpmEnabled = state.getProperty("hostBpmEnabled", false);
 	lastDuration = state.getProperty("lastDuration", 6.0);
-	globalModelType = state.getProperty("globalModelType", "standard").toString();
 	lastKeyIndex = state.getProperty("lastKeyIndex", 1);
 	isGenerating = state.getProperty("isGenerating", false);
 	generatingTrackId = state.getProperty("generatingTrackId", "").toString();

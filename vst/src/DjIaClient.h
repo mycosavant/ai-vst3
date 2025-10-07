@@ -10,14 +10,12 @@ public:
 		float generationDuration;
 		float bpm;
 		juce::String key;
-		juce::String modelType = "standard";
 
 		LoopRequest()
 			: prompt(""),
 			generationDuration(6.0f),
 			bpm(120.0f),
-			key(""),
-			modelType("standard")
+			key("")
 		{
 		}
 	};
@@ -40,6 +38,17 @@ public:
 		}
 	};
 
+	struct CreditsInfo
+	{
+		int creditsRemaining = 0;
+		int creditsTotal = 0;
+		bool canGenerateStandard = false;
+		int costStandard = 0;
+		bool success = false;
+		juce::String errorMessage = "";
+	};
+
+
 	DjIaClient(const juce::String& apiKey = "", const juce::String& baseUrl = "http://localhost:8000")
 		: apiKey(apiKey), baseUrl(baseUrl + "/api/v1")
 	{
@@ -49,6 +58,16 @@ public:
 	{
 		apiKey = newApiKey;
 		DBG("DjIaClient: API key updated");
+	}
+
+	juce::String getApiKey() const
+	{
+		return apiKey;
+	}
+
+	juce::String getBaseUrl() const
+	{
+		return baseUrl;
 	}
 
 	void setBaseUrl(const juce::String& newBaseUrl)
@@ -62,6 +81,76 @@ public:
 			baseUrl = newBaseUrl + "/api/v1";
 		}
 		DBG("DjIaClient: Base URL updated to: " + baseUrl);
+	}
+
+	CreditsInfo checkCredits(int timeoutMS = 10000)
+	{
+		CreditsInfo result;
+
+		try
+		{
+			if (baseUrl.isEmpty())
+			{
+				throw std::runtime_error("Server URL not configured");
+			}
+
+			juce::String headerString = "Content-Type: application/json\n";
+			if (apiKey.isNotEmpty())
+			{
+				headerString += "X-API-Key: " + apiKey + "\n";
+			}
+
+			int statusCode = 0;
+			juce::StringPairArray responseHeaders;
+
+			auto url = juce::URL(baseUrl + "/auth/credits/check/vst");
+			auto options = juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
+				.withStatusCode(&statusCode)
+				.withResponseHeaders(&responseHeaders)
+				.withExtraHeaders(headerString)
+				.withConnectionTimeoutMs(timeoutMS);
+
+			auto response = url.createInputStream(options);
+
+			if (!response)
+			{
+				throw std::runtime_error("Cannot connect to server");
+			}
+
+			if (statusCode != 200)
+			{
+				throw std::runtime_error("HTTP Error " + std::to_string(statusCode));
+			}
+
+			juce::String responseText = response->readEntireStreamAsString();
+
+			auto jsonResponse = juce::JSON::parse(responseText);
+
+			if (jsonResponse.isObject())
+			{
+				auto obj = jsonResponse.getDynamicObject();
+
+				result.creditsRemaining = obj->getProperty("credits_remaining");
+				result.creditsTotal = obj->getProperty("credits_total");
+				result.canGenerateStandard = obj->getProperty("can_generate_standard");
+				result.costStandard = obj->getProperty("cost_standard");
+				result.success = true;
+
+				DBG("Credits checked: " + juce::String(result.creditsRemaining) + " / " + juce::String(result.creditsTotal));
+			}
+			else
+			{
+				throw std::runtime_error("Invalid JSON response");
+			}
+		}
+		catch (const std::exception& e)
+		{
+			DBG("Credits check error: " + juce::String(e.what()));
+			result.success = false;
+			result.errorMessage = e.what();
+		}
+
+		return result;
 	}
 
 	LoopResponse generateLoop(const LoopRequest& request, double sampleRate, int requestTimeoutMS)
@@ -79,7 +168,6 @@ public:
 			jsonRequest.getDynamicObject()->setProperty("key", request.key);
 			jsonRequest.getDynamicObject()->setProperty("sample_rate", sampleRate);
 			jsonRequest.getDynamicObject()->setProperty("generation_duration", request.generationDuration);
-			jsonRequest.getDynamicObject()->setProperty("model_type", request.modelType);
 
 			auto jsonString = juce::JSON::toString(jsonRequest);
 

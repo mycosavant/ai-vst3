@@ -211,14 +211,10 @@ public:
 	bool previewSampleFromBank(const juce::String& sampleId);
 	void stopSamplePreview();
 	bool isSamplePreviewing() const { return isPreviewPlaying.load(); }
-	juce::String getGlobalModelType() const { return globalModelType; }
-	void setGlobalModelType(const juce::String& model) { globalModelType = model; }
 	int getCreditsRemaining() const { return creditsRemaining; }
 	void setCreditsRemaining(int credits) { creditsRemaining = credits; }
-	juce::String globalModelType = "standard";
 	int creditsRemaining = 0;
 	bool canGenerateStandard = true;
-	bool canGeneratePremium = false;
 
 private:
 	DjIaVstEditor* currentEditor = nullptr;
