@@ -13,6 +13,7 @@ from server.api.api_request_handler import APIRequestHandler
 from core.api_keys_manager import check_api_key_status, increment_api_key_usage
 
 router = APIRouter()
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 def get_user_id_from_api_key(api_key):
@@ -25,9 +26,6 @@ def get_dj_system(request: Request):
     if hasattr(request.app, "state") and hasattr(request.app.state, "dj_system"):
         return request.app.state.dj_system
     raise RuntimeError("No DJSystem instance found in FastAPI application!")
-
-
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 def create_error_response(
@@ -174,3 +172,52 @@ async def generate_loop(
     finally:
         if processed_path and os.path.exists(processed_path):
             os.remove(processed_path)
+
+
+@router.get("/auth/credits/check/vst")
+async def check_credits_local(api_key: str = Depends(api_key_header)):
+    if not api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"error": {"code": "INVALID_KEY", "message": "API Key required"}},
+        )
+
+    is_valid, error_code, key_info = check_api_key_status(api_key)
+
+    if not is_valid:
+        if error_code == "INVALID_KEY":
+            raise HTTPException(
+                status_code=403,
+                detail={"error": {"code": "INVALID_KEY", "message": "Invalid API key"}},
+            )
+        elif error_code == "KEY_EXPIRED":
+            raise HTTPException(
+                status_code=403,
+                detail={"error": {"code": "KEY_EXPIRED", "message": "API key expired"}},
+            )
+        elif error_code == "CREDITS_EXHAUSTED":
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": {
+                        "code": "CREDITS_EXHAUSTED",
+                        "message": "No credits remaining",
+                    }
+                },
+            )
+
+    if key_info.get("is_limited"):
+        credits_remaining = key_info.get("total_credits", 0) - key_info.get(
+            "credits_used", 0
+        )
+        credits_total = key_info.get("total_credits", 0)
+    else:
+        credits_remaining = -1
+        credits_total = -1
+
+    return {
+        "credits_remaining": credits_remaining,
+        "credits_total": credits_total,
+        "can_generate_standard": credits_remaining == -1 or credits_remaining >= 2,
+        "cost_standard": 2,
+    }
