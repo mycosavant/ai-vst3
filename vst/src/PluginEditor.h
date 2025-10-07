@@ -98,6 +98,7 @@ private:
 	void notifyTracksPromptUpdate();
 	void generateFromTrackComponent(const juce::String& trackId);
 	void refreshCredits();
+	void refreshCreditsAsync();
 
 	juce::StringArray getAllPrompts() const;
 

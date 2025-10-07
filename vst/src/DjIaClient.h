@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "./JuceHeader.h"
+#include <mutex>
 
 class DjIaClient
 {
@@ -56,22 +57,26 @@ public:
 
 	void setApiKey(const juce::String& newApiKey)
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		apiKey = newApiKey;
 		DBG("DjIaClient: API key updated");
 	}
 
 	juce::String getApiKey() const
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		return apiKey;
 	}
 
 	juce::String getBaseUrl() const
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		return baseUrl;
 	}
 
 	void setBaseUrl(const juce::String& newBaseUrl)
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		if (newBaseUrl.endsWith("/"))
 		{
 			baseUrl = newBaseUrl.dropLastCharacters(1) + "/api/v1";
@@ -89,21 +94,30 @@ public:
 
 		try
 		{
-			if (baseUrl.isEmpty())
+			juce::String currentBaseUrl;
+			juce::String currentApiKey;
+
+			{
+				std::lock_guard<std::mutex> lock(mutex);
+				currentBaseUrl = baseUrl;
+				currentApiKey = apiKey;
+			}
+
+			if (currentBaseUrl.isEmpty())
 			{
 				throw std::runtime_error("Server URL not configured");
 			}
 
 			juce::String headerString = "Content-Type: application/json\n";
-			if (apiKey.isNotEmpty())
+			if (currentApiKey.isNotEmpty())
 			{
-				headerString += "X-API-Key: " + apiKey + "\n";
+				headerString += "X-API-Key: " + currentApiKey + "\n";
 			}
 
 			int statusCode = 0;
 			juce::StringPairArray responseHeaders;
 
-			auto url = juce::URL(baseUrl + "/auth/credits/check/vst");
+			auto url = juce::URL(currentBaseUrl + "/auth/credits/check/vst");
 			auto options = juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
 				.withStatusCode(&statusCode)
 				.withResponseHeaders(&responseHeaders)
@@ -135,8 +149,6 @@ public:
 				result.canGenerateStandard = obj->getProperty("can_generate_standard");
 				result.costStandard = obj->getProperty("cost_standard");
 				result.success = true;
-
-				DBG("Credits checked: " + juce::String(result.creditsRemaining) + " / " + juce::String(result.creditsTotal));
 			}
 			else
 			{
@@ -145,7 +157,6 @@ public:
 		}
 		catch (const std::exception& e)
 		{
-			DBG("Credits check error: " + juce::String(e.what()));
 			result.success = false;
 			result.errorMessage = e.what();
 		}
@@ -171,25 +182,36 @@ public:
 
 			auto jsonString = juce::JSON::toString(jsonRequest);
 
-			juce::String headerString = "Content-Type: application/json\n";
-			if (apiKey.isNotEmpty())
+			juce::String currentBaseUrl;
+			juce::String currentApiKey;
+
 			{
-				headerString += "X-API-Key: " + apiKey + "\n";
+				std::lock_guard<std::mutex> lock(mutex);
+				currentBaseUrl = baseUrl;
+				currentApiKey = apiKey;
 			}
-			if (baseUrl.isEmpty())
+
+			juce::String headerString = "Content-Type: application/json\n";
+			if (currentApiKey.isNotEmpty())
+			{
+				headerString += "X-API-Key: " + currentApiKey + "\n";
+			}
+
+			if (currentBaseUrl.isEmpty())
 			{
 				DBG("ERROR: Base URL is empty!");
 				throw std::runtime_error("Server URL not configured. Please set server URL in settings.");
 			}
 
-			if (!baseUrl.startsWithIgnoreCase("http"))
+			if (!currentBaseUrl.startsWithIgnoreCase("http"))
 			{
-				DBG("ERROR: Invalid URL format: " + baseUrl);
+				DBG("ERROR: Invalid URL format: " + currentBaseUrl);
 				throw std::runtime_error("Invalid server URL format. Must start with http:// or https://");
 			}
+
 			int statusCode = 0;
 			juce::StringPairArray responseHeaders;
-			auto url = juce::URL(baseUrl + "/generate")
+			auto url = juce::URL(currentBaseUrl + "/generate")
 				.withPOSTData(jsonString);
 			auto options = juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inPostData)
 				.withStatusCode(&statusCode)
@@ -201,7 +223,7 @@ public:
 			if (!response)
 			{
 				DBG("ERROR: Failed to connect to server");
-				throw std::runtime_error(("Cannot connect to server at " + baseUrl +
+				throw std::runtime_error(("Cannot connect to server at " + currentBaseUrl +
 					". Please check: Server is running, URL is correct, Network connection")
 					.toStdString());
 			}
@@ -291,6 +313,7 @@ public:
 	}
 
 private:
+	mutable std::mutex mutex;
 	juce::String apiKey;
 	juce::String baseUrl;
 };

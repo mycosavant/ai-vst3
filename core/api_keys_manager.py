@@ -54,9 +54,6 @@ def get_api_key_info(api_key: str) -> Dict[str, Any]:
 
 
 def check_api_key_status(api_key: str) -> tuple[bool, str, Dict[str, Any]]:
-    """
-    Retourne (is_valid, error_code, key_info)
-    """
     if ENVIRONMENT == "dev":
         return True, None, {"unlimited": True}
 
@@ -97,7 +94,7 @@ def increment_api_key_usage(api_key: str):
             cursor.execute(
                 """
                 UPDATE api_keys 
-                SET credits_used = credits_used + 1 
+                SET credits_used = credits_used + 2 
                 WHERE id = ?
             """,
                 (key_info["id"],),

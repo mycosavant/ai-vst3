@@ -33,7 +33,7 @@ DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
 		{
 			loadPromptPresets();
 			refreshTracks();
-			refreshCredits();
+			refreshCreditsAsync();
 			for (auto& trackComp : trackComponents)
 			{
 				if (trackComp->getTrack() && trackComp->getTrack()->showWaveform)
@@ -729,8 +729,7 @@ void DjIaVstEditor::setupUI()
 		"Available generation credits\n"
 		"\n"
 		"Cost per generation:\n"
-		"  - Standard: 2 credits (1 LLM + 1 audio)\n"
-		"  - Premium: 21 credits (1 LLM + 20 audio)"
+		"  - 2 credits (1 LLM + 1 audio)"
 	);
 
 	addAndMakeVisible(statusLabel);
@@ -1184,13 +1183,13 @@ void DjIaVstEditor::layoutPromptSection(juce::Rectangle<int> area, int spacing)
 
 void DjIaVstEditor::layoutConfigSection(juce::Rectangle<int> area, int reducing)
 {
-	auto controlRow = area.removeFromTop(35);
+	auto creditsRow = area.removeFromTop(35);
+	creditsLabel.setBounds(creditsRow.reduced(reducing));
+
+	auto controlRow = area.removeFromTop(40);
 	auto controlWidth = controlRow.getWidth() / 2;
 	keySelector.setBounds(controlRow.removeFromLeft(controlWidth).reduced(reducing));
 	durationSlider.setBounds(controlRow.removeFromLeft(controlWidth).reduced(reducing));
-
-	auto creditsRow = area.removeFromTop(35);
-	creditsLabel.setBounds(creditsRow.reduced(reducing));
 }
 
 void DjIaVstEditor::resized()
@@ -2337,8 +2336,14 @@ void DjIaVstEditor::refreshMixerChannels()
 
 void DjIaVstEditor::refreshCredits()
 {
+	refreshCreditsAsync();
+}
+
+void DjIaVstEditor::refreshCreditsAsync()
+{
 	juce::String currentApiKey = audioProcessor.getApiKey();
 	juce::String currentServerUrl = audioProcessor.getServerUrl();
+	int timeout = audioProcessor.getRequestTimeout();
 
 	if (currentApiKey.isEmpty())
 	{
@@ -2352,22 +2357,38 @@ void DjIaVstEditor::refreshCredits()
 		return;
 	}
 
+	creditsLabel.setText("Credits: Loading...", juce::dontSendNotification);
+
 	apiClient.setApiKey(currentApiKey);
 	apiClient.setBaseUrl(currentServerUrl);
 
-	auto creditsInfo = apiClient.checkCredits(audioProcessor.getRequestTimeout());
+	juce::Thread::launch([this, timeout, safeThis = juce::Component::SafePointer<DjIaVstEditor>(this)]() {
+		auto creditsInfo = apiClient.checkCredits(timeout);
+		juce::MessageManager::callAsync([safeThis, creditsInfo]() {
+			if (auto* editor = safeThis.getComponent())
+			{
+				if (creditsInfo.success)
+				{
+					juce::String creditsText;
+					if (creditsInfo.creditsRemaining == -1 || creditsInfo.creditsTotal == -1)
+					{
+						creditsText = "Credits: Unlimited";
+					}
+					else
+					{
+						creditsText = "Credits: " + juce::String(creditsInfo.creditsRemaining) +
+							" / " + juce::String(creditsInfo.creditsTotal);
+					}
 
-	if (creditsInfo.success)
-	{
-		juce::String creditsText = "Credits: " + juce::String(creditsInfo.creditsRemaining) +
-			" / " + juce::String(creditsInfo.creditsTotal);
-		creditsLabel.setText(creditsText, juce::dontSendNotification);
-
-		audioProcessor.setCreditsRemaining(creditsInfo.creditsRemaining);
-		audioProcessor.canGenerateStandard = creditsInfo.canGenerateStandard;
-	}
-	else
-	{
-		creditsLabel.setText("Credits: Error", juce::dontSendNotification);
-	}
+					editor->creditsLabel.setText(creditsText, juce::dontSendNotification);
+					editor->audioProcessor.setCreditsRemaining(creditsInfo.creditsRemaining);
+					editor->audioProcessor.canGenerateStandard = creditsInfo.canGenerateStandard;
+				}
+				else
+				{
+					editor->creditsLabel.setText("Credits: Error", juce::dontSendNotification);
+				}
+			}
+			});
+		});
 }

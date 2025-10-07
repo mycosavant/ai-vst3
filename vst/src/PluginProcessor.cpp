@@ -387,13 +387,10 @@ void DjIaVstProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
 	checkAndSwapStagingBuffers();
 	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
 		buffer.clear(i, 0, buffer.getNumSamples());
-
 	bool hostIsPlaying = false;
 	auto currentPlayHead = getPlayHead();
-
 	double hostBpm = 126.0;
 	double hostPpqPosition = 0.0;
-
 	if (currentPlayHead)
 	{
 		getDawInformations(currentPlayHead, hostIsPlaying, hostBpm, hostPpqPosition);
@@ -402,34 +399,32 @@ void DjIaVstProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
 	handleSequencerPlayState(hostIsPlaying);
 	updateSequencers(hostIsPlaying);
 	checkBeatRepeatWithSampleCounter();
-
 	{
 		juce::ScopedLock lock(sequencerMidiLock);
 		midiMessages.addEvents(sequencerMidiBuffer, 0, buffer.getNumSamples(), 0);
 		sequencerMidiBuffer.clear();
 	}
-
 	processMidiMessages(midiMessages, hostIsPlaying, hostBpm);
-
 	if (hasPendingAudioData.load())
 	{
 		processIncomingAudio(hostIsPlaying);
 	}
-
 	resizeIndividualsBuffers(buffer);
 	clearOutputBuffers(buffer);
-
 	auto mainOutput = getBusBuffer(buffer, false, 0);
 	mainOutput.clear();
-
 	updateTimeStretchRatios(hostBpm);
-
 	trackManager.renderAllTracks(mainOutput, individualOutputBuffers, hostBpm);
-
 	copyTracksToIndividualOutputs(buffer);
 	handlePreviewPlaying(buffer);
-
 	applyMasterEffects(mainOutput);
+
+	bool isMultiOutputActive = getBusCount(false) > 1;
+	if (isMultiOutputActive)
+	{
+		mainOutput.clear();
+	}
+
 	checkIfUIUpdateNeeded(midiMessages);
 }
 
