@@ -3,7 +3,8 @@
 🎵 **Real-time AI music generation VST3 plugin for live performance**
 
 📄 **[Late Breaking Paper - AIMLA 2025](https://drive.google.com/file/d/1cwqmrV0_qC462LLQgQUz-5Cd422gL-8F/view)** - Presented at the first AES International Conference on Artificial Intelligence and Machine Learning for Audio (Queen Mary University London, Sept 8-10, 2025)  
-🎓 **[Tutorial](https://youtu.be/-qdFo_PcKoY)** - From DAW setup to live performance (French + English subtitles)
+🎓 **[Tutorial](https://youtu.be/-qdFo_PcKoY)** - From DAW setup to live performance (French + English subtitles)  
+🌐 **[Official Website](https://obsidian-neural.com)** - Learn more about the project
 
 ---
 
@@ -23,17 +24,57 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 
 ## Quick Start
 
-### 🔵 Server + GPU (Recommended)
+### 🟣 Cloud Inference API (New - Recommended for Beginners)
 
-**Best quality for live performance and production.**
+**Generate AI loops directly from your DAW with zero setup. Professional quality with stems separation.**
+
+1. Download VST3 from [Releases](https://github.com/innermost47/ai-dj/releases)
+2. Get your API key from [obsidian-neural.com](https://obsidian-neural.com)
+3. Load the VST in your DAW
+4. Configure in the plugin:
+   - Click the **⚙️ settings button** (top right) or wait for the first-time setup dialog
+   - Choose "Server/API" mode
+   - Enter Server URL: `https://ai-harmony.duckdns.org/obsidian`
+   - Enter your API key
+   - Click "Save & Continue"
+
+**Pricing:**
+
+- **Free**: 10 credits (5 samples) - Try it out
+- **Starter**: €14.99/month - 500 credits (250 samples)
+- **Pro**: €29.99/month - 1500 credits (750 samples)
+- **Studio**: €59.99/month - 4000 credits (2000 samples)
+
+Each generation costs **2 credits** (1 LLM + 1 audio). Samples up to 30 seconds, ~10s generation time.
+
+**Benefits:**
+
+- Zero setup - Works immediately
+- Professional quality
+- STEMS separation included
+- Variable duration (up to 30s)
+- No GPU or powerful hardware required
+- Perfect for live performance
+
+### 🔵 Self-Hosted Server + GPU (Advanced)
+
+**Best for privacy, customization, and unlimited generations.**
 
 1. Get [Stability AI access](https://huggingface.co/stabilityai/stable-audio-open-1.0)
 2. Follow [build from source instructions](INSTALLATION.md#option-3-build-from-source)
 3. Run server interface: `python server_interface.py`
 4. Download VST3 from [Releases](https://github.com/innermost47/ai-dj/releases)
-5. Configure VST with server URL and API key
+5. Load the VST in your DAW
+6. Configure in the plugin:
+   - Click the **⚙️ settings button** (top right) or wait for the first-time setup dialog
+   - Choose "Server/API" mode
+   - Enter your local server URL (default: `http://localhost:8000`)
+   - Leave API key empty for local server
+   - Click "Save & Continue"
 
-**Benefits:** Variable duration, STEMS separation, better timing, GPU acceleration
+**Benefits:** Unlimited generations, full privacy, variable duration, STEMS separation
+
+**Requirements:** GPU with CUDA support, Python environment
 
 ### 🟢 Local Models (Offline)
 
@@ -47,9 +88,27 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 
 **Requirements:** 16GB+ RAM, Windows (macOS/Linux coming soon)
 
-### 🔴 Free API (No Setup)
+**Current limitations:**
 
-Contact b03caa1n5@mozmail.com for free API key (10 slots available)
+- Fixed 10-second generation
+- Some timing/quantization issues
+- High RAM usage
+
+---
+
+## Which Option Should I Choose?
+
+| Feature                   | Cloud API               | Self-Hosted                    | Local Models          |
+| ------------------------- | ----------------------- | ------------------------------ | --------------------- |
+| **Setup Difficulty**      | ⭐ Easy                 | ⭐⭐⭐ Advanced                | ⭐⭐ Moderate         |
+| **Hardware Requirements** | None                    | GPU + CUDA                     | 16GB+ RAM             |
+| **Generation Quality**    | ⭐⭐⭐ Best             | ⭐⭐ Good                      | ⭐ Bad                |
+| **STEMS Separation**      | ✅ Yes                  | ✅ Yes                         | ❌ No                 |
+| **Variable Duration**     | ✅ Up to 30s            | ✅ Yes                         | ❌ Fixed 10s          |
+| **Cost**                  | Pay per use             | Free (after setup)             | Free                  |
+| **Privacy**               | Data processed on cloud | Full privacy                   | Full privacy          |
+| **Internet Required**     | ✅ Yes                  | ❌ No                          | ❌ No                 |
+| **Best For**              | Beginners, live gigs    | Privacy-focused, unlimited use | Offline work, testing |
 
 ---
 
@@ -59,7 +118,8 @@ Contact b03caa1n5@mozmail.com for free API key (10 slots available)
 
 📧 **Email:** b03caa1n5@mozmail.com  
 💬 **Discussions:** [GitHub Discussions](https://github.com/innermost47/ai-dj/discussions)  
-📺 **Examples:** [Community Sessions](YOUTUBE.md)
+📺 **Examples:** [Community Sessions](YOUTUBE.md)  
+🌐 **Website:** [obsidian-neural.com](https://obsidian-neural.com)
 
 [![Jungle Session](https://img.youtube.com/vi/cFmRJIFUOCU/maxresdefault.jpg)](https://youtu.be/cFmRJIFUOCU)
 
@@ -84,26 +144,17 @@ Contact b03caa1n5@mozmail.com for free API key (10 slots available)
 ## Status & Support
 
 🚀 **Active development** - Updates pushed regularly  
-⭐ **110+ GitHub stars** - Thanks for the support!  
-🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)
-
-**Current limitations (local mode):**
-
-- Fixed 10-second generation
-- Some timing/quantization issues
-- High RAM usage
-- No STEMS separation yet
-
-Server mode still provides better quality for live performance.
+⭐ **120+ GitHub stars** - Thanks for the support!  
+🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)  
+📊 **API Status:** Check [obsidian-neural.com](https://obsidian-neural.com) for current operational status
 
 ---
 
 ## License
 
-**Dual licensed:**
-
 - 🆓 **GNU Affero General Public License v3.0** (Open source)
-- 💼 **Commercial license** available (Contact: b03caa1n5@mozmail.com)
+
+**AI Model:** Stability AI Community License
 
 ---
 
@@ -115,6 +166,23 @@ Server mode still provides better quality for live performance.
 
 ---
 
+## Credits & Attribution
+
+**Developed by InnerMost47 (Anthony Charretier)**
+
+Special thanks to:
+
+- Stability AI for Stable Audio Open
+- The open-source community
+- All beta testers and early adopters
+
+---
+
 **OBSIDIAN-Neural** - Where artificial intelligence meets live music performance.
 
-_Developed by InnerMost47_
+_Made with 🎵 in France_
+
+[![Website](https://img.shields.io/badge/Website-obsidian--neural.com-blue)](https://obsidian-neural.com)
+[![API Status](https://img.shields.io/badge/API-Operational-green)](https://obsidian-neural.com)
+[![License](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/innermost47/ai-dj?style=social)](https://github.com/innermost47/ai-dj)
