@@ -809,7 +809,7 @@ void DjIaVstEditor::setupUI()
 	promptInput.setTooltip("Enter your custom prompt for audio generation");
 	savePresetButton.setTooltip("Save current prompt as custom preset");
 	keySelector.setTooltip("Select musical key and mode for generation");
-	durationSlider.setTooltip("Generation duration in seconds (2-10s)");
+	durationSlider.setTooltip("Generation duration in seconds (2-30s)");
 	generateButton.setTooltip("Generate audio loop for selected track (Right-click for MIDI learn)");
 	configButton.setTooltip("Configure API settings and generation mode");
 	autoLoadButton.setTooltip("Automatically load generated samples (disable for manual control)");
