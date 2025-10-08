@@ -100,6 +100,7 @@ const juce::Colour ColourPalette::slate(COLOR_SLATE);
 const juce::Colour ColourPalette::indigo(COLOR_INDIGO);
 const juce::Colour ColourPalette::teal(COLOR_TEAL);
 const juce::Colour ColourPalette::amber(COLOR_AMBER);
+const juce::Colour ColourPalette::textInactive(COLOR_INACTIVE);
 
 juce::Colour ColourPalette::getTrackColour(int trackIndex)
 {
