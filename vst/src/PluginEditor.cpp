@@ -1144,7 +1144,7 @@ void DjIaVstEditor::paint(juce::Graphics& g)
 	if (bannerImage.isValid())
 	{
 		int sourceWidth = bannerImage.getWidth();
-		int sourceHeight = (int)((bannerImage.getHeight() - 300) * 0.1f);
+		int sourceHeight = (int)((bannerImage.getHeight() - 1200) * 0.1f);
 		auto sourceArea = juce::Rectangle<int>(0, 0, sourceWidth, sourceHeight);
 		juce::Path roundedRect;
 		roundedRect.addRoundedRectangle(bannerArea.toFloat(), 6.0f);
