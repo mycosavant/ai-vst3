@@ -19,6 +19,8 @@ public:
 		setColour(juce::TextEditor::focusedOutlineColourId, ColourPalette::backgroundLight.brighter(0.2f));
 		setColour(juce::TextEditor::highlightColourId, soften(ColourPalette::backgroundLight).brighter(0.3f));
 		setColour(juce::TextEditor::shadowColourId, juce::Colours::transparentBlack);
+		setColour(juce::ScrollBar::thumbColourId, ColourPalette::sliderThumb);
+		setColour(juce::ScrollBar::backgroundColourId, ColourPalette::backgroundDeep);
 	}
 
 private:
@@ -218,4 +220,44 @@ public:
 			}
 		}
 	}
+
+	void drawScrollbar(juce::Graphics& g,
+		juce::ScrollBar& /*scrollbar*/,
+		int x, int y,
+		int width, int height,
+		bool isScrollbarVertical,
+		int thumbStartPosition,
+		int thumbSize,
+		bool isMouseOver,
+		bool isMouseDown) override
+	{
+		g.setColour(findColour(juce::ScrollBar::backgroundColourId));
+		g.fillRoundedRectangle((float)x, (float)y, (float)width, (float)height, 4.0f);
+
+		juce::Rectangle<float> thumbBounds;
+
+		if (isScrollbarVertical)
+			thumbBounds = juce::Rectangle<float>((float)x,
+				(float)thumbStartPosition,
+				(float)width,
+				(float)thumbSize);
+		else
+			thumbBounds = juce::Rectangle<float>((float)thumbStartPosition,
+				(float)y,
+				(float)thumbSize,
+				(float)height);
+
+		auto thumbColour = findColour(juce::ScrollBar::thumbColourId);
+
+		if (isMouseDown)
+			thumbColour = thumbColour.brighter(0.2f);
+		else if (isMouseOver)
+			thumbColour = thumbColour.brighter(0.1f);
+
+		g.setColour(thumbColour);
+		g.fillRoundedRectangle(thumbBounds, 4.0f);
+	}
+
+
+
 };
