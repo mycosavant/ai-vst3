@@ -1141,24 +1141,6 @@ void DjIaVstEditor::paint(juce::Graphics& g)
 	g.setGradientFill(gradient);
 	g.fillAll();
 
-	if (bannerImage.isValid())
-	{
-		int sourceWidth = bannerImage.getWidth();
-		int sourceHeight = (int)((bannerImage.getHeight() - 1200) * 0.1f);
-		auto sourceArea = juce::Rectangle<int>(0, 0, sourceWidth, sourceHeight);
-		juce::Path roundedRect;
-		roundedRect.addRoundedRectangle(bannerArea.toFloat(), 6.0f);
-		g.saveState();
-		g.reduceClipRegion(roundedRect);
-		g.drawImage(bannerImage,
-			bannerArea.getX(), bannerArea.getY(),
-			bannerArea.getWidth(), bannerArea.getHeight(),
-			0, 0,
-			sourceWidth, sourceHeight,
-			false);
-		g.restoreState();
-	}
-
 	if (logoImage.isValid())
 	{
 		auto logoArea = juce::Rectangle<int>(0, 40, 100, 60);
