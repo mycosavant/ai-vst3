@@ -596,7 +596,7 @@ void MixerChannel::paint(juce::Graphics& g)
 	}
 	else if (isSelected)
 	{
-		bgColour = ColourPalette::backgroundMid;
+		bgColour = ColourPalette::trackSelected.withAlpha(0.1f);
 	}
 	else
 	{

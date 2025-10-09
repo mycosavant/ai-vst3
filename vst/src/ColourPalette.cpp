@@ -78,7 +78,7 @@ const juce::Colour ColourPalette::vuGreen(COLOR_SUCCESS);
 const juce::Colour ColourPalette::vuOrange(COLOR_WARNING);
 const juce::Colour ColourPalette::vuRed(COLOR_DANGER);
 
-const juce::Colour ColourPalette::playActive(COLOR_SUCCESS);
+const juce::Colour ColourPalette::playActive(COLOR_DANGER);
 const juce::Colour ColourPalette::playArmed(COLOR_PLAY_ARMED);
 const juce::Colour ColourPalette::muteActive(COLOR_DANGER);
 const juce::Colour ColourPalette::soloActive(COLOR_SOLO_ACTIVE);
