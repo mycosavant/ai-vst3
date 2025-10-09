@@ -73,25 +73,23 @@ DjIaVstEditor::~DjIaVstEditor()
 void DjIaVstEditor::updateMidiIndicator(const juce::String& noteInfo)
 {
 	lastMidiNote = noteInfo;
-
 	juce::MessageManager::callAsync([this, noteInfo]()
 		{
 			if (midiIndicator.isShowing())
 			{
 				midiIndicator.setText(noteInfo, juce::dontSendNotification);
-				auto greenWithOpacity = ColourPalette::textSuccess.withAlpha(0.3f);
-				midiIndicator.setColour(juce::Label::backgroundColourId, greenWithOpacity);
-
+				midiIndicator.setColour(juce::Label::textColourId, juce::Colours::black);
+				auto redWithOpacity = ColourPalette::buttonPrimary.withAlpha(0.3f);
+				midiIndicator.setColour(juce::Label::backgroundColourId, redWithOpacity);
 				juce::Timer::callAfterDelay(200, [this]()
 					{
 						if (midiIndicator.isShowing())
 						{
-							midiIndicator.setColour(juce::Label::backgroundColourId, ColourPalette::backgroundDeep);
+							midiIndicator.setColour(juce::Label::backgroundColourId, juce::Colours::white);
 						}
 					});
 			} });
 }
-
 void DjIaVstEditor::updateUIComponents()
 {
 	if (!isGenerating.load() && audioProcessor.getIsGenerating())
@@ -169,15 +167,15 @@ void DjIaVstEditor::onGenerationComplete(const juce::String& trackId, const juce
 		juce::Timer::callAfterDelay(5000, [this]()
 			{
 				statusLabel.setText("Ready", juce::dontSendNotification);
-				statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess); });
+				statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet); });
 	}
 	else
 	{
-		statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
+		statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
 		juce::Timer::callAfterDelay(3000, [this]()
 			{
 				statusLabel.setText("Ready", juce::dontSendNotification);
-				statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess); });
+				statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet); });
 	}
 	refreshCredits();
 }
@@ -385,11 +383,11 @@ void DjIaVstEditor::showConfigDialog()
 						statusLabel.setText("Configuration updated!", juce::dontSendNotification);
 					}
 
-					statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
+					statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
 
 					juce::Timer::callAfterDelay(3000, [this]() {
 						statusLabel.setText("Ready", juce::dontSendNotification);
-						statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
+						statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
 						});
 				}
 			}
@@ -410,7 +408,7 @@ void DjIaVstEditor::checkLocalModelsAndNotify()
 	if (modelsPresent)
 	{
 		statusLabel.setText("Local models found! Configuration saved.", juce::dontSendNotification);
-		statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
+		statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
 	}
 	else
 	{
@@ -532,16 +530,6 @@ void DjIaVstEditor::stopGenerationButtonAnimation()
 
 void DjIaVstEditor::setupUI()
 {
-	getLookAndFeel().setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
-	getLookAndFeel().setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
-	getLookAndFeel().setColour(juce::ComboBox::backgroundColourId, ColourPalette::backgroundDark);
-	getLookAndFeel().setColour(juce::ComboBox::textColourId, ColourPalette::textPrimary);
-	getLookAndFeel().setColour(juce::TextEditor::backgroundColourId, ColourPalette::backgroundDeep);
-	getLookAndFeel().setColour(juce::TextEditor::textColourId, ColourPalette::textPrimary);
-	getLookAndFeel().setColour(juce::Slider::backgroundColourId, ColourPalette::backgroundDark);
-	getLookAndFeel().setColour(juce::Slider::thumbColourId, ColourPalette::sliderThumb);
-	getLookAndFeel().setColour(juce::Slider::trackColourId, ColourPalette::sliderTrack);
-
 	addAndMakeVisible(nextTrackButton);
 	nextTrackButton.setButtonText("Next Track");
 	nextTrackButton.setTooltip("Select next track (Right-click for MIDI learn)");
@@ -584,8 +572,6 @@ void DjIaVstEditor::setupUI()
 
 	addAndMakeVisible(resetUIButton);
 	resetUIButton.setButtonText("Reset UI");
-	resetUIButton.setColour(juce::TextButton::buttonColourId, ColourPalette::amber);
-	resetUIButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
 	resetUIButton.setTooltip("Reset UI state if stuck in generation mode");
 
 	addAndMakeVisible(keySelector);
@@ -705,6 +691,9 @@ void DjIaVstEditor::setupUI()
 	durationSlider.setColour(juce::Slider::backgroundColourId, juce::Colours::black);
 	durationSlider.setColour(juce::Slider::thumbColourId, ColourPalette::sliderThumb);
 	durationSlider.setColour(juce::Slider::trackColourId, ColourPalette::sliderTrack);
+	durationSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
+	durationSlider.setColour(juce::Slider::textBoxBackgroundColourId, ColourPalette::backgroundDark);
+	durationSlider.setColour(juce::Slider::textBoxOutlineColourId, ColourPalette::backgroundDark.darker(0.3f).withAlpha(0.3f));
 	durationSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
 	durationSlider.setTextValueSuffix(" s");
 	durationSlider.setDoubleClickReturnValue(true, 6.0);
@@ -734,7 +723,7 @@ void DjIaVstEditor::setupUI()
 
 	addAndMakeVisible(statusLabel);
 	statusLabel.setText("Ready", juce::dontSendNotification);
-	statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
+	statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
 
 	addAndMakeVisible(autoLoadButton);
 	autoLoadButton.setButtonText("Auto-Load Samples");
@@ -747,8 +736,8 @@ void DjIaVstEditor::setupUI()
 
 	addAndMakeVisible(midiIndicator);
 	midiIndicator.setText("MIDI: Waiting...", juce::dontSendNotification);
-	midiIndicator.setColour(juce::Label::backgroundColourId, ColourPalette::backgroundDeep);
-	midiIndicator.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
+	midiIndicator.setColour(juce::Label::backgroundColourId, juce::Colours::white);
+	midiIndicator.setColour(juce::Label::textColourId, juce::Colours::black);
 	midiIndicator.setJustificationType(juce::Justification::left);
 	midiIndicator.setFont(juce::FontOptions(12.0f, juce::Font::bold));
 
@@ -758,7 +747,6 @@ void DjIaVstEditor::setupUI()
 
 	addAndMakeVisible(addTrackButton);
 	addTrackButton.setButtonText("+ Add Track");
-	addTrackButton.setColour(juce::TextButton::buttonColourId, ColourPalette::textSuccess);
 
 	addAndMakeVisible(tracksViewport);
 	tracksViewport.setViewedComponent(&tracksContainer, false);
@@ -782,28 +770,16 @@ void DjIaVstEditor::setupUI()
 
 	addAndMakeVisible(showSampleBankButton);
 	showSampleBankButton.setButtonText("Bank");
-	showSampleBankButton.setColour(juce::TextButton::buttonColourId, ColourPalette::indigo);
-	showSampleBankButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
 	showSampleBankButton.setTooltip("Show/hide sample bank");
 
-	refreshTrackComponents();
-
-	addEventListeners();
-
-	generateButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonSuccess);
-	generateButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
-	addTrackButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonPrimary);
-	loadSampleButton.setColour(juce::TextButton::buttonColourId, ColourPalette::coral);
-	loadSampleButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
 	statusLabel.setColour(juce::Label::backgroundColourId, ColourPalette::backgroundDeep);
-	statusLabel.setColour(juce::Label::textColourId, ColourPalette::textSuccess);
+	statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
 
 	addAndMakeVisible(bypassSequencerButton);
 	bypassSequencerButton.setButtonText("Bypass Sequencer");
 	bypassSequencerButton.setClickingTogglesState(true);
 	bypassSequencerButton.setToggleState(audioProcessor.getBypassSequencer(), juce::dontSendNotification);
 	bypassSequencerButton.setTooltip("Global bypass - direct MIDI playback for composition mode");
-	bypassSequencerButton.setColour(juce::ToggleButton::textColourId, ColourPalette::textPrimary);
 
 	promptPresetSelector.setTooltip("Select a preset prompt (Right-click for MIDI learn, Ctrl+Right-click to edit custom prompts)");
 	promptInput.setTooltip("Enter your custom prompt for audio generation");
@@ -828,6 +804,9 @@ void DjIaVstEditor::setupUI()
 		juce::URL("https://github.com/sponsors/innermost47").launchInDefaultBrowser();
 		statusLabel.setText("Thank you for considering sponsorship!", juce::dontSendNotification);
 		};
+
+	refreshTrackComponents();
+	addEventListeners();
 }
 
 void DjIaVstEditor::addEventListeners()
@@ -1133,13 +1112,7 @@ void DjIaVstEditor::updateUIFromProcessor()
 
 void DjIaVstEditor::paint(juce::Graphics& g)
 {
-	auto bounds = getLocalBounds();
-	juce::ColourGradient gradient(
-		ColourPalette::backgroundDeep, 0.0f, 0.0f,
-		ColourPalette::backgroundMid, 0.0f, static_cast<float>(getHeight()),
-		false);
-	g.setGradientFill(gradient);
-	g.fillAll();
+	g.fillAll(ColourPalette::backgroundDeep);
 
 	if (logoImage.isValid())
 	{
@@ -1281,13 +1254,11 @@ void DjIaVstEditor::toggleSampleBank()
 	if (sampleBankVisible)
 	{
 		showSampleBankButton.setButtonText("Hide Bank");
-		showSampleBankButton.setColour(juce::TextButton::buttonColourId, ColourPalette::coral);
 		setStatusWithTimeout("Sample bank opened", 2000);
 	}
 	else
 	{
 		showSampleBankButton.setButtonText("Bank");
-		showSampleBankButton.setColour(juce::TextButton::buttonColourId, ColourPalette::indigo);
 		setStatusWithTimeout("Sample bank closed", 2000);
 	}
 

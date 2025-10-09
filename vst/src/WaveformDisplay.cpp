@@ -40,7 +40,6 @@ void WaveformDisplay::setAudioData(const juce::AudioBuffer<float>& newAudioBuffe
 
 	if (newAudioBuffer.getNumChannels() == 0 || newAudioBuffer.getNumSamples() == 0)
 	{
-		DBG("WaveformDisplay: Empty buffer received");
 		audioBuffer.setSize(0, 0);
 		sampleRate = newSampleRate;
 		thumbnail.clear();
@@ -63,10 +62,6 @@ void WaveformDisplay::setAudioData(const juce::AudioBuffer<float>& newAudioBuffe
 
 		generateThumbnail();
 		repaint();
-
-		DBG("WaveformDisplay: Buffer set successfully - "
-			<< audioBuffer.getNumChannels() << " channels, "
-			<< audioBuffer.getNumSamples() << " samples");
 	}
 	catch (const std::exception& e)
 	{
@@ -118,7 +113,7 @@ void WaveformDisplay::paint(juce::Graphics& g)
 {
 	auto bounds = getLocalBounds();
 
-	g.setColour(ColourPalette::backgroundDeep);
+	g.setColour(ColourPalette::backgroundMid);
 	g.fillRect(bounds);
 
 	if (thumbnail.empty())
@@ -127,7 +122,7 @@ void WaveformDisplay::paint(juce::Graphics& g)
 		g.setFont(12.0f);
 		g.drawText("No audio data", bounds.reduced(5).removeFromTop(20), juce::Justification::centred);
 
-		g.setColour(ColourPalette::textInactive);
+		g.setColour(ColourPalette::textSecondary);
 		g.setFont(10.0f);
 		g.drawText("Ctrl+Wheel: Zoom | Wheel: Scroll | Right-click: Lock/Unlock | Ctrl+Click: Drag and Drop in DAW",
 			bounds.reduced(5).removeFromBottom(15), juce::Justification::centred);
@@ -495,7 +490,7 @@ void WaveformDisplay::setColorDependingTimeStretchRatio(juce::Colour& waveformCo
 
 	if (deviation < 0.005f)
 	{
-		waveformColor = ColourPalette::buttonSuccess;
+		waveformColor = ColourPalette::buttonPrimary;
 	}
 	else if (deviation < 0.08f)
 	{
@@ -503,30 +498,25 @@ void WaveformDisplay::setColorDependingTimeStretchRatio(juce::Colour& waveformCo
 
 		if (stretchRatio > 1.0f)
 		{
-			if (normalizedDev < 0.5f)
-			{
-				waveformColor = ColourPalette::buttonSuccess.interpolatedWith(ColourPalette::buttonWarning, normalizedDev * 2.0f);
-			}
-			else
-			{
-				waveformColor = ColourPalette::buttonWarning.interpolatedWith(ColourPalette::buttonDangerLight, (normalizedDev - 0.5f) * 2.0f);
-			}
+			waveformColor = ColourPalette::buttonPrimary.interpolatedWith(
+				ColourPalette::buttonDangerLight, normalizedDev);
 		}
 		else
 		{
-			if (normalizedDev < 0.5f)
-			{
-				waveformColor = ColourPalette::buttonSuccess.interpolatedWith(ColourPalette::buttonSecondary, normalizedDev * 2.0f);
-			}
-			else
-			{
-				waveformColor = ColourPalette::buttonSecondary.interpolatedWith(ColourPalette::backgroundDark, (normalizedDev - 0.5f) * 2.0f);
-			}
+			waveformColor = ColourPalette::buttonPrimary.interpolatedWith(
+				ColourPalette::buttonDangerDark, normalizedDev);
 		}
 	}
 	else
 	{
-		waveformColor = stretchRatio > 1.0f ? ColourPalette::buttonDanger : ColourPalette::backgroundDeep;
+		if (stretchRatio > 1.0f)
+		{
+			waveformColor = juce::Colour(0xffE6A5A5);
+		}
+		else
+		{
+			waveformColor = juce::Colour(0xff6B3535);
+		}
 	}
 }
 
@@ -592,8 +582,16 @@ void WaveformDisplay::drawLoopMarkers(juce::Graphics& g)
 	float startX = timeToX(loopStart);
 	float endX = timeToX(loopEnd);
 
-	juce::Colour loopColour = loopPointsLocked ? ColourPalette::textAccent : ColourPalette::buttonSuccess;
-	g.setColour(loopColour.withAlpha(0.2f));
+	juce::Colour loopColour = loopPointsLocked ? ColourPalette::textAccent : ColourPalette::buttonPrimary;
+
+	if (loopPointsLocked)
+	{
+		g.setColour(loopColour.darker(0.3f).withAlpha(0.5f));
+	}
+	else
+	{
+		g.setColour(loopColour.withAlpha(0.35f));
+	}
 	g.fillRect(startX, 0.0f, endX - startX, (float)getHeight());
 
 	float lineWidth = loopPointsLocked ? 3.0f : 2.0f;
@@ -692,7 +690,7 @@ void WaveformDisplay::drawPlaybackHead(juce::Graphics& g)
 
 			juce::Path triangle;
 			triangle.addTriangle(headX - 8, 0.0f, headX + 8, 0.0f, headX, 16.0f);
-			g.setColour(ColourPalette::buttonWarning);
+			g.setColour(ColourPalette::buttonDangerLight);
 			g.fillPath(triangle);
 			triangle.clear();
 

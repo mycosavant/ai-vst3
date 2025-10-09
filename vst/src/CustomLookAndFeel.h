@@ -12,6 +12,7 @@ public:
 		setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
 		setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 		setColour(juce::ComboBox::outlineColourId, juce::Colours::transparentBlack);
+		setColour(juce::ComboBox::textColourId, juce::Colours::black);
 		setColour(juce::ToggleButton::tickColourId, soften(ColourPalette::buttonSuccess));
 		setColour(juce::TextEditor::backgroundColourId, ColourPalette::backgroundDeep);
 		setColour(juce::TextEditor::textColourId, ColourPalette::textPrimary);
@@ -46,8 +47,25 @@ public:
 		else if (shouldDrawButtonAsHighlighted)
 			baseColour = baseColour.brighter(0.08f);
 
+		if (!shouldDrawButtonAsDown)
+		{
+			g.setColour(juce::Colours::black.withAlpha(0.15f));
+			g.fillRoundedRectangle(bounds.translated(0, 1.5f), 4.0f);
+		}
+
+
 		g.setColour(baseColour);
 		g.fillRoundedRectangle(bounds, 4.0f);
+
+		if (!shouldDrawButtonAsDown)
+		{
+			g.setColour(juce::Colours::white.withAlpha(0.08f));
+			auto topBounds = bounds.withHeight(bounds.getHeight() * 0.4f);
+			g.fillRoundedRectangle(topBounds, 4.0f);
+		}
+
+		g.setColour(baseColour.darker(0.3f).withAlpha(0.3f));
+		g.drawRoundedRectangle(bounds, 4.0f, 0.8f);
 	}
 
 	void drawButtonText(juce::Graphics& g,
@@ -86,8 +104,24 @@ public:
 		else if (shouldDrawButtonAsHighlighted)
 			bgColour = bgColour.brighter(0.08f);
 
+		if (!shouldDrawButtonAsDown)
+		{
+			g.setColour(juce::Colours::black.withAlpha(0.15f));
+			g.fillRoundedRectangle(bounds.translated(0, 1.5f), 4.0f);
+		}
+
 		g.setColour(bgColour);
 		g.fillRoundedRectangle(bounds, 4.0f);
+
+		if (!shouldDrawButtonAsDown)
+		{
+			g.setColour(juce::Colours::white.withAlpha(0.08f));
+			auto topBounds = bounds.withHeight(bounds.getHeight() * 0.4f);
+			g.fillRoundedRectangle(topBounds, 4.0f);
+		}
+
+		g.setColour(bgColour.darker(0.3f).withAlpha(0.3f));
+		g.drawRoundedRectangle(bounds, 4.0f, 0.8f);
 
 		g.setColour(button.getToggleState()
 			? ColourPalette::textPrimary
@@ -105,8 +139,18 @@ public:
 	{
 		auto bounds = juce::Rectangle<int>(0, 0, width, height).toFloat();
 
+		g.setColour(juce::Colours::black.withAlpha(0.15f));
+		g.fillRoundedRectangle(bounds.translated(0, 1.5f), 4.0f);
+
 		g.setColour(ColourPalette::backgroundDark);
 		g.fillRoundedRectangle(bounds, 4.0f);
+
+		g.setColour(juce::Colours::white.withAlpha(0.08f));
+		auto topBounds = bounds.withHeight(bounds.getHeight() * 0.4f);
+		g.fillRoundedRectangle(topBounds, 4.0f);
+
+		g.setColour(ColourPalette::backgroundDark.darker(0.3f).withAlpha(0.3f));
+		g.drawRoundedRectangle(bounds, 4.0f, 0.8f);
 
 		auto arrowZone = juce::Rectangle<float>((float)buttonX, (float)buttonY, (float)buttonW, (float)buttonH);
 		auto arrowBounds = arrowZone.reduced(4.0f);
@@ -148,8 +192,14 @@ public:
 				endPoint = { (float)(x + width), cy };
 			}
 
+			auto trackRect = juce::Rectangle<float>(startPoint, endPoint).expanded(trackWidth * 0.5f);
+
 			g.setColour(ColourPalette::backgroundDeep);
-			g.fillRoundedRectangle(juce::Rectangle<float>(startPoint, endPoint).expanded(trackWidth * 0.5f), trackWidth * 0.5f);
+			g.fillRoundedRectangle(trackRect, trackWidth * 0.5f);
+
+			g.setColour(ColourPalette::backgroundDeep.darker(0.4f).withAlpha(0.4f));
+			g.drawRoundedRectangle(trackRect, trackWidth * 0.5f, 0.8f);
+
 			auto filledEnd = startPoint + (endPoint - startPoint) * ((sliderPos - minSliderPos) / (maxSliderPos - minSliderPos));
 			g.setColour(soften(ColourPalette::sliderThumb));
 			g.fillRoundedRectangle(juce::Rectangle<float>(startPoint, filledEnd).expanded(trackWidth * 0.5f), trackWidth * 0.5f);
@@ -257,7 +307,4 @@ public:
 		g.setColour(thumbColour);
 		g.fillRoundedRectangle(thumbBounds, 4.0f);
 	}
-
-
-
 };
