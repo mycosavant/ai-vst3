@@ -16,7 +16,7 @@ constexpr auto COLOR_TEXT_SECONDARY = 0xff4A4A4A;
 constexpr auto COLOR_TEXT_ACCENT = 0xffB8605C;
 constexpr auto COLOR_INACTIVE = 0xffCCCCCC;
 constexpr auto COLOR_SELECTED = 0xffB8605C;
-constexpr auto COLOR_PLAY_ARMED = 0xffB8605C;
+constexpr auto COLOR_PLAY_ARMED = 0xffD4A5A0;
 constexpr auto COLOR_SOLO_ACTIVE = 0xffB8605C;
 constexpr auto COLOR_SOLO_TEXT = 0xffFFFFFF;
 constexpr auto COLOR_STOP_ACTIVE = 0xff8B4545;
@@ -39,6 +39,10 @@ constexpr auto COLOR_SLATE = 0xff1A1A1A;
 constexpr auto COLOR_INDIGO = 0xff1A1A1A;
 constexpr auto COLOR_TEAL = 0xffB8605C;
 constexpr auto COLOR_AMBER = 0xffF5F5F5;
+constexpr auto COLOR_VU_GREEN = 0xffD4A5A0;
+constexpr auto COLOR_VU_ORANGE = 0xffC97571;
+constexpr auto COLOR_VU_RED = 0xffB8605C;
+constexpr auto COLOR_PLAY_ACTIVE = 0xff8B4545;
 
 const juce::Colour ColourPalette::track1(COLOR_TRACK1);
 const juce::Colour ColourPalette::track2(COLOR_TRACK2);
@@ -74,11 +78,11 @@ const juce::Colour ColourPalette::sliderTrack(COLOR_INACTIVE);
 
 const juce::Colour ColourPalette::vuPeak(COLOR_TEXT_PRIMARY);
 const juce::Colour ColourPalette::vuClipping(COLOR_DANGER);
-const juce::Colour ColourPalette::vuGreen(COLOR_SUCCESS);
-const juce::Colour ColourPalette::vuOrange(COLOR_WARNING);
-const juce::Colour ColourPalette::vuRed(COLOR_DANGER);
+const juce::Colour ColourPalette::vuGreen(COLOR_VU_GREEN);
+const juce::Colour ColourPalette::vuOrange(COLOR_VU_ORANGE);
+const juce::Colour ColourPalette::vuRed(COLOR_VU_RED);
 
-const juce::Colour ColourPalette::playActive(COLOR_DANGER);
+const juce::Colour ColourPalette::playActive(COLOR_PLAY_ACTIVE);
 const juce::Colour ColourPalette::playArmed(COLOR_PLAY_ARMED);
 const juce::Colour ColourPalette::muteActive(COLOR_DANGER);
 const juce::Colour ColourPalette::soloActive(COLOR_SOLO_ACTIVE);

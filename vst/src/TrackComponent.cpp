@@ -1040,7 +1040,9 @@ void TrackComponent::setupUI()
 	deleteButton.onClick = [this]()
 		{
 			if (onDeleteTrack)
+			{
 				onDeleteTrack(trackId);
+			}
 		};
 
 	addAndMakeVisible(generateButton);

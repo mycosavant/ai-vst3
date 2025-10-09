@@ -166,6 +166,37 @@ public:
 		g.fillPath(arrow);
 	}
 
+	void drawLabel(juce::Graphics& g, juce::Label& label) override
+	{
+		g.fillAll(label.findColour(juce::Label::backgroundColourId));
+
+		if (!label.isBeingEdited())
+		{
+			auto alpha = label.isEnabled() ? 1.0f : 0.5f;
+			auto textColour = label.findColour(juce::Label::textColourId).withMultipliedAlpha(alpha);
+
+			g.setColour(textColour);
+			g.setFont(label.getFont());
+
+			auto textArea = getLabelBorderSize(label).subtractedFrom(label.getLocalBounds());
+
+			g.drawFittedText(label.getText(),
+				textArea,
+				label.getJustificationType(),
+				juce::jmax(1, (int)((float)textArea.getHeight() / label.getFont().getHeight())),
+				1.0f);
+		}
+		else if (label.isEnabled())
+		{
+			g.setColour(label.findColour(juce::Label::outlineColourId));
+		}
+	}
+
+	juce::BorderSize<int> getLabelBorderSize(juce::Label& /*label*/) override
+	{
+		return juce::BorderSize<int>(1, 5, 1, 5);
+	}
+
 	void drawLinearSlider(juce::Graphics& g,
 		int x, int y, int width, int height,
 		float sliderPos,
@@ -200,9 +231,23 @@ public:
 			g.setColour(ColourPalette::backgroundDeep.darker(0.4f).withAlpha(0.4f));
 			g.drawRoundedRectangle(trackRect, trackWidth * 0.5f, 0.8f);
 
-			auto filledEnd = startPoint + (endPoint - startPoint) * ((sliderPos - minSliderPos) / (maxSliderPos - minSliderPos));
-			g.setColour(soften(ColourPalette::sliderThumb));
-			g.fillRoundedRectangle(juce::Rectangle<float>(startPoint, filledEnd).expanded(trackWidth * 0.5f), trackWidth * 0.5f);
+			float denominator = maxSliderPos - minSliderPos;
+			if (std::abs(denominator) > 0.001f)
+			{
+				float fillRatio = juce::jlimit(0.0f, 1.0f, (sliderPos - minSliderPos) / denominator);
+				auto filledEnd = startPoint + (endPoint - startPoint) * fillRatio;
+
+				if (std::isfinite(filledEnd.x) && std::isfinite(filledEnd.y))
+				{
+					auto fillRect = juce::Rectangle<float>(startPoint, filledEnd).expanded(trackWidth * 0.5f);
+
+					if (fillRect.isFinite() && !fillRect.isEmpty())
+					{
+						g.setColour(soften(ColourPalette::sliderThumb));
+						g.fillRoundedRectangle(fillRect, trackWidth * 0.5f);
+					}
+				}
+			}
 		}
 
 		auto thumbWidth = 16.0f;

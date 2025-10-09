@@ -919,7 +919,6 @@ void MixerChannel::setupUI()
 
 void MixerChannel::updateButtonColors()
 {
-
 	if (!track)
 	{
 		return;
@@ -949,7 +948,7 @@ void MixerChannel::updateButtonColors()
 	}
 
 	muteButton.setToggleState(isMuted, juce::dontSendNotification);
-	muteButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::red);
+	muteButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::muteActive);
 	muteButton.setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 	muteButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonInactive);
 	muteButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);

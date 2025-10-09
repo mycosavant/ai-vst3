@@ -1273,7 +1273,6 @@ void DjIaVstProcessor::performTrackDeletion(const juce::String& trackId)
 	TrackData* trackToDelete = trackManager.getTrack(trackId);
 	if (!trackToDelete)
 		return;
-
 	int slotIndex = trackToDelete->slotIndex;
 	if (slotIndex != -1)
 	{
@@ -1295,42 +1294,53 @@ void DjIaVstProcessor::performTrackDeletion(const juce::String& trackId)
 		}
 	}
 
+	juce::String trackToSelect = selectedTrackId;
+
 	if (trackId == selectedTrackId)
 	{
 		if (trackIds.size() > 1)
 		{
 			if (deletedTrackIndex < trackIds.size() - 1)
 			{
-				selectedTrackId = trackIds[deletedTrackIndex + 1];
+				trackToSelect = trackIds[deletedTrackIndex + 1];
 			}
 			else if (deletedTrackIndex > 0)
 			{
-				selectedTrackId = trackIds[deletedTrackIndex - 1];
+				trackToSelect = trackIds[deletedTrackIndex - 1];
 			}
 		}
 		else
 		{
-			selectedTrackId = trackManager.createTrack("Track");
+			trackToSelect = trackManager.createTrack("Track");
 		}
+		selectedTrackId = trackToSelect;
 	}
 
 	if (slotIndex != -1)
 	{
 		getMidiLearnManager().removeMappingsForSlot(slotIndex + 1);
 	}
-
 	trackManager.removeTrack(trackId);
-
 	reassignTrackOutputsAndMidi();
 
-	juce::MessageManager::callAsync([this]()
+	juce::MessageManager::callAsync([this, trackToSelect]()
 		{
 			if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
 			{
 				editor->refreshTrackComponents();
 				editor->toggleWaveFormButtonOnTrack();
+
+				juce::Timer::callAfterDelay(50, [editor, trackToSelect]()
+					{
+						if (editor->mixerPanel)
+						{
+							editor->mixerPanel->trackSelected(trackToSelect);
+						}
+					});
+
 				editor->setStatusWithTimeout("Track deleted");
-			} });
+			}
+		});
 }
 
 void DjIaVstProcessor::reassignTrackOutputsAndMidi()

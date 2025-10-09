@@ -14,7 +14,7 @@ class DjIaVstEditor : public juce::AudioProcessorEditor, public juce::MenuBarMod
 public:
 	explicit DjIaVstEditor(DjIaVstProcessor&);
 	~DjIaVstEditor() override;
-
+	std::unique_ptr<MixerPanel> mixerPanel;
 	void paint(juce::Graphics&) override;
 	void layoutPromptSection(juce::Rectangle<int> area, int spacing);
 	void layoutConfigSection(juce::Rectangle<int> area, int reducing);
@@ -103,7 +103,6 @@ private:
 	juce::StringArray getAllPrompts() const;
 
 	juce::File getSessionsDirectory();
-	std::unique_ptr<MixerPanel> mixerPanel;
 	juce::TextButton showMixerButton;
 	bool mixerVisible = false;
 	std::atomic<bool> isGenerating{ false };

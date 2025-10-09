@@ -797,7 +797,7 @@ void DjIaVstEditor::setupUI()
 
 	addAndMakeVisible(sponsorButton);
 	sponsorButton.setButtonText(juce::String::fromUTF8("\xE2\x98\x85 Sponsor"));
-	sponsorButton.setColour(juce::TextButton::buttonColourId, ColourPalette::violet);
+	sponsorButton.setColour(juce::TextButton::buttonColourId, ColourPalette::violet.withAlpha(0.35f));
 	sponsorButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
 	sponsorButton.setTooltip("Support the project on GitHub Sponsors");
 	sponsorButton.onClick = [this]() {
@@ -1129,9 +1129,7 @@ void DjIaVstEditor::layoutPromptSection(juce::Rectangle<int> area, int spacing)
 	promptPresetSelector.setBounds(row1.removeFromLeft(area.getWidth() - saveButtonWidth - spacing));
 	row1.removeFromLeft(spacing);
 	savePresetButton.setBounds(row1.removeFromLeft(saveButtonWidth));
-
 	area.removeFromTop(spacing);
-
 	auto row2 = area.removeFromTop(35);
 	promptInput.setBounds(row2.removeFromLeft(area.getWidth()));
 }
@@ -1140,7 +1138,6 @@ void DjIaVstEditor::layoutConfigSection(juce::Rectangle<int> area, int reducing)
 {
 	auto creditsRow = area.removeFromTop(35);
 	creditsLabel.setBounds(creditsRow.reduced(reducing));
-
 	auto controlRow = area.removeFromTop(40);
 	auto controlWidth = controlRow.getWidth() / 2;
 	keySelector.setBounds(controlRow.removeFromLeft(controlWidth).reduced(reducing));
@@ -1150,16 +1147,12 @@ void DjIaVstEditor::layoutConfigSection(juce::Rectangle<int> area, int reducing)
 void DjIaVstEditor::resized()
 {
 	static bool resizing = false;
-
 	const int spacing = 5;
 	const int padding = 10;
 	const int reducing = 2;
-
 	if (resizing)
 		return;
-
 	resizing = true;
-
 	auto bottomArea = getLocalBounds().removeFromBottom(45);
 	auto area = getLocalBounds();
 
@@ -1169,13 +1162,15 @@ void DjIaVstEditor::resized()
 	}
 
 	area = area.reduced(padding);
-	auto configArea = area.removeFromTop(70);
 
-	this->bannerArea = configArea;
+	auto topArea = area.removeFromTop(80);
+	this->bannerArea = topArea;
 
-	auto logoSpace = configArea.removeFromLeft(80);
+	auto column1 = topArea.removeFromLeft(330);
 
-	auto nameArea = configArea.removeFromLeft(250);
+	auto logoSpace = column1.removeFromLeft(80);
+
+	auto nameArea = column1.removeFromLeft(250);
 	auto titleArea = nameArea.removeFromTop(30);
 	auto devArea = nameArea.removeFromTop(10);
 	auto partnerArea = nameArea.removeFromTop(25);
@@ -1183,37 +1178,41 @@ void DjIaVstEditor::resized()
 	developerLabel.setBounds(devArea);
 	stabilityLabel.setBounds(partnerArea);
 
-	auto sponsorArea = configArea.removeFromLeft(100);
-	auto topSponsorArea = sponsorArea.removeFromTop(35);
-	sponsorButton.setBounds(topSponsorArea.reduced(5));
+	topArea.removeFromLeft(spacing * 2);
 
-	auto configButtonArea = configArea.removeFromRight(100);
-	configButton.setBounds(configButtonArea.reduced(16));
+	auto column2 = topArea.removeFromLeft(400);
+	layoutPromptSection(column2, spacing);
 
-	area = area.reduced(padding);
+	topArea.removeFromLeft(spacing * 2);
 
-	auto promptAndConfigArea = area.removeFromTop(80);
-	auto leftSection = promptAndConfigArea.removeFromLeft(promptAndConfigArea.getWidth() / 2);
-	promptAndConfigArea.removeFromLeft(20);
-	auto rightSection = promptAndConfigArea;
+	auto column3 = topArea.removeFromLeft(400);
+	layoutConfigSection(column3, reducing);
 
-	layoutPromptSection(rightSection, spacing);
-	layoutConfigSection(leftSection, reducing);
+	topArea.removeFromLeft(spacing * 2);
+
+	auto column4 = topArea;
+
+	auto sponsorButtonArea = column4.removeFromTop(35);
+	sponsorButton.setBounds(sponsorButtonArea.reduced(2));
+
+	auto configButtonArea = column4.removeFromTop(35);
+	configButton.setBounds(configButtonArea.reduced(2));
 
 	area.removeFromTop(spacing);
+
 	auto tracksAndMixerArea = area.removeFromTop(area.getHeight() - 70);
 	int tracksWidth = static_cast<int>(tracksAndMixerArea.getWidth() * 0.6f);
 	auto tracksMainArea = tracksAndMixerArea.removeFromLeft(tracksWidth);
 	tracksViewport.setBounds(tracksMainArea);
-
 	tracksAndMixerArea.removeFromLeft(5);
+
 	if (mixerPanel)
 	{
 		mixerPanel->setBounds(tracksAndMixerArea);
 		mixerPanel->setVisible(true);
 	}
 
-	auto buttonsRow = area.removeFromTop(35);
+	auto buttonsRow = area.removeFromTop(40);
 	auto buttonWidth = buttonsRow.getWidth() / 9;
 	autoLoadButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	bypassSequencerButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
@@ -1227,14 +1226,20 @@ void DjIaVstEditor::resized()
 	resetUIButton.setBounds(buttonsRow.reduced(5));
 
 	bottomArea.removeFromTop(spacing);
-	statusLabel.setBounds(bottomArea.removeFromTop(20));
-	midiIndicator.setBounds(bottomArea.removeFromTop(20));
+
+	auto statusRow = bottomArea.removeFromTop(20);
+	statusRow.removeFromLeft(10);
+	statusLabel.setBounds(statusRow);
+
+	auto midiRow = bottomArea.removeFromTop(20);
+	midiRow.removeFromLeft(10);
+	midiIndicator.setBounds(midiRow);
+
 	if (sampleBankPanel && sampleBankVisible)
 	{
 		auto bankArea = getLocalBounds().removeFromRight(400).reduced(5);
 		sampleBankPanel->setBounds(bankArea);
 	}
-
 	resizing = false;
 }
 
@@ -1363,8 +1368,6 @@ void DjIaVstEditor::onGenerateButtonClicked()
 		currentPage.generationKey = keySelector.getText();
 		currentPage.generationDuration = (int)durationSlider.getValue();
 		track->syncLegacyProperties();
-
-		DBG("Global generation for page " << (char)('A' + track->currentPageIndex) << " - Prompt: " << currentPage.selectedPrompt);
 	}
 	else
 	{
@@ -1920,13 +1923,20 @@ void DjIaVstEditor::onAddTrack()
 {
 	try
 	{
+		juce::String currentSelectedId = audioProcessor.getSelectedTrackId();
 		juce::String newTrackId = audioProcessor.createNewTrack();
+
 		refreshTrackComponents();
 
 		if (mixerPanel)
 		{
 			mixerPanel->trackAdded(newTrackId);
+			if (!currentSelectedId.isEmpty())
+			{
+				mixerPanel->trackSelected(currentSelectedId);
+			}
 		}
+
 		toggleWaveFormButtonOnTrack();
 		toggleSEQButtonOnTrack();
 		setStatusWithTimeout("New track created");
