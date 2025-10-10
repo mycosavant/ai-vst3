@@ -149,7 +149,7 @@ private:
 	juce::TextButton playButton;
 	juce::Slider durationSlider;
 	juce::Label durationLabel;
-	juce::ToggleButton autoLoadButton;
+	juce::TextButton  autoLoadButton;
 	juce::TextButton loadSampleButton;
 	juce::Label midiIndicator;
 	juce::String lastMidiNote;
@@ -162,7 +162,7 @@ private:
 	juce::TextButton saveSessionButton;
 	juce::TextButton loadSessionButton;
 	juce::ComboBox sessionSelector;
-	juce::ToggleButton bypassSequencerButton;
+	juce::TextButton  bypassSequencerButton;
 	std::unique_ptr<juce::MenuBarComponent> menuBar;
 
 	MidiLearnableButton nextTrackButton;

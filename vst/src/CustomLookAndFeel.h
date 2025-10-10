@@ -40,7 +40,8 @@ public:
 		bool shouldDrawButtonAsDown) override
 	{
 		auto bounds = button.getLocalBounds().toFloat().reduced(0.5f);
-		auto baseColour = soften(backgroundColour);
+		auto baseColour = soften(backgroundColour)
+			.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f);
 
 		if (shouldDrawButtonAsDown)
 			baseColour = baseColour.darker(0.15f);
@@ -52,7 +53,6 @@ public:
 			g.setColour(juce::Colours::black.withAlpha(0.15f));
 			g.fillRoundedRectangle(bounds.translated(0, 1.5f), 4.0f);
 		}
-
 
 		g.setColour(baseColour);
 		g.fillRoundedRectangle(bounds, 4.0f);
@@ -95,11 +95,11 @@ public:
 	{
 		auto bounds = button.getLocalBounds().toFloat();
 
-		auto bgColour = button.getToggleState()
-			? soften(button.findColour(juce::ToggleButton::tickColourId))
-			: ColourPalette::backgroundDark;
+		auto bgColour = button.findColour(juce::TextButton::buttonColourId);
 
-		if (shouldDrawButtonAsDown)
+		if (!button.isEnabled())
+			bgColour = bgColour.withAlpha(0.5f);
+		else if (shouldDrawButtonAsDown)
 			bgColour = bgColour.darker(0.15f);
 		else if (shouldDrawButtonAsHighlighted)
 			bgColour = bgColour.brighter(0.08f);
@@ -123,9 +123,14 @@ public:
 		g.setColour(bgColour.darker(0.3f).withAlpha(0.3f));
 		g.drawRoundedRectangle(bounds, 4.0f, 0.8f);
 
-		g.setColour(button.getToggleState()
-			? ColourPalette::textPrimary
-			: ColourPalette::textSecondary);
+		auto textColour = button.findColour(button.getToggleState()
+			? juce::TextButton::textColourOnId
+			: juce::TextButton::textColourOffId);
+
+		if (!button.isEnabled())
+			textColour = textColour.withAlpha(0.5f);
+
+		g.setColour(textColour);
 		g.setFont(juce::FontOptions(14.0f));
 		g.drawText(button.getButtonText(), bounds, juce::Justification::centred);
 	}

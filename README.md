@@ -40,18 +40,17 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 
 **Pricing:**
 
-- **Free**: 10 credits (5 samples) - Try it out
-- **Starter**: €14.99/month - 500 credits (250 samples)
-- **Pro**: €29.99/month - 1500 credits (750 samples)
-- **Studio**: €59.99/month - 4000 credits (2000 samples)
+- **Free**: 10 credits (10 samples) - Try it out
+- **Starter**: €14.99/month - 500 credits (500 samples)
+- **Pro**: €29.99/month - 1500 credits (1500 samples)
+- **Studio**: €59.99/month - 4000 credits (4000 samples)
 
-Each generation costs **2 credits** (1 LLM + 1 audio). Samples up to 30 seconds, ~10s generation time.
+Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samples up to 30 seconds, ~10s generation time.
 
 **Benefits:**
 
 - Zero setup - Works immediately
 - Professional quality
-- STEMS separation included
 - Variable duration (up to 30s)
 - No GPU or powerful hardware required
 - Perfect for live performance
@@ -72,7 +71,7 @@ Each generation costs **2 credits** (1 LLM + 1 audio). Samples up to 30 seconds,
    - Leave API key empty for local server
    - Click "Save & Continue"
 
-**Benefits:** Unlimited generations, full privacy, variable duration, STEMS separation
+**Benefits:** Unlimited generations, full privacy, variable duration
 
 **Requirements:** GPU with CUDA support, Python environment
 
@@ -103,7 +102,6 @@ Each generation costs **2 credits** (1 LLM + 1 audio). Samples up to 30 seconds,
 | **Setup Difficulty**      | ⭐ Easy                 | ⭐⭐⭐ Advanced                | ⭐⭐ Moderate         |
 | **Hardware Requirements** | None                    | GPU + CUDA                     | 16GB+ RAM             |
 | **Generation Quality**    | ⭐⭐⭐ Best             | ⭐⭐ Good                      | ⭐ Bad                |
-| **STEMS Separation**      | ✅ Yes                  | ✅ Yes                         | ❌ No                 |
 | **Variable Duration**     | ✅ Up to 30s            | ✅ Yes                         | ❌ Fixed 10s          |
 | **Cost**                  | Pay per use             | Free (after setup)             | Free                  |
 | **Privacy**               | Data processed on cloud | Full privacy                   | Full privacy          |

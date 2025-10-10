@@ -80,7 +80,6 @@ void DjIaVstEditor::updateMidiIndicator(const juce::String& noteInfo)
 				midiIndicator.setText(noteInfo, juce::dontSendNotification);
 				midiIndicator.setColour(juce::Label::textColourId, juce::Colours::black);
 				auto redWithOpacity = ColourPalette::buttonPrimary.withAlpha(0.3f);
-				midiIndicator.setColour(juce::Label::backgroundColourId, redWithOpacity);
 				juce::Timer::callAfterDelay(200, [this]()
 					{
 						if (midiIndicator.isShowing())
@@ -726,9 +725,11 @@ void DjIaVstEditor::setupUI()
 	statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
 
 	addAndMakeVisible(autoLoadButton);
-	autoLoadButton.setButtonText("Auto-Load Samples");
+	autoLoadButton.setButtonText("Auto-Load Mode");
 	autoLoadButton.setClickingTogglesState(true);
 	autoLoadButton.setToggleState(audioProcessor.getAutoLoadEnabled(), juce::dontSendNotification);
+	autoLoadButton.setTooltip("Toggle between automatic and manual sample loading");
+	autoLoadButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonWarning.darker(0.3f));
 
 	addAndMakeVisible(loadSampleButton);
 	loadSampleButton.setButtonText("Load Sample");
@@ -776,10 +777,11 @@ void DjIaVstEditor::setupUI()
 	statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
 
 	addAndMakeVisible(bypassSequencerButton);
-	bypassSequencerButton.setButtonText("Bypass Sequencer");
+	bypassSequencerButton.setButtonText("Sequencer Mode");
 	bypassSequencerButton.setClickingTogglesState(true);
 	bypassSequencerButton.setToggleState(audioProcessor.getBypassSequencer(), juce::dontSendNotification);
 	bypassSequencerButton.setTooltip("Global bypass - direct MIDI playback for composition mode");
+	bypassSequencerButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonPrimary);
 
 	promptPresetSelector.setTooltip("Select a preset prompt (Right-click for MIDI learn, Ctrl+Right-click to edit custom prompts)");
 	promptInput.setTooltip("Enter your custom prompt for audio generation");
@@ -909,11 +911,17 @@ void DjIaVstEditor::addEventListeners()
 
 			if (isBypassed)
 			{
+				bypassSequencerButton.setButtonText("Composition Mode");
 				statusLabel.setText("Composition mode - Direct MIDI playback", juce::dontSendNotification);
+				bypassSequencerButton.setColour(juce::TextButton::buttonColourId,
+					ColourPalette::buttonWarning.darker(0.3f));
 			}
 			else
 			{
+				bypassSequencerButton.setButtonText("Sequencer Mode");
 				statusLabel.setText("Sequencer mode - Armed playback", juce::dontSendNotification);
+				bypassSequencerButton.setColour(juce::TextButton::buttonColourId,
+					ColourPalette::buttonPrimary);
 			}
 		};
 
@@ -1092,10 +1100,38 @@ void DjIaVstEditor::updateUIFromProcessor()
 
 	keySelector.setText(audioProcessor.getGlobalKey(), juce::dontSendNotification);
 
-	autoLoadButton.setToggleState(audioProcessor.getAutoLoadEnabled(), juce::dontSendNotification);
-	loadSampleButton.setEnabled(!audioProcessor.getAutoLoadEnabled());
+	bool autoLoadOn = audioProcessor.getAutoLoadEnabled();
+	autoLoadButton.setToggleState(autoLoadOn, juce::dontSendNotification);
+	loadSampleButton.setEnabled(!autoLoadOn);
 
-	bypassSequencerButton.setToggleState(audioProcessor.getBypassSequencer(), juce::dontSendNotification);
+	if (autoLoadOn)
+	{
+		autoLoadButton.setButtonText("Auto-Load Mode");
+		autoLoadButton.setColour(juce::TextButton::buttonColourId,
+			ColourPalette::buttonWarning.darker(0.3f));
+	}
+	else
+	{
+		autoLoadButton.setButtonText("Manual Mode");
+		autoLoadButton.setColour(juce::TextButton::buttonColourId,
+			ColourPalette::buttonPrimary);
+	}
+
+	bool bypassOn = audioProcessor.getBypassSequencer();
+	bypassSequencerButton.setToggleState(bypassOn, juce::dontSendNotification);
+
+	if (bypassOn)
+	{
+		bypassSequencerButton.setButtonText("Composition Mode");
+		bypassSequencerButton.setColour(juce::TextButton::buttonColourId,
+			ColourPalette::buttonWarning.darker(0.3f));
+	}
+	else
+	{
+		bypassSequencerButton.setButtonText("Sequencer Mode");
+		bypassSequencerButton.setColour(juce::TextButton::buttonColourId,
+			ColourPalette::buttonPrimary);
+	}
 
 	int presetIndex = audioProcessor.getLastPresetIndex();
 	if (presetIndex >= 0 && presetIndex < promptPresets.size())
@@ -1104,7 +1140,7 @@ void DjIaVstEditor::updateUIFromProcessor()
 	}
 	else
 	{
-		promptPresetSelector.setSelectedId(promptPresets.size(), juce::dontSendNotification);
+		promptPresetSelector.setSelectedId(1, juce::dontSendNotification);
 	}
 
 	refreshTrackComponents();
@@ -1214,8 +1250,8 @@ void DjIaVstEditor::resized()
 
 	auto buttonsRow = area.removeFromTop(40);
 	auto buttonWidth = buttonsRow.getWidth() / 9;
-	autoLoadButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	bypassSequencerButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
+	autoLoadButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	addTrackButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	generateButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	loadSampleButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
@@ -1600,15 +1636,21 @@ void DjIaVstEditor::onAutoLoadToggled()
 
 	if (autoLoadOn)
 	{
+		autoLoadButton.setButtonText("Auto-Load Mode");
 		statusLabel.setText("Auto-load enabled - samples load automatically", juce::dontSendNotification);
 		loadSampleButton.setButtonText("Load Sample");
 		loadSampleButton.setEnabled(false);
+		autoLoadButton.setColour(juce::TextButton::buttonColourId,
+			ColourPalette::buttonWarning.darker(0.3f));
 	}
 	else
 	{
+		autoLoadButton.setButtonText("Manual Mode");
 		statusLabel.setText("Manual mode - click Load Sample when ready", juce::dontSendNotification);
 		loadSampleButton.setEnabled(true);
 		updateLoadButtonState();
+		autoLoadButton.setColour(juce::TextButton::buttonColourId,
+			ColourPalette::buttonPrimary);
 	}
 }
 
@@ -1633,12 +1675,10 @@ void DjIaVstEditor::updateLoadButtonState()
 		if (audioProcessor.hasSampleWaiting())
 		{
 			loadSampleButton.setButtonText("Load Sample (Ready!)");
-			loadSampleButton.setColour(juce::TextButton::buttonColourId, ColourPalette::amber);
 		}
 		else
 		{
 			loadSampleButton.setButtonText("Load Sample");
-			loadSampleButton.setColour(juce::TextButton::buttonColourId, ColourPalette::coral);
 		}
 	}
 }
