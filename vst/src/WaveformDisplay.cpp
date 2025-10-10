@@ -590,7 +590,7 @@ void WaveformDisplay::drawLoopMarkers(juce::Graphics& g)
 	}
 	else
 	{
-		g.setColour(loopColour.withAlpha(0.35f));
+		g.setColour(loopColour.withAlpha(0.15f));
 	}
 	g.fillRect(startX, 0.0f, endX - startX, (float)getHeight());
 
@@ -722,22 +722,17 @@ void WaveformDisplay::drawBeatMarkers(juce::Graphics& g)
 {
 	if (thumbnail.empty())
 		return;
-
 	float hostBpm = getHostBpm();
 	if (hostBpm <= 0.0f)
 		return;
-
 	int numerator = audioProcessor.getTimeSignatureNumerator();
 	int denominator = audioProcessor.getTimeSignatureDenominator();
-
 	double totalDuration = getTotalDuration();
 	double viewDuration = totalDuration / zoomFactor;
 	double viewEndTime = juce::jlimit(viewStartTime, totalDuration, viewStartTime + viewDuration);
-
 	float baseBeatDuration = 60.0f / hostBpm;
 	float actualBeatDuration;
 	float barDuration;
-
 	if (denominator == 8)
 	{
 		actualBeatDuration = baseBeatDuration * 0.5f * stretchRatio;
@@ -748,13 +743,10 @@ void WaveformDisplay::drawBeatMarkers(juce::Graphics& g)
 		actualBeatDuration = baseBeatDuration * stretchRatio;
 		barDuration = actualBeatDuration * numerator;
 	}
-
 	double measureAtLoopStart = floor(loopStart / barDuration);
 	double gridOffset = loopStart - (measureAtLoopStart * barDuration);
-
 	double extendedStart = viewStartTime - (actualBeatDuration * 50);
 	double extendedEnd = viewEndTime + (actualBeatDuration * 50);
-
 	extendedStart -= gridOffset;
 	extendedEnd -= gridOffset;
 
@@ -766,7 +758,7 @@ void WaveformDisplay::drawBeatMarkers(juce::Graphics& g)
 		drawMeasureLine(shiftedTime, g, barDuration, viewDuration);
 	}
 
-	g.setColour(ColourPalette::sequencerBeat.withAlpha(0.6f));
+	g.setColour(ColourPalette::sequencerAccent.withAlpha(0.6f));
 	double firstBeatTime = floor(extendedStart / actualBeatDuration) * actualBeatDuration;
 	for (double time = firstBeatTime; time <= extendedEnd; time += actualBeatDuration)
 	{
@@ -777,7 +769,7 @@ void WaveformDisplay::drawBeatMarkers(juce::Graphics& g)
 		}
 	}
 
-	g.setColour(ColourPalette::sequencerSubBeat.withAlpha(0.3f));
+	g.setColour(ColourPalette::sequencerAccent.withAlpha(0.5f));
 	double subdivisionDuration = actualBeatDuration * 0.5f;
 	double firstSubTime = floor(extendedStart / subdivisionDuration) * subdivisionDuration;
 	for (double time = firstSubTime; time <= extendedEnd; time += subdivisionDuration)
@@ -791,7 +783,7 @@ void WaveformDisplay::drawBeatMarkers(juce::Graphics& g)
 		}
 	}
 
-	g.setColour(ColourPalette::sequencerSubBeat.withAlpha(0.2f));
+	g.setColour(ColourPalette::sequencerAccent.withAlpha(0.35f));
 	subdivisionDuration = actualBeatDuration * 0.25f;
 	firstSubTime = floor(extendedStart / subdivisionDuration) * subdivisionDuration;
 	for (double time = firstSubTime; time <= extendedEnd; time += subdivisionDuration)

@@ -843,6 +843,7 @@ void DjIaVstProcessor::generateLoopFromMidi(const juce::String& trackId)
 						}
 
 						DjIaClient::LoopRequest request;
+						request.generationDuration = static_cast<float>(getGlobalDuration());
 
 						if (track->usePages.load()) {
 							auto& currentPage = track->getCurrentPage();
@@ -851,26 +852,21 @@ void DjIaVstProcessor::generateLoopFromMidi(const juce::String& trackId)
 								request.prompt = currentPage.selectedPrompt;
 								request.bpm = currentPage.generationBpm > 0 ? currentPage.generationBpm : static_cast<float>(getHostBpm());
 								request.key = !currentPage.generationKey.isEmpty() ? currentPage.generationKey : getGlobalKey();
-								request.generationDuration = currentPage.generationDuration > 0 ? static_cast<float>(currentPage.generationDuration) : static_cast<float>(getGlobalDuration());
-
 							}
 							else {
 								request = createGlobalLoopRequest();
 								currentPage.selectedPrompt = request.prompt;
 								currentPage.generationBpm = request.bpm;
 								currentPage.generationKey = request.key;
-								currentPage.generationDuration = static_cast<int>(request.generationDuration);
 							}
 
 							track->syncLegacyProperties();
-							DBG("MIDI generation for page " << (char)('A' + track->currentPageIndex));
 						}
 						else {
 							if (!track->selectedPrompt.isEmpty()) {
 								request.prompt = track->selectedPrompt;
 								request.bpm = static_cast<float>(getHostBpm());
 								request.key = getGlobalKey();
-								request.generationDuration = static_cast<float>(getGlobalDuration());
 							}
 							else {
 								request = createGlobalLoopRequest();

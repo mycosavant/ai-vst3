@@ -718,7 +718,7 @@ void DjIaVstEditor::setupUI()
 		"Available generation credits\n"
 		"\n"
 		"Cost per generation:\n"
-		"  - 2 credits (1 LLM + 1 audio)"
+		"  - 1 credit)"
 	);
 
 	addAndMakeVisible(statusLabel);
@@ -1233,6 +1233,7 @@ void DjIaVstEditor::resized()
 
 	auto midiRow = bottomArea.removeFromTop(20);
 	midiRow.removeFromLeft(10);
+	midiRow.removeFromRight(10);
 	midiIndicator.setBounds(midiRow);
 
 	if (sampleBankPanel && sampleBankVisible)

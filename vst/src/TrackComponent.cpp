@@ -1146,7 +1146,7 @@ void TrackComponent::setupUI()
 
 	addAndMakeVisible(trackNumberLabel);
 	trackNumberLabel.setJustificationType(juce::Justification::centred);
-	trackNumberLabel.setFont(juce::FontOptions(16.0f, juce::Font::bold));
+	trackNumberLabel.setFont(juce::FontOptions(14.0f, juce::Font::bold));
 	trackNumberLabel.setColour(juce::Label::textColourId, ColourPalette::textPrimary);
 
 	addAndMakeVisible(previewButton);

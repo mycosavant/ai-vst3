@@ -299,7 +299,7 @@ void MasterChannel::resized()
 	lowLabel.setBounds(width - spacing - 25, bottomRow.getY(), 50, 12);
 	lowKnob.setBounds(width - spacing - knobSize / 2, bottomRow.getY() + 15, knobSize, knobSize);
 
-	auto volumeArea = area.removeFromTop(270);
+	auto volumeArea = area.removeFromTop(372);
 	int faderWidth = width / 3;
 	int centerX = (width - faderWidth) / 2;
 	masterVolumeSlider.setBounds(centerX, volumeArea.getY() + 5, faderWidth, volumeArea.getHeight() - 10);

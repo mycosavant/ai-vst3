@@ -94,7 +94,7 @@ def increment_api_key_usage(api_key: str):
             cursor.execute(
                 """
                 UPDATE api_keys 
-                SET credits_used = credits_used + 2 
+                SET credits_used = credits_used + 1 
                 WHERE id = ?
             """,
                 (key_info["id"],),
