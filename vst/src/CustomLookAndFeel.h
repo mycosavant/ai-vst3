@@ -12,6 +12,7 @@ public:
 		setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
 		setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 		setColour(juce::ComboBox::outlineColourId, juce::Colours::transparentBlack);
+		setColour(juce::ComboBox::textColourId, juce::Colours::black);
 		setColour(juce::ToggleButton::tickColourId, soften(ColourPalette::buttonSuccess));
 		setColour(juce::TextEditor::backgroundColourId, ColourPalette::backgroundDeep);
 		setColour(juce::TextEditor::textColourId, ColourPalette::textPrimary);
@@ -19,6 +20,8 @@ public:
 		setColour(juce::TextEditor::focusedOutlineColourId, ColourPalette::backgroundLight.brighter(0.2f));
 		setColour(juce::TextEditor::highlightColourId, soften(ColourPalette::backgroundLight).brighter(0.3f));
 		setColour(juce::TextEditor::shadowColourId, juce::Colours::transparentBlack);
+		setColour(juce::ScrollBar::thumbColourId, ColourPalette::sliderThumb);
+		setColour(juce::ScrollBar::backgroundColourId, ColourPalette::backgroundDeep);
 	}
 
 private:
@@ -37,15 +40,32 @@ public:
 		bool shouldDrawButtonAsDown) override
 	{
 		auto bounds = button.getLocalBounds().toFloat().reduced(0.5f);
-		auto baseColour = soften(backgroundColour);
+		auto baseColour = soften(backgroundColour)
+			.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f);
 
 		if (shouldDrawButtonAsDown)
 			baseColour = baseColour.darker(0.15f);
 		else if (shouldDrawButtonAsHighlighted)
 			baseColour = baseColour.brighter(0.08f);
 
+		if (!shouldDrawButtonAsDown)
+		{
+			g.setColour(juce::Colours::black.withAlpha(0.15f));
+			g.fillRoundedRectangle(bounds.translated(0, 1.5f), 4.0f);
+		}
+
 		g.setColour(baseColour);
 		g.fillRoundedRectangle(bounds, 4.0f);
+
+		if (!shouldDrawButtonAsDown)
+		{
+			g.setColour(juce::Colours::white.withAlpha(0.08f));
+			auto topBounds = bounds.withHeight(bounds.getHeight() * 0.4f);
+			g.fillRoundedRectangle(topBounds, 4.0f);
+		}
+
+		g.setColour(baseColour.darker(0.3f).withAlpha(0.3f));
+		g.drawRoundedRectangle(bounds, 4.0f, 0.8f);
 	}
 
 	void drawButtonText(juce::Graphics& g,
@@ -75,21 +95,42 @@ public:
 	{
 		auto bounds = button.getLocalBounds().toFloat();
 
-		auto bgColour = button.getToggleState()
-			? soften(button.findColour(juce::ToggleButton::tickColourId))
-			: ColourPalette::backgroundDark;
+		auto bgColour = button.findColour(juce::TextButton::buttonColourId);
 
-		if (shouldDrawButtonAsDown)
+		if (!button.isEnabled())
+			bgColour = bgColour.withAlpha(0.5f);
+		else if (shouldDrawButtonAsDown)
 			bgColour = bgColour.darker(0.15f);
 		else if (shouldDrawButtonAsHighlighted)
 			bgColour = bgColour.brighter(0.08f);
 
+		if (!shouldDrawButtonAsDown)
+		{
+			g.setColour(juce::Colours::black.withAlpha(0.15f));
+			g.fillRoundedRectangle(bounds.translated(0, 1.5f), 4.0f);
+		}
+
 		g.setColour(bgColour);
 		g.fillRoundedRectangle(bounds, 4.0f);
 
-		g.setColour(button.getToggleState()
-			? ColourPalette::textPrimary
-			: ColourPalette::textSecondary);
+		if (!shouldDrawButtonAsDown)
+		{
+			g.setColour(juce::Colours::white.withAlpha(0.08f));
+			auto topBounds = bounds.withHeight(bounds.getHeight() * 0.4f);
+			g.fillRoundedRectangle(topBounds, 4.0f);
+		}
+
+		g.setColour(bgColour.darker(0.3f).withAlpha(0.3f));
+		g.drawRoundedRectangle(bounds, 4.0f, 0.8f);
+
+		auto textColour = button.findColour(button.getToggleState()
+			? juce::TextButton::textColourOnId
+			: juce::TextButton::textColourOffId);
+
+		if (!button.isEnabled())
+			textColour = textColour.withAlpha(0.5f);
+
+		g.setColour(textColour);
 		g.setFont(juce::FontOptions(14.0f));
 		g.drawText(button.getButtonText(), bounds, juce::Justification::centred);
 	}
@@ -103,8 +144,18 @@ public:
 	{
 		auto bounds = juce::Rectangle<int>(0, 0, width, height).toFloat();
 
+		g.setColour(juce::Colours::black.withAlpha(0.15f));
+		g.fillRoundedRectangle(bounds.translated(0, 1.5f), 4.0f);
+
 		g.setColour(ColourPalette::backgroundDark);
 		g.fillRoundedRectangle(bounds, 4.0f);
+
+		g.setColour(juce::Colours::white.withAlpha(0.08f));
+		auto topBounds = bounds.withHeight(bounds.getHeight() * 0.4f);
+		g.fillRoundedRectangle(topBounds, 4.0f);
+
+		g.setColour(ColourPalette::backgroundDark.darker(0.3f).withAlpha(0.3f));
+		g.drawRoundedRectangle(bounds, 4.0f, 0.8f);
 
 		auto arrowZone = juce::Rectangle<float>((float)buttonX, (float)buttonY, (float)buttonW, (float)buttonH);
 		auto arrowBounds = arrowZone.reduced(4.0f);
@@ -118,6 +169,37 @@ public:
 
 		g.setColour(soften(ColourPalette::textSecondary));
 		g.fillPath(arrow);
+	}
+
+	void drawLabel(juce::Graphics& g, juce::Label& label) override
+	{
+		g.fillAll(label.findColour(juce::Label::backgroundColourId));
+
+		if (!label.isBeingEdited())
+		{
+			auto alpha = label.isEnabled() ? 1.0f : 0.5f;
+			auto textColour = label.findColour(juce::Label::textColourId).withMultipliedAlpha(alpha);
+
+			g.setColour(textColour);
+			g.setFont(label.getFont());
+
+			auto textArea = getLabelBorderSize(label).subtractedFrom(label.getLocalBounds());
+
+			g.drawFittedText(label.getText(),
+				textArea,
+				label.getJustificationType(),
+				juce::jmax(1, (int)((float)textArea.getHeight() / label.getFont().getHeight())),
+				1.0f);
+		}
+		else if (label.isEnabled())
+		{
+			g.setColour(label.findColour(juce::Label::outlineColourId));
+		}
+	}
+
+	juce::BorderSize<int> getLabelBorderSize(juce::Label& /*label*/) override
+	{
+		return juce::BorderSize<int>(1, 5, 1, 5);
 	}
 
 	void drawLinearSlider(juce::Graphics& g,
@@ -146,11 +228,31 @@ public:
 				endPoint = { (float)(x + width), cy };
 			}
 
+			auto trackRect = juce::Rectangle<float>(startPoint, endPoint).expanded(trackWidth * 0.5f);
+
 			g.setColour(ColourPalette::backgroundDeep);
-			g.fillRoundedRectangle(juce::Rectangle<float>(startPoint, endPoint).expanded(trackWidth * 0.5f), trackWidth * 0.5f);
-			auto filledEnd = startPoint + (endPoint - startPoint) * ((sliderPos - minSliderPos) / (maxSliderPos - minSliderPos));
-			g.setColour(soften(ColourPalette::sliderThumb));
-			g.fillRoundedRectangle(juce::Rectangle<float>(startPoint, filledEnd).expanded(trackWidth * 0.5f), trackWidth * 0.5f);
+			g.fillRoundedRectangle(trackRect, trackWidth * 0.5f);
+
+			g.setColour(ColourPalette::backgroundDeep.darker(0.4f).withAlpha(0.4f));
+			g.drawRoundedRectangle(trackRect, trackWidth * 0.5f, 0.8f);
+
+			float denominator = maxSliderPos - minSliderPos;
+			if (std::abs(denominator) > 0.001f)
+			{
+				float fillRatio = juce::jlimit(0.0f, 1.0f, (sliderPos - minSliderPos) / denominator);
+				auto filledEnd = startPoint + (endPoint - startPoint) * fillRatio;
+
+				if (std::isfinite(filledEnd.x) && std::isfinite(filledEnd.y))
+				{
+					auto fillRect = juce::Rectangle<float>(startPoint, filledEnd).expanded(trackWidth * 0.5f);
+
+					if (fillRect.isFinite() && !fillRect.isEmpty())
+					{
+						g.setColour(soften(ColourPalette::sliderThumb));
+						g.fillRoundedRectangle(fillRect, trackWidth * 0.5f);
+					}
+				}
+			}
 		}
 
 		auto thumbWidth = 16.0f;
@@ -217,5 +319,42 @@ public:
 				g.drawRoundedRectangle(0.0f, 0.0f, (float)width, (float)height, 4.0f, 1.0f);
 			}
 		}
+	}
+
+	void drawScrollbar(juce::Graphics& g,
+		juce::ScrollBar& /*scrollbar*/,
+		int x, int y,
+		int width, int height,
+		bool isScrollbarVertical,
+		int thumbStartPosition,
+		int thumbSize,
+		bool isMouseOver,
+		bool isMouseDown) override
+	{
+		g.setColour(findColour(juce::ScrollBar::backgroundColourId));
+		g.fillRoundedRectangle((float)x, (float)y, (float)width, (float)height, 4.0f);
+
+		juce::Rectangle<float> thumbBounds;
+
+		if (isScrollbarVertical)
+			thumbBounds = juce::Rectangle<float>((float)x,
+				(float)thumbStartPosition,
+				(float)width,
+				(float)thumbSize);
+		else
+			thumbBounds = juce::Rectangle<float>((float)thumbStartPosition,
+				(float)y,
+				(float)thumbSize,
+				(float)height);
+
+		auto thumbColour = findColour(juce::ScrollBar::thumbColourId);
+
+		if (isMouseDown)
+			thumbColour = thumbColour.brighter(0.2f);
+		else if (isMouseOver)
+			thumbColour = thumbColour.brighter(0.1f);
+
+		g.setColour(thumbColour);
+		g.fillRoundedRectangle(thumbBounds, 4.0f);
 	}
 };

@@ -5,6 +5,7 @@
 #include "MidiLearnableComponents.h"
 #include "SampleBankPanel.h"
 #include "CustomLookAndFeel.h"
+#include "DjIaClient.h"
 
 class SequencerComponent;
 
@@ -13,7 +14,7 @@ class DjIaVstEditor : public juce::AudioProcessorEditor, public juce::MenuBarMod
 public:
 	explicit DjIaVstEditor(DjIaVstProcessor&);
 	~DjIaVstEditor() override;
-
+	std::unique_ptr<MixerPanel> mixerPanel;
 	void paint(juce::Graphics&) override;
 	void layoutPromptSection(juce::Rectangle<int> area, int spacing);
 	void layoutConfigSection(juce::Rectangle<int> area, int reducing);
@@ -50,6 +51,7 @@ public:
 
 private:
 	DjIaVstProcessor& audioProcessor;
+	DjIaClient apiClient;
 	CustomLookAndFeel customLookAndFeel;
 	juce::Image logoImage;
 	juce::Image bannerImage;
@@ -95,11 +97,12 @@ private:
 	void checkLocalModelsAndNotify();
 	void notifyTracksPromptUpdate();
 	void generateFromTrackComponent(const juce::String& trackId);
+	void refreshCredits();
+	void refreshCreditsAsync();
 
 	juce::StringArray getAllPrompts() const;
 
 	juce::File getSessionsDirectory();
-	std::unique_ptr<MixerPanel> mixerPanel;
 	juce::TextButton showMixerButton;
 	bool mixerVisible = false;
 	std::atomic<bool> isGenerating{ false };
@@ -143,17 +146,10 @@ private:
 	juce::TextEditor serverUrlInput;
 	juce::Label apiKeyLabel;
 	juce::TextEditor apiKeyInput;
-	juce::Label stemsLabel;
-	juce::ToggleButton drumsButton;
-	juce::ToggleButton bassButton;
-	juce::ToggleButton otherButton;
-	juce::ToggleButton vocalsButton;
-	juce::ToggleButton guitarButton;
-	juce::ToggleButton pianoButton;
 	juce::TextButton playButton;
 	juce::Slider durationSlider;
 	juce::Label durationLabel;
-	juce::ToggleButton autoLoadButton;
+	juce::TextButton  autoLoadButton;
 	juce::TextButton loadSampleButton;
 	juce::Label midiIndicator;
 	juce::String lastMidiNote;
@@ -166,11 +162,13 @@ private:
 	juce::TextButton saveSessionButton;
 	juce::TextButton loadSessionButton;
 	juce::ComboBox sessionSelector;
-	juce::ToggleButton bypassSequencerButton;
+	juce::TextButton  bypassSequencerButton;
 	std::unique_ptr<juce::MenuBarComponent> menuBar;
 
 	MidiLearnableButton nextTrackButton;
 	MidiLearnableButton prevTrackButton;
+
+	juce::Label creditsLabel;
 
 	enum MenuIDs
 	{
