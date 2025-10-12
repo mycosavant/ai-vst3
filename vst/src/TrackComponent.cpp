@@ -463,7 +463,8 @@ void TrackComponent::paint(juce::Graphics& g)
 	}
 	else if (isGenerating && blinkState)
 	{
-		bgColour = ColourPalette::playArmed.withAlpha(0.3f);
+		bgColour = blinkState ? ColourPalette::buttonDangerLight.withAlpha(0.3f)
+			: ColourPalette::buttonDangerDark.withAlpha(0.3f);
 	}
 	else if (isSelected)
 	{
@@ -477,7 +478,8 @@ void TrackComponent::paint(juce::Graphics& g)
 	g.setColour(bgColour);
 	g.fillRoundedRectangle(bounds.toFloat(), 6.0f);
 
-	juce::Colour borderColour = isGenerating ? ColourPalette::playArmed : (isSelected ? ColourPalette::trackSelected : ColourPalette::backgroundLight);
+	juce::Colour borderColour = isGenerating ? (blinkState ? ColourPalette::buttonDangerLight : ColourPalette::buttonDangerDark)
+		: (isSelected ? ColourPalette::trackSelected : ColourPalette::backgroundLight);
 
 	g.setColour(borderColour);
 	g.drawRoundedRectangle(bounds.toFloat().reduced(1), 6.0f,
@@ -605,8 +607,11 @@ void TrackComponent::setupPagesUI()
 
 		pageButtons[i].onClick = [this, i]()
 			{ onPageSelected(i); };
+
 		pageButtons[i].setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundDark);
-		pageButtons[i].setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonSuccess);
+		pageButtons[i].setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonDangerLight);
+		pageButtons[i].setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
+		pageButtons[i].setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 	}
 
 	addAndMakeVisible(togglePagesButton);
@@ -690,7 +695,6 @@ void TrackComponent::onPageSelected(int pageIndex)
 		{
 			track->onPlayStateChanged(false);
 		}
-		DBG("Stopped playback: switched to empty page");
 	}
 
 	updatePagesDisplay();
@@ -761,19 +765,25 @@ void TrackComponent::updatePagesDisplay()
 
 		if (track->pages[i].numSamples > 0)
 		{
-			pageButtons[i].setColour(juce::TextButton::textColourOffId, ColourPalette::textSuccess);
+			pageButtons[i].setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
+			pageButtons[i].setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 			pageButtons[i].setColour(juce::TextButton::buttonColourId,
-				i == track->currentPageIndex ? ColourPalette::buttonSuccess : ColourPalette::backgroundLight);
+				i == track->currentPageIndex ? ColourPalette::buttonDangerLight : ColourPalette::backgroundLight);
+			pageButtons[i].setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonDangerLight.withAlpha(0.4f));
 		}
 		else if (track->pages[i].isLoading.load())
 		{
-			pageButtons[i].setColour(juce::TextButton::textColourOffId, ColourPalette::amber);
+			pageButtons[i].setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
+			pageButtons[i].setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 			pageButtons[i].setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundDark);
+			pageButtons[i].setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonDangerLight);
 		}
 		else
 		{
 			pageButtons[i].setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
+			pageButtons[i].setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 			pageButtons[i].setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundDark);
+			pageButtons[i].setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonDangerLight);
 		}
 	}
 }
@@ -1030,7 +1040,9 @@ void TrackComponent::setupUI()
 	deleteButton.onClick = [this]()
 		{
 			if (onDeleteTrack)
+			{
 				onDeleteTrack(trackId);
+			}
 		};
 
 	addAndMakeVisible(generateButton);
@@ -1051,20 +1063,6 @@ void TrackComponent::setupUI()
 						currentPage.generationKey = audioProcessor.getGlobalKey();
 						currentPage.generationDuration = audioProcessor.getGlobalDuration();
 
-						currentPage.preferredStems.clear();
-						if (audioProcessor.isGlobalStemEnabled("drums"))
-							currentPage.preferredStems.push_back("drums");
-						if (audioProcessor.isGlobalStemEnabled("bass"))
-							currentPage.preferredStems.push_back("bass");
-						if (audioProcessor.isGlobalStemEnabled("other"))
-							currentPage.preferredStems.push_back("other");
-						if (audioProcessor.isGlobalStemEnabled("vocals"))
-							currentPage.preferredStems.push_back("vocals");
-						if (audioProcessor.isGlobalStemEnabled("guitar"))
-							currentPage.preferredStems.push_back("guitar");
-						if (audioProcessor.isGlobalStemEnabled("piano"))
-							currentPage.preferredStems.push_back("piano");
-
 						track->syncLegacyProperties();
 					}
 					else
@@ -1073,19 +1071,6 @@ void TrackComponent::setupUI()
 						track->generationBpm = audioProcessor.getGlobalBpm();
 						track->generationKey = audioProcessor.getGlobalKey();
 						track->generationDuration = audioProcessor.getGlobalDuration();
-
-						if (audioProcessor.isGlobalStemEnabled("drums"))
-							track->preferredStems.push_back("drums");
-						if (audioProcessor.isGlobalStemEnabled("bass"))
-							track->preferredStems.push_back("bass");
-						if (audioProcessor.isGlobalStemEnabled("other"))
-							track->preferredStems.push_back("other");
-						if (audioProcessor.isGlobalStemEnabled("vocals"))
-							track->preferredStems.push_back("vocals");
-						if (audioProcessor.isGlobalStemEnabled("guitar"))
-							track->preferredStems.push_back("guitar");
-						if (audioProcessor.isGlobalStemEnabled("piano"))
-							track->preferredStems.push_back("piano");
 					}
 				}
 				onGenerateForTrack(trackId);
@@ -1161,7 +1146,7 @@ void TrackComponent::setupUI()
 
 	addAndMakeVisible(trackNumberLabel);
 	trackNumberLabel.setJustificationType(juce::Justification::centred);
-	trackNumberLabel.setFont(juce::FontOptions(16.0f, juce::Font::bold));
+	trackNumberLabel.setFont(juce::FontOptions(14.0f, juce::Font::bold));
 	trackNumberLabel.setColour(juce::Label::textColourId, ColourPalette::textPrimary);
 
 	addAndMakeVisible(previewButton);

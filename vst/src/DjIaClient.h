@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "./JuceHeader.h"
+#include <mutex>
 
 class DjIaClient
 {
@@ -10,14 +11,12 @@ public:
 		float generationDuration;
 		float bpm;
 		juce::String key;
-		std::vector<juce::String> preferredStems;
 
 		LoopRequest()
 			: prompt(""),
-			  generationDuration(6.0f),
-			  bpm(120.0f),
-			  key(""),
-			  preferredStems()
+			generationDuration(6.0f),
+			bpm(120.0f),
+			key("")
 		{
 		}
 	};
@@ -28,7 +27,6 @@ public:
 		float duration;
 		float bpm;
 		juce::String key;
-		std::vector<juce::String> stemsUsed;
 		juce::String errorMessage = "";
 		int creditsRemaining = -1;
 		bool isUnlimitedKey = false;
@@ -41,19 +39,44 @@ public:
 		}
 	};
 
-	DjIaClient(const juce::String &apiKey = "", const juce::String &baseUrl = "http://localhost:8000")
+	struct CreditsInfo
+	{
+		int creditsRemaining = 0;
+		int creditsTotal = 0;
+		bool canGenerateStandard = false;
+		int costStandard = 0;
+		bool success = false;
+		juce::String errorMessage = "";
+	};
+
+
+	DjIaClient(const juce::String& apiKey = "", const juce::String& baseUrl = "http://localhost:8000")
 		: apiKey(apiKey), baseUrl(baseUrl + "/api/v1")
 	{
 	}
 
-	void setApiKey(const juce::String &newApiKey)
+	void setApiKey(const juce::String& newApiKey)
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		apiKey = newApiKey;
 		DBG("DjIaClient: API key updated");
 	}
 
-	void setBaseUrl(const juce::String &newBaseUrl)
+	juce::String getApiKey() const
 	{
+		std::lock_guard<std::mutex> lock(mutex);
+		return apiKey;
+	}
+
+	juce::String getBaseUrl() const
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		return baseUrl;
+	}
+
+	void setBaseUrl(const juce::String& newBaseUrl)
+	{
+		std::lock_guard<std::mutex> lock(mutex);
 		if (newBaseUrl.endsWith("/"))
 		{
 			baseUrl = newBaseUrl.dropLastCharacters(1) + "/api/v1";
@@ -65,7 +88,83 @@ public:
 		DBG("DjIaClient: Base URL updated to: " + baseUrl);
 	}
 
-	LoopResponse generateLoop(const LoopRequest &request, double sampleRate, int requestTimeoutMS)
+	CreditsInfo checkCredits(int timeoutMS = 10000)
+	{
+		CreditsInfo result;
+
+		try
+		{
+			juce::String currentBaseUrl;
+			juce::String currentApiKey;
+
+			{
+				std::lock_guard<std::mutex> lock(mutex);
+				currentBaseUrl = baseUrl;
+				currentApiKey = apiKey;
+			}
+
+			if (currentBaseUrl.isEmpty())
+			{
+				throw std::runtime_error("Server URL not configured");
+			}
+
+			juce::String headerString = "Content-Type: application/json\n";
+			if (currentApiKey.isNotEmpty())
+			{
+				headerString += "X-API-Key: " + currentApiKey + "\n";
+			}
+
+			int statusCode = 0;
+			juce::StringPairArray responseHeaders;
+
+			auto url = juce::URL(currentBaseUrl + "/auth/credits/check/vst");
+			auto options = juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
+				.withStatusCode(&statusCode)
+				.withResponseHeaders(&responseHeaders)
+				.withExtraHeaders(headerString)
+				.withConnectionTimeoutMs(timeoutMS);
+
+			auto response = url.createInputStream(options);
+
+			if (!response)
+			{
+				throw std::runtime_error("Cannot connect to server");
+			}
+
+			if (statusCode != 200)
+			{
+				throw std::runtime_error("HTTP Error " + std::to_string(statusCode));
+			}
+
+			juce::String responseText = response->readEntireStreamAsString();
+
+			auto jsonResponse = juce::JSON::parse(responseText);
+
+			if (jsonResponse.isObject())
+			{
+				auto obj = jsonResponse.getDynamicObject();
+
+				result.creditsRemaining = obj->getProperty("credits_remaining");
+				result.creditsTotal = obj->getProperty("credits_total");
+				result.canGenerateStandard = obj->getProperty("can_generate_standard");
+				result.costStandard = obj->getProperty("cost_standard");
+				result.success = true;
+			}
+			else
+			{
+				throw std::runtime_error("Invalid JSON response");
+			}
+		}
+		catch (const std::exception& e)
+		{
+			result.success = false;
+			result.errorMessage = e.what();
+		}
+
+		return result;
+	}
+
+	LoopResponse generateLoop(const LoopRequest& request, double sampleRate, int requestTimeoutMS)
 	{
 		try
 		{
@@ -81,49 +180,52 @@ public:
 			jsonRequest.getDynamicObject()->setProperty("sample_rate", sampleRate);
 			jsonRequest.getDynamicObject()->setProperty("generation_duration", request.generationDuration);
 
-			if (!request.preferredStems.empty())
-			{
-				juce::Array<juce::var> stems;
-				for (const auto &stem : request.preferredStems)
-					stems.add(stem);
-				jsonRequest.getDynamicObject()->setProperty("preferred_stems", stems);
-			}
-
 			auto jsonString = juce::JSON::toString(jsonRequest);
 
-			juce::String headerString = "Content-Type: application/json\n";
-			if (apiKey.isNotEmpty())
+			juce::String currentBaseUrl;
+			juce::String currentApiKey;
+
 			{
-				headerString += "X-API-Key: " + apiKey + "\n";
+				std::lock_guard<std::mutex> lock(mutex);
+				currentBaseUrl = baseUrl;
+				currentApiKey = apiKey;
 			}
-			if (baseUrl.isEmpty())
+
+			juce::String headerString = "Content-Type: application/json\n";
+			if (currentApiKey.isNotEmpty())
+			{
+				headerString += "X-API-Key: " + currentApiKey + "\n";
+			}
+
+			if (currentBaseUrl.isEmpty())
 			{
 				DBG("ERROR: Base URL is empty!");
 				throw std::runtime_error("Server URL not configured. Please set server URL in settings.");
 			}
 
-			if (!baseUrl.startsWithIgnoreCase("http"))
+			if (!currentBaseUrl.startsWithIgnoreCase("http"))
 			{
-				DBG("ERROR: Invalid URL format: " + baseUrl);
+				DBG("ERROR: Invalid URL format: " + currentBaseUrl);
 				throw std::runtime_error("Invalid server URL format. Must start with http:// or https://");
 			}
+
 			int statusCode = 0;
 			juce::StringPairArray responseHeaders;
-			auto url = juce::URL(baseUrl + "/generate")
-						   .withPOSTData(jsonString);
+			auto url = juce::URL(currentBaseUrl + "/generate")
+				.withPOSTData(jsonString);
 			auto options = juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inPostData)
-							   .withStatusCode(&statusCode)
-							   .withResponseHeaders(&responseHeaders)
-							   .withExtraHeaders(headerString)
-							   .withConnectionTimeoutMs(requestTimeoutMS);
+				.withStatusCode(&statusCode)
+				.withResponseHeaders(&responseHeaders)
+				.withExtraHeaders(headerString)
+				.withConnectionTimeoutMs(requestTimeoutMS);
 
 			auto response = url.createInputStream(options);
 			if (!response)
 			{
 				DBG("ERROR: Failed to connect to server");
-				throw std::runtime_error(("Cannot connect to server at " + baseUrl +
-										  ". Please check: Server is running, URL is correct, Network connection")
-											 .toStdString());
+				throw std::runtime_error(("Cannot connect to server at " + currentBaseUrl +
+					". Please check: Server is running, URL is correct, Network connection")
+					.toStdString());
 			}
 
 			DBG("HTTP Status Code: " + juce::String(statusCode));
@@ -180,7 +282,6 @@ public:
 			result.duration = request.generationDuration;
 			result.bpm = bpm;
 			result.key = request.key;
-			result.stemsUsed = request.preferredStems;
 			juce::String creditsRemaining = responseHeaders["X-Credits-Remaining"];
 			juce::String duration = responseHeaders["X-Duration"];
 			if (creditsRemaining.isNotEmpty())
@@ -202,7 +303,7 @@ public:
 
 			return result;
 		}
-		catch (const std::exception &e)
+		catch (const std::exception& e)
 		{
 			DBG("API Error: " + juce::String(e.what()));
 			LoopResponse emptyResponse;
@@ -212,6 +313,7 @@ public:
 	}
 
 private:
+	mutable std::mutex mutex;
 	juce::String apiKey;
 	juce::String baseUrl;
 };

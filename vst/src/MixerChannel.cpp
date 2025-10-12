@@ -596,7 +596,7 @@ void MixerChannel::paint(juce::Graphics& g)
 	}
 	else if (isSelected)
 	{
-		bgColour = ColourPalette::backgroundMid;
+		bgColour = ColourPalette::trackSelected.withAlpha(0.1f);
 	}
 	else
 	{
@@ -729,7 +729,7 @@ void MixerChannel::resized()
 
 	area.removeFromTop(5);
 
-	auto volumeArea = area.removeFromTop(220);
+	auto volumeArea = area.removeFromTop(320);
 	volumeSlider.setBounds(volumeArea.reduced(width / 4, 0));
 
 	area.removeFromTop(5);
@@ -919,7 +919,6 @@ void MixerChannel::setupUI()
 
 void MixerChannel::updateButtonColors()
 {
-
 	if (!track)
 	{
 		return;
@@ -949,7 +948,7 @@ void MixerChannel::updateButtonColors()
 	}
 
 	muteButton.setToggleState(isMuted, juce::dontSendNotification);
-	muteButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::red);
+	muteButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::muteActive);
 	muteButton.setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 	muteButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonInactive);
 	muteButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);

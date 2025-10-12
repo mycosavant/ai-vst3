@@ -7,16 +7,16 @@ class TrackManager
 public:
 	TrackManager() = default;
 
-	std::function<void(int slot, TrackData *track)> parameterUpdateCallback;
+	std::function<void(int slot, TrackData* track)> parameterUpdateCallback;
 
-	juce::String createTrack(const juce::String &name = "Track")
+	juce::String createTrack(const juce::String& name = "Track")
 	{
 		juce::ScopedLock lock(tracksLock);
 		for (int i = 0; i < 8; ++i)
 		{
 			usedSlots[i] = false;
 		}
-		for (const auto &pair : tracks)
+		for (const auto& pair : tracks)
 		{
 			if (pair.second->slotIndex >= 0 && pair.second->slotIndex < 8)
 			{
@@ -41,11 +41,11 @@ public:
 		return trackId;
 	}
 
-	void removeTrack(const juce::String &trackId)
+	void removeTrack(const juce::String& trackId)
 	{
 		juce::ScopedLock lock(tracksLock);
 		std::string stdId = trackId.toStdString();
-		if (auto *track = getTrack(trackId))
+		if (auto* track = getTrack(trackId))
 		{
 			if (track->slotIndex != -1)
 			{
@@ -56,7 +56,7 @@ public:
 		trackOrder.erase(std::remove(trackOrder.begin(), trackOrder.end(), stdId), trackOrder.end());
 	}
 
-	void reorderTracks(const juce::String &fromTrackId, const juce::String &toTrackId)
+	void reorderTracks(const juce::String& fromTrackId, const juce::String& toTrackId)
 	{
 		juce::ScopedLock lock(tracksLock);
 
@@ -76,7 +76,7 @@ public:
 		trackOrder.insert(toIt, movedId);
 	}
 
-	TrackData *getTrack(const juce::String &trackId)
+	TrackData* getTrack(const juce::String& trackId)
 	{
 		juce::ScopedLock lock(tracksLock);
 		auto it = tracks.find(trackId.toStdString());
@@ -87,7 +87,7 @@ public:
 	{
 		juce::ScopedLock lock(tracksLock);
 		std::vector<juce::String> ids;
-		for (const auto &stdId : trackOrder)
+		for (const auto& stdId : trackOrder)
 		{
 			if (tracks.count(stdId))
 			{
@@ -96,16 +96,16 @@ public:
 		}
 		return ids;
 	}
-	void renderAllTracks(juce::AudioBuffer<float> &outputBuffer,
-						 std::vector<juce::AudioBuffer<float>> &individualOutputs,
-						 double hostBpm)
+	void renderAllTracks(juce::AudioBuffer<float>& outputBuffer,
+		std::vector<juce::AudioBuffer<float>>& individualOutputs,
+		double hostBpm)
 	{
 		const int numSamples = outputBuffer.getNumSamples();
 		bool anyTrackSolo = false;
 
 		{
 			juce::ScopedLock lock(tracksLock);
-			for (const auto &pair : tracks)
+			for (const auto& pair : tracks)
 			{
 				if (pair.second->isSolo.load())
 				{
@@ -116,16 +116,16 @@ public:
 		}
 
 		outputBuffer.clear();
-		for (auto &buffer : individualOutputs)
+		for (auto& buffer : individualOutputs)
 		{
 			buffer.clear();
 		}
 
 		juce::ScopedLock lock(tracksLock);
 
-		for (const auto &pair : tracks)
+		for (const auto& pair : tracks)
 		{
-			auto *track = pair.second.get();
+			auto* track = pair.second.get();
 
 			if (track->isEnabled.load() && track->numSamples > 0 &&
 				track->slotIndex >= 0 && track->slotIndex < individualOutputs.size())
@@ -138,10 +138,10 @@ public:
 				tempIndividualBuffer.clear();
 
 				renderSingleTrack(*track, tempMixBuffer, tempIndividualBuffer,
-								  numSamples, bufferIndex, hostBpm);
+					numSamples, bufferIndex, hostBpm);
 
 				bool shouldHearTrack = !track->isMuted.load() &&
-									   (!anyTrackSolo || track->isSolo.load());
+					(!anyTrackSolo || track->isSolo.load());
 
 				if (shouldHearTrack)
 				{
@@ -169,17 +169,16 @@ public:
 		juce::ValueTree state("TrackManager");
 
 		juce::ScopedLock lock(tracksLock);
-		for (const auto &pair : tracks)
+		for (const auto& pair : tracks)
 		{
 			auto trackState = juce::ValueTree("Track");
-			auto *track = pair.second.get();
+			auto* track = pair.second.get();
 
 			trackState.setProperty("id", track->trackId, nullptr);
 			trackState.setProperty("name", track->trackName, nullptr);
 			trackState.setProperty("slotIndex", track->slotIndex, nullptr);
 			trackState.setProperty("prompt", track->prompt, nullptr);
 			trackState.setProperty("style", track->style, nullptr);
-			trackState.setProperty("stems", track->stems, nullptr);
 			trackState.setProperty("bpm", track->bpm, nullptr);
 			trackState.setProperty("originalBpm", track->originalBpm, nullptr);
 			trackState.setProperty("timeStretchMode", track->timeStretchMode, nullptr);
@@ -224,7 +223,7 @@ public:
 			for (int pageIndex = 0; pageIndex < 4; ++pageIndex)
 			{
 				auto pageState = juce::ValueTree("Page");
-				const auto &page = track->pages[pageIndex];
+				const auto& page = track->pages[pageIndex];
 
 				pageState.setProperty("index", pageIndex, nullptr);
 				pageState.setProperty("audioFilePath", page.audioFilePath, nullptr);
@@ -237,33 +236,15 @@ public:
 				pageState.setProperty("generationBpm", page.generationBpm, nullptr);
 				pageState.setProperty("generationKey", page.generationKey, nullptr);
 				pageState.setProperty("generationDuration", page.generationDuration, nullptr);
-				pageState.setProperty("stems", page.stems, nullptr);
 				pageState.setProperty("loopStart", page.loopStart, nullptr);
 				pageState.setProperty("loopEnd", page.loopEnd, nullptr);
 				pageState.setProperty("useOriginalFile", page.useOriginalFile.load(), nullptr);
 				pageState.setProperty("hasOriginalVersion", page.hasOriginalVersion.load(), nullptr);
 				pageState.setProperty("isLoaded", page.isLoaded.load(), nullptr);
 
-				juce::String stemsString;
-				for (int i = 0; i < page.preferredStems.size(); ++i)
-				{
-					if (i > 0)
-						stemsString += ",";
-					stemsString += page.preferredStems[i];
-				}
-				pageState.setProperty("preferredStems", stemsString, nullptr);
-
 				trackState.appendChild(pageState, nullptr);
 			}
 
-			juce::String stemsString;
-			for (int i = 0; i < track->preferredStems.size(); ++i)
-			{
-				if (i > 0)
-					stemsString += ",";
-				stemsString += track->preferredStems[i];
-			}
-			trackState.setProperty("preferredStems", stemsString, nullptr);
 			if (track->numSamples > 0 && !track->audioFilePath.isEmpty())
 			{
 				trackState.setProperty("audioFilePath", track->audioFilePath, nullptr);
@@ -295,7 +276,7 @@ public:
 		return state;
 	}
 
-	void loadState(const juce::ValueTree &state)
+	void loadState(const juce::ValueTree& state)
 	{
 		juce::ScopedLock lock(tracksLock);
 		tracks.clear();
@@ -316,7 +297,6 @@ public:
 			track->prompt = trackState.getProperty("prompt", "");
 			track->slotIndex = trackState.getProperty("slotIndex", -1);
 			track->style = trackState.getProperty("style", "");
-			track->stems = trackState.getProperty("stems", "");
 			track->bpm = trackState.getProperty("bpm", 126.0f);
 			track->originalBpm = trackState.getProperty("originalBpm", 126.0f);
 			track->timeStretchMode = 4;
@@ -384,7 +364,7 @@ public:
 
 					if (pageState.isValid())
 					{
-						auto &page = track->pages[pageIndex];
+						auto& page = track->pages[pageIndex];
 						page.audioFilePath = pageState.getProperty("audioFilePath", "").toString();
 						page.numSamples = pageState.getProperty("numSamples", 0);
 						page.sampleRate = pageState.getProperty("sampleRate", 48000.0);
@@ -395,23 +375,11 @@ public:
 						page.generationBpm = pageState.getProperty("generationBpm", 126.0f);
 						page.generationKey = pageState.getProperty("generationKey", "").toString();
 						page.generationDuration = pageState.getProperty("generationDuration", 6);
-						page.stems = pageState.getProperty("stems", "").toString();
 						page.loopStart = pageState.getProperty("loopStart", 0.0);
 						page.loopEnd = pageState.getProperty("loopEnd", 4.0);
 						page.useOriginalFile = pageState.getProperty("useOriginalFile", false);
 						page.hasOriginalVersion = pageState.getProperty("hasOriginalVersion", false);
 						page.isLoaded = false;
-
-						juce::String stemsString = pageState.getProperty("preferredStems", "").toString();
-						page.preferredStems.clear();
-						if (stemsString.isNotEmpty())
-						{
-							juce::StringArray stemsArray = juce::StringArray::fromTokens(stemsString, ",", "");
-							for (const auto &stem : stemsArray)
-							{
-								page.preferredStems.push_back(stem.trim().toStdString());
-							}
-						}
 
 						if (!page.audioFilePath.isEmpty())
 						{
@@ -494,19 +462,9 @@ public:
 
 			if (!track->usePages.load())
 			{
-				juce::String stemsString = trackState.getProperty("preferredStems", "drums,bass");
 				track->lastPpqPosition = -1.0;
 				track->customStepCounter = 0;
 				track->sequencerData.stepAccumulator = 0.0;
-				track->preferredStems.clear();
-				if (stemsString.isNotEmpty())
-				{
-					juce::StringArray stemsArray = juce::StringArray::fromTokens(stemsString, ",", "");
-					for (const auto &stem : stemsArray)
-					{
-						track->preferredStems.push_back(stem.trim());
-					}
-				}
 			}
 
 			auto sequencerState = trackState.getChildWithName("Sequencer");
@@ -545,9 +503,9 @@ public:
 		}
 	}
 
-	std::array<bool, 8> usedSlots{false};
+	std::array<bool, 8> usedSlots{ false };
 
-	void loadAudioFileForPage(TrackData *track, int pageIndex, const juce::File &audioFile)
+	void loadAudioFileForPage(TrackData* track, int pageIndex, const juce::File& audioFile)
 	{
 		if (!track || pageIndex < 0 || pageIndex >= 4)
 		{
@@ -555,7 +513,7 @@ public:
 			return;
 		}
 
-		auto &page = track->pages[pageIndex];
+		auto& page = track->pages[pageIndex];
 
 		DBG("loadAudioFileForPage: Attempting to load page " << (char)('A' + pageIndex) << " from: " << audioFile.getFullPathName());
 
@@ -621,7 +579,7 @@ public:
 		float maxSample = 0.0f;
 		for (int ch = 0; ch < page.audioBuffer.getNumChannels(); ++ch)
 		{
-			auto *channelData = page.audioBuffer.getReadPointer(ch);
+			auto* channelData = page.audioBuffer.getReadPointer(ch);
 			for (int i = 0; i < page.audioBuffer.getNumSamples(); ++i)
 			{
 				maxSample = std::max(maxSample, std::abs(channelData[i]));
@@ -630,7 +588,7 @@ public:
 		DBG("loadAudioFileForPage: Max sample amplitude: " << maxSample);
 	}
 
-	void loadAudioFileForTrack(TrackData *track, const juce::File &audioFile)
+	void loadAudioFileForTrack(TrackData* track, const juce::File& audioFile)
 	{
 		static juce::AudioFormatManager formatManager;
 		static bool initialized = false;
@@ -685,9 +643,9 @@ private:
 
 		DBG("Actual slot usage from tracks:");
 		std::vector<bool> actualUsage(8, false);
-		for (const auto &pair : tracks)
+		for (const auto& pair : tracks)
 		{
-			const auto &track = pair.second;
+			const auto& track = pair.second;
 			if (track->slotIndex >= 0 && track->slotIndex < 8)
 			{
 				actualUsage[track->slotIndex] = true;
@@ -716,10 +674,10 @@ private:
 		return -1;
 	}
 
-	void renderSingleTrack(TrackData &track,
-						   juce::AudioBuffer<float> &mixOutput,
-						   juce::AudioBuffer<float> &individualOutput,
-						   int numSamples, int /*trackIndex*/, double hostBpm) const
+	void renderSingleTrack(TrackData& track,
+		juce::AudioBuffer<float>& mixOutput,
+		juce::AudioBuffer<float>& individualOutput,
+		int numSamples, int /*trackIndex*/, double hostBpm) const
 	{
 		if (parameterUpdateCallback)
 		{
@@ -730,7 +688,7 @@ private:
 			}
 		}
 
-		const juce::AudioSampleBuffer *bufferToUse = nullptr;
+		const juce::AudioSampleBuffer* bufferToUse = nullptr;
 		int numSamplesToUse = 0;
 		double sampleRateToUse = 0;
 		double loopStartToUse = 0;
@@ -739,7 +697,7 @@ private:
 
 		if (track.usePages.load())
 		{
-			const auto &currentPage = track.getCurrentPage();
+			const auto& currentPage = track.getCurrentPage();
 			bufferToUse = &currentPage.audioBuffer;
 			numSamplesToUse = currentPage.numSamples;
 			sampleRateToUse = currentPage.sampleRate;
@@ -885,7 +843,7 @@ private:
 		track.readPosition = currentPosition;
 	}
 
-	float interpolateLinear(const float *buffer, double position, int bufferSize) const
+	float interpolateLinear(const float* buffer, double position, int bufferSize) const
 	{
 		int index = static_cast<int>(position);
 		if (index >= bufferSize - 1)
