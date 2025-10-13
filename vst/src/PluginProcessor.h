@@ -215,6 +215,8 @@ public:
 	void setCreditsRemaining(int credits) { creditsRemaining = credits; }
 	int creditsRemaining = 0;
 	bool canGenerateStandard = true;
+	DjIaClient& getApiClient() { return apiClient; }
+	const DjIaClient& getApiClient() const { return apiClient; }
 
 private:
 	DjIaVstEditor* currentEditor = nullptr;
@@ -449,6 +451,7 @@ private:
 	void updateTrackPathsAfterMigration();
 	void checkBeatRepeatWithSampleCounter();
 	void generateLoopFromGlobalSettings();
+	void clearMasterChannel(juce::AudioSampleBuffer& mainOutput);
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DjIaVstProcessor);
 };

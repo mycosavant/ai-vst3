@@ -212,7 +212,12 @@ void SampleBankItem::drawCategoryBadges(juce::Graphics& g)
 		g.setColour(badgeColor);
 		g.fillRoundedRectangle(static_cast<float>(currentX), static_cast<float>(startY), static_cast<float>(badgeWidth), static_cast<float>(badgeHeight), 9.0f);
 
-		g.setColour(juce::Colours::white);
+		g.setColour(ColourPalette::textPrimary);
+		g.drawRoundedRectangle(static_cast<float>(currentX), static_cast<float>(startY),
+			static_cast<float>(badgeWidth), static_cast<float>(badgeHeight),
+			9.0f, 0.35f);
+
+		g.setColour(ColourPalette::textPrimary);
 		g.drawText(category, currentX, startY, badgeWidth, badgeHeight, juce::Justification::centred);
 
 		currentX += badgeWidth + badgeMargin;
@@ -404,10 +409,10 @@ void SampleBankItem::drawMiniWaveform(juce::Graphics& g)
 	clipPath.addRoundedRectangle(waveformBounds.toFloat(), 4.0f);
 	g.reduceClipRegion(clipPath);
 
-	g.setColour(juce::Colours::black);
+	g.setColour(ColourPalette::backgroundMid);
 	g.fillRoundedRectangle(waveformBounds.toFloat(), 4.0f);
 
-	g.setColour(juce::Colours::lightblue);
+	g.setColour(ColourPalette::buttonDanger);
 
 	juce::Path waveformPath;
 	juce::Path bottomPath;
@@ -456,16 +461,9 @@ void SampleBankItem::drawMiniWaveform(juce::Graphics& g)
 			float progress = playbackPosition / duration;
 			float headX = waveformBounds.getX() + (progress * waveformBounds.getWidth());
 
-			g.setColour(juce::Colours::red);
+			g.setColour(ColourPalette::playArmed);
 			g.drawLine(headX, static_cast<float>(waveformBounds.getY()),
 				headX, static_cast<float>(waveformBounds.getBottom()), 2.0f);
-
-			juce::Path triangle;
-			triangle.addTriangle(headX - 3, static_cast<float>(waveformBounds.getY()),
-				headX + 3, static_cast<float>(waveformBounds.getY()),
-				headX, static_cast<float>(waveformBounds.getY()) + 6);
-			g.setColour(juce::Colours::yellow);
-			g.fillPath(triangle);
 		}
 	}
 
@@ -782,14 +780,8 @@ void SampleBankPanel::timerCallback()
 
 void SampleBankPanel::paint(juce::Graphics& g)
 {
-	juce::ColourGradient gradient(
-		ColourPalette::backgroundDeep, 0.0f, 0.0f,
-		ColourPalette::backgroundMid, 0.0f, static_cast<float>(getHeight()),
-		false);
-	g.setGradientFill(gradient);
-	g.fillAll();
-
-	g.setColour(ColourPalette::backgroundLight);
+	g.fillAll(juce::Colours::white);
+	g.setColour(ColourPalette::backgroundDeep);
 	g.drawRect(getLocalBounds(), 1);
 }
 

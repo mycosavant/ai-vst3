@@ -10,7 +10,7 @@
 #endif
 
 DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
-	: AudioProcessorEditor(&p), audioProcessor(p), apiClient("", "http://localhost:8000")
+	: AudioProcessorEditor(&p), audioProcessor(p)
 {
 	setSize(1300, 800);
 	setLookAndFeel(&customLookAndFeel);
@@ -19,8 +19,6 @@ DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
 	tooltipWindow = std::make_unique<juce::TooltipWindow>(this, 700);
 	logoImage = juce::ImageCache::getFromMemory(BinaryData::logo_png,
 		BinaryData::logo_pngSize);
-	bannerImage = juce::ImageCache::getFromMemory(BinaryData::cyber_banner_png,
-		BinaryData::cyber_banner_pngSize);
 	audioProcessor.setGenerationListener(this);
 	if (audioProcessor.isStateReady())
 	{
@@ -191,6 +189,10 @@ void DjIaVstEditor::refreshTracks()
 
 void DjIaVstEditor::initUI()
 {
+	if (isInitialized.load())
+	{
+		return;
+	}
 	setupUI();
 	refreshUIForMode();
 	serverUrlInput.setText(audioProcessor.getServerUrl(), juce::dontSendNotification);
@@ -762,12 +764,11 @@ void DjIaVstEditor::setupUI()
 	addAndMakeVisible(loadSessionButton);
 	loadSessionButton.setButtonText("Load Session");
 
-	mixerPanel = std::make_unique<MixerPanel>(audioProcessor);
-	addAndMakeVisible(*mixerPanel);
-
-	sampleBankPanel = std::make_unique<SampleBankPanel>(audioProcessor);
-	addChildComponent(*sampleBankPanel);
-	sampleBankPanel->setVisible(false);
+	if (!mixerPanel)
+	{
+		mixerPanel = std::make_unique<MixerPanel>(audioProcessor);
+		addAndMakeVisible(*mixerPanel);
+	}
 
 	addAndMakeVisible(showSampleBankButton);
 	showSampleBankButton.setButtonText("Bank");
@@ -806,6 +807,12 @@ void DjIaVstEditor::setupUI()
 		juce::URL("https://github.com/sponsors/innermost47").launchInDefaultBrowser();
 		statusLabel.setText("Thank you for considering sponsorship!", juce::dontSendNotification);
 		};
+
+	if (!sampleBankPanel) {
+		sampleBankPanel = std::make_unique<SampleBankPanel>(audioProcessor);
+		addChildComponent(*sampleBankPanel);
+		sampleBankPanel->setVisible(false);
+	}
 
 	refreshTrackComponents();
 	addEventListeners();
@@ -2363,11 +2370,11 @@ void DjIaVstEditor::refreshCreditsAsync()
 
 	creditsLabel.setText("Credits: Loading...", juce::dontSendNotification);
 
-	apiClient.setApiKey(currentApiKey);
-	apiClient.setBaseUrl(currentServerUrl);
+	audioProcessor.getApiClient().setApiKey(currentApiKey);
+	audioProcessor.getApiClient().setBaseUrl(currentServerUrl);
 
 	juce::Thread::launch([this, timeout, safeThis = juce::Component::SafePointer<DjIaVstEditor>(this)]() {
-		auto creditsInfo = apiClient.checkCredits(timeout);
+		auto creditsInfo = audioProcessor.getApiClient().checkCredits(timeout);
 		juce::MessageManager::callAsync([safeThis, creditsInfo]() {
 			if (auto* editor = safeThis.getComponent())
 			{

@@ -5,7 +5,6 @@
 #include "MidiLearnableComponents.h"
 #include "SampleBankPanel.h"
 #include "CustomLookAndFeel.h"
-#include "DjIaClient.h"
 
 class SequencerComponent;
 
@@ -51,7 +50,6 @@ public:
 
 private:
 	DjIaVstProcessor& audioProcessor;
-	DjIaClient apiClient;
 	CustomLookAndFeel customLookAndFeel;
 	juce::Image logoImage;
 	juce::Image bannerImage;

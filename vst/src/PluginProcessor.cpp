@@ -418,14 +418,16 @@ void DjIaVstProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
 	copyTracksToIndividualOutputs(buffer);
 	handlePreviewPlaying(buffer);
 	applyMasterEffects(mainOutput);
+	clearMasterChannel(mainOutput);
+	checkIfUIUpdateNeeded(midiMessages);
+}
 
+void DjIaVstProcessor::clearMasterChannel(juce::AudioSampleBuffer& mainOutput) {
 	bool isMultiOutputActive = getBusCount(false) > 1;
 	if (isMultiOutputActive)
 	{
 		mainOutput.clear();
 	}
-
-	checkIfUIUpdateNeeded(midiMessages);
 }
 
 void DjIaVstProcessor::handlePreviewPlaying(juce::AudioSampleBuffer& buffer)
