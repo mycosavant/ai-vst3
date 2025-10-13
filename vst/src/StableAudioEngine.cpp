@@ -10,7 +10,7 @@
 #define CHDIR chdir
 #endif
 
-bool StableAudioEngine::initialize(const juce::String &modelsDir)
+bool StableAudioEngine::initialize(const juce::String& modelsDir)
 {
 	try
 	{
@@ -31,12 +31,11 @@ bool StableAudioEngine::initialize(const juce::String &modelsDir)
 		}
 
 		isInitialized = true;
-		DBG("Stable Audio Engine ready! Using executable: " << audiogenExecutable.getFullPathName());
 		return true;
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& /*e*/)
 	{
-		DBG("Exception during initialization: " << e.what());
+		DBG("Exception during Stable Audio Engine initialization");
 		return false;
 	}
 }
@@ -67,7 +66,7 @@ bool StableAudioEngine::checkRequiredFiles()
 	return true;
 }
 
-StableAudioEngine::GenerationResult StableAudioEngine::generateSample(const GenerationParams &params)
+StableAudioEngine::GenerationResult StableAudioEngine::generateSample(const GenerationParams& params)
 {
 	GenerationResult result;
 
@@ -157,12 +156,12 @@ StableAudioEngine::GenerationResult StableAudioEngine::generateSample(const Gene
 		result.performanceInfo = "Generated in " + juce::String(endTime - startTime, 0) + "ms";
 
 		DBG("Generation successful: " << result.audioData.size() << " samples in "
-									  << (endTime - startTime) << "ms");
+			<< (endTime - startTime) << "ms");
 		outputFile.deleteFile();
 
 		return result;
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		result.errorMessage = juce::String("Generation failed: ") + e.what();
 		DBG("Generation exception: " << e.what());
@@ -170,7 +169,7 @@ StableAudioEngine::GenerationResult StableAudioEngine::generateSample(const Gene
 	}
 }
 
-std::vector<float> StableAudioEngine::loadAndResampleWavFile(const juce::File &wavFile, double targetSampleRate)
+std::vector<float> StableAudioEngine::loadAndResampleWavFile(const juce::File& wavFile, double targetSampleRate)
 {
 	std::vector<float> audioData;
 
@@ -179,7 +178,7 @@ std::vector<float> StableAudioEngine::loadAndResampleWavFile(const juce::File &w
 		juce::AudioFormatManager formatManager;
 		formatManager.registerBasicFormats();
 
-		auto *reader = formatManager.createReaderFor(wavFile);
+		auto* reader = formatManager.createReaderFor(wavFile);
 		if (reader == nullptr)
 		{
 			DBG("Failed to create audio reader for: " << wavFile.getFullPathName());
@@ -235,18 +234,18 @@ std::vector<float> StableAudioEngine::loadAndResampleWavFile(const juce::File &w
 			DBG("No resampling needed: " << audioData.size() << " samples");
 		}
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& /*e*/)
 	{
-		DBG("Exception loading/resampling WAV file: " << e.what());
+		DBG("Exception loading/resampling WAV file in Stable Audio Engine");
 		audioData.clear();
 	}
 
 	return audioData;
 }
 
-juce::AudioBuffer<float> StableAudioEngine::resampleBuffer(const juce::AudioBuffer<float> &inputBuffer,
-														   double inputSampleRate,
-														   double outputSampleRate)
+juce::AudioBuffer<float> StableAudioEngine::resampleBuffer(const juce::AudioBuffer<float>& inputBuffer,
+	double inputSampleRate,
+	double outputSampleRate)
 {
 	double ratio = outputSampleRate / inputSampleRate;
 	int outputNumSamples = static_cast<int>(inputBuffer.getNumSamples() * ratio);
@@ -255,28 +254,28 @@ juce::AudioBuffer<float> StableAudioEngine::resampleBuffer(const juce::AudioBuff
 	juce::LagrangeInterpolator interpolator;
 	interpolator.reset();
 
-	const float *inputData = inputBuffer.getReadPointer(0);
-	float *outputData = outputBuffer.getWritePointer(0);
+	const float* inputData = inputBuffer.getReadPointer(0);
+	float* outputData = outputBuffer.getWritePointer(0);
 
 	interpolator.process(1.0 / ratio, inputData, outputData, outputNumSamples, inputBuffer.getNumSamples(), 0);
 
 	return outputBuffer;
 }
 
-std::vector<float> StableAudioEngine::generateAudio(const juce::String &prompt, float duration)
+std::vector<float> StableAudioEngine::generateAudio(const juce::String& prompt, float duration)
 {
 	GenerationParams params(prompt, duration);
 	auto result = generateSample(params);
 	return result.isValid() ? result.audioData : std::vector<float>();
 }
 
-juce::String StableAudioEngine::sanitizePrompt(const juce::String &prompt)
+juce::String StableAudioEngine::sanitizePrompt(const juce::String& prompt)
 {
 	auto sanitized = prompt.replace("\"", "\\\"")
-						 .replace("'", "\\'")
-						 .replace("|", "")
-						 .replace("&", "and")
-						 .replace(";", "");
+		.replace("'", "\\'")
+		.replace("|", "")
+		.replace("&", "and")
+		.replace(";", "");
 	if (sanitized.length() > 200)
 	{
 		sanitized = sanitized.substring(0, 200);

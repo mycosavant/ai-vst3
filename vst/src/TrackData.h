@@ -245,8 +245,6 @@ struct TrackData
 		useOriginalFile = currentPage.useOriginalFile.load();
 		hasOriginalVersion = currentPage.hasOriginalVersion.load();
 		originalStagingBuffer = currentPage.originalStagingBuffer;
-
-		DBG("Synced legacy properties - loops: " << loopStart << " to " << loopEnd);
 	}
 
 	void migrateToPages()
@@ -274,8 +272,6 @@ struct TrackData
 
 		currentPageIndex = 0;
 		usePages = true;
-
-		DBG("Track " << trackName << " migrated to pages system");
 	}
 
 	void setCurrentPage(int pageIndex)
@@ -291,8 +287,6 @@ struct TrackData
 		{
 			syncLegacyProperties();
 		}
-
-		DBG("Track " << trackName << " switched to page " << (char)('A' + pageIndex) << " - loops: " << getCurrentPage().loopStart << " to " << getCurrentPage().loopEnd);
 	}
 
 	DjIaClient::LoopRequest createLoopRequest() const

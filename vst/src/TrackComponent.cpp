@@ -863,9 +863,8 @@ void TrackComponent::loadPageAudioFile(int pageIndex, const juce::File& audioFil
 
 		DBG("Page " << (char)('A' + pageIndex) << " loaded successfully: " << numSamples << " samples");
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& /*e*/)
 	{
-		DBG("Failed to load page " << pageIndex << ": " << e.what());
 		page.isLoading = false;
 
 		juce::MessageManager::callAsync([this]()

@@ -63,9 +63,8 @@ void WaveformDisplay::setAudioData(const juce::AudioBuffer<float>& newAudioBuffe
 		generateThumbnail();
 		repaint();
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& /*e*/)
 	{
-		DBG("WaveformDisplay: Exception during buffer set: " << e.what());
 		audioBuffer.setSize(0, 0);
 		sampleRate = newSampleRate;
 		thumbnail.clear();

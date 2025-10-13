@@ -3379,11 +3379,9 @@ void DjIaVstProcessor::loadSampleToBankPage(const juce::String& trackId, int pag
 						}
 					}
 				} });
-
-				DBG("Sample from bank loaded successfully to page " << (char)('A' + pageIndex));
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& /*e*/)
 	{
-		DBG("Failed to load sample from bank to page: " << e.what());
+		DBG("Failed to load sample from bank to page");
 	}
 }

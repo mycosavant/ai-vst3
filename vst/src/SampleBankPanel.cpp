@@ -1038,7 +1038,7 @@ void SampleBankPanel::createSampleItems(const std::vector<SampleBankEntry*>& sam
 					showDeleteConfirmation(sampleId, entry->originalPrompt);
 				}
 			};
-		item->onCategoriesChanged = [this](SampleBankEntry* entry, const std::vector<juce::String>& /*newCategories*/)
+		item->onCategoriesChanged = [this](SampleBankEntry* /*entry*/, const std::vector<juce::String>& /*newCategories*/)
 			{
 				auto* bank = audioProcessor.getSampleBank();
 				if (bank)
@@ -1046,7 +1046,6 @@ void SampleBankPanel::createSampleItems(const std::vector<SampleBankEntry*>& sam
 					bank->saveBankData();
 				}
 				refreshSampleList();
-				DBG("Categories updated for sample: " + entry->originalPrompt);
 			};
 		item->getCategoriesList = [this]() -> std::vector<juce::String>
 			{
