@@ -157,6 +157,9 @@ struct TrackData
 	std::atomic<int64_t> pendingBeatNumber{ -1 };
 	std::atomic<int64_t> pendingStopBeatNumber{ -1 };
 
+	std::atomic<bool> pageChangePending{ false };
+	std::atomic<int> pendingPageIndex{ -1 };
+
 	int customStepCounter = 0;
 	double lastPpqPosition = -1.0;
 
