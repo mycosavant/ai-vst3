@@ -418,7 +418,6 @@ void DjIaVstProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
 	copyTracksToIndividualOutputs(buffer);
 	handlePreviewPlaying(buffer);
 	applyMasterEffects(mainOutput);
-	clearMasterChannel(mainOutput);
 	checkIfUIUpdateNeeded(midiMessages);
 }
 

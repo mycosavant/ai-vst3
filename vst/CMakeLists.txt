@@ -47,7 +47,7 @@ configure_file(
 )
 
 juce_add_plugin(ObsidianNeuralVST
-    VERSION "1.0.0"
+    VERSION "1.0.1"
     PLUGIN_MANUFACTURER_CODE "OBSI"
     PLUGIN_CODE "Obsi"
     COMPANY_NAME "InnerMost47"
