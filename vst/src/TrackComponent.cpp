@@ -668,13 +668,53 @@ void TrackComponent::onPageSelected(int pageIndex)
 	if (track->currentPageIndex == pageIndex)
 		return;
 
+	if (track->pageChangePending.load() && track->pendingPageIndex.load() == pageIndex)
+	{
+		track->pageChangePending = false;
+		track->pendingPageIndex = -1;
+		stopTimer();
+		pageButtons[pageIndex].setToggleState(false, juce::dontSendNotification);
+		updatePagesDisplay();
+		statusCallback("Page change cancelled");
+		return;
+	}
+
+	if (track->pages[pageIndex].numSamples == 0)
+	{
+		performPageChange(pageIndex);
+		return;
+	}
+
+	if (!audioProcessor.getPlayHead() ||
+		!audioProcessor.getPlayHead()->getPosition() ||
+		!audioProcessor.getPlayHead()->getPosition()->getIsPlaying())
+	{
+		performPageChange(pageIndex);
+		return;
+	}
+
+	track->pageChangePending = true;
+	track->pendingPageIndex = pageIndex;
+
+	if (!isTimerRunning())
+	{
+		startTimer(200);
+	}
+
+	statusCallback("Page " + juce::String((char)('A' + pageIndex)) + " will switch at next measure");
+}
+
+void TrackComponent::performPageChange(int pageIndex)
+{
+	if (!track || pageIndex < 0 || pageIndex >= 4)
+		return;
+
 	DBG("Switching to page " << (char)('A' + pageIndex) << " for track " << track->trackName);
 
 	bool wasPlaying = track->isPlaying.load();
 	bool wasArmed = track->isArmed.load();
 	bool wasArmedToStop = track->isArmedToStop.load();
 	bool wasCurrentlyPlaying = track->isCurrentlyPlaying.load();
-	double currentReadPosition = track->readPosition.load();
 
 	track->setCurrentPage(pageIndex);
 
@@ -682,7 +722,7 @@ void TrackComponent::onPageSelected(int pageIndex)
 	track->isArmed = wasArmed;
 	track->isArmedToStop = wasArmedToStop;
 	track->isCurrentlyPlaying = wasCurrentlyPlaying;
-	track->readPosition = currentReadPosition;
+	track->readPosition = 0.0;
 
 	const auto& newPage = track->getCurrentPage();
 
@@ -695,6 +735,14 @@ void TrackComponent::onPageSelected(int pageIndex)
 		{
 			track->onPlayStateChanged(false);
 		}
+	}
+
+	track->pageChangePending = false;
+	track->pendingPageIndex = -1;
+
+	if (!isGenerating && !track->pageChangePending.load())
+	{
+		stopTimer();
 	}
 
 	updatePagesDisplay();
@@ -723,35 +771,7 @@ void TrackComponent::onPageSelected(int pageIndex)
 	}
 
 	char pageName = 'A' + static_cast<char>(pageIndex);
-	if (newPage.numSamples > 0)
-	{
-		juce::String promptText = newPage.selectedPrompt;
-		if (promptText.isEmpty())
-			promptText = newPage.prompt;
-		if (promptText.isEmpty())
-			promptText = "Generated sample";
-
-		juce::String playState = "";
-		if (track->isPlaying.load())
-		{
-			playState = " [PLAYING @" + juce::String(currentReadPosition, 1) + "s]";
-		}
-		else if (track->isArmed.load())
-		{
-			playState = " [ARMED]";
-		}
-
-		statusCallback("Switched to page " + juce::String(pageName) + " - " +
-			promptText.substring(0, 20) + "..." + playState);
-	}
-	else
-	{
-		juce::String playState = "";
-		if (track->isArmed.load())
-			playState = " [ARMED - waiting for sample]";
-
-		statusCallback("Switched to page " + juce::String(pageName) + " - Empty" + playState);
-	}
+	statusCallback("Switched to page " + juce::String(pageName));
 }
 
 void TrackComponent::updatePagesDisplay()
@@ -759,9 +779,16 @@ void TrackComponent::updatePagesDisplay()
 	if (!track || !pagesMode)
 		return;
 
+	int pendingPage = track->pageChangePending.load() ? track->pendingPageIndex.load() : -1;
+
 	for (int i = 0; i < 4; ++i)
 	{
 		pageButtons[i].setToggleState(i == track->currentPageIndex, juce::dontSendNotification);
+
+		if (i == pendingPage)
+		{
+			continue;
+		}
 
 		if (track->pages[i].numSamples > 0)
 		{
@@ -885,7 +912,10 @@ void TrackComponent::startGeneratingAnimation()
 	}
 	togglePagesButton.setEnabled(false);
 
-	startTimer(200);
+	if (!isTimerRunning())
+	{
+		startTimer(200);
+	}
 }
 
 void TrackComponent::stopGeneratingAnimation()
@@ -901,7 +931,10 @@ void TrackComponent::stopGeneratingAnimation()
 	}
 	togglePagesButton.setEnabled(true);
 
-	stopTimer();
+	if (!track || !track->pageChangePending.load())
+	{
+		stopTimer();
+	}
 
 	if (waveformDisplay && showWaveformButton.getToggleState() && track)
 	{
@@ -933,6 +966,25 @@ void TrackComponent::timerCallback()
 	{
 		blinkState = !blinkState;
 		repaint();
+	}
+
+	if (track && track->pageChangePending.load())
+	{
+		pageBlinkState = !pageBlinkState;
+		int pendingPage = track->pendingPageIndex.load();
+		if (pendingPage >= 0 && pendingPage < 4)
+		{
+			pageButtons[pendingPage].setColour(
+				juce::TextButton::buttonColourId,
+				pageBlinkState ? ColourPalette::buttonDanger : ColourPalette::backgroundDeep
+			);
+			pageButtons[pendingPage].repaint();
+		}
+	}
+
+	if (!isGenerating && (!track || !track->pageChangePending.load()))
+	{
+		stopTimer();
 	}
 }
 

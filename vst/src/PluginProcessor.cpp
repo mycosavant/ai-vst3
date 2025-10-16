@@ -3164,6 +3164,28 @@ void DjIaVstProcessor::handleAdvanceStep(TrackData* track, bool hostIsPlaying)
 	int newStep = track->customStepCounter % stepsPerMeasure;
 	int newMeasure = (track->customStepCounter / stepsPerMeasure) % track->sequencerData.numMeasures;
 
+	if (newMeasure == 0 && newStep == 0 && track->pageChangePending.load())
+	{
+		int targetPage = track->pendingPageIndex.load();
+		if (targetPage >= 0 && targetPage < 4)
+		{
+			juce::MessageManager::callAsync([this, trackId = track->trackId, targetPage]()
+				{
+					if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+					{
+						for (auto& trackComp : editor->getTrackComponents())
+						{
+							if (trackComp->getTrackId() == trackId)
+							{
+								trackComp->performPageChange(targetPage);
+								break;
+							}
+						}
+					}
+				});
+		}
+	}
+
 	int safeMeasure = juce::jlimit(0, track->sequencerData.numMeasures - 1, newMeasure);
 	int safeStep = juce::jlimit(0, stepsPerMeasure - 1, newStep);
 

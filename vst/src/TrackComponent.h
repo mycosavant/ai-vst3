@@ -77,6 +77,7 @@ public:
 	void setupMidiLearn();
 	void updatePromptSelection(const juce::String& promptText);
 	void onPageSelected(int pageIndex);
+	void performPageChange(int pageIndex);
 
 	bool isEditingLabel = false;
 	MidiLearnableComboBox promptPresetSelector;
@@ -127,6 +128,8 @@ private:
 	juce::TextButton togglePagesButton;
 	bool pagesMode = false;
 	static const int PAGE_BUTTON_SIZE = 14;
+
+	bool pageBlinkState = false;
 
 	void setupPagesUI();
 	void updatePagesDisplay();
