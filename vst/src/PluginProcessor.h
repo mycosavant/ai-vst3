@@ -320,16 +320,25 @@ private:
 	juce::String generatingTrackId = "";
 
 	juce::StringArray booleanParamIds = {
-		"generate", "play",
-		"slot1Mute", "slot1Solo", "slot1Play", "slot1Stop", "slot1Generate",
-		"slot2Mute", "slot2Solo", "slot2Play", "slot2Stop", "slot2Generate",
-		"slot3Mute", "slot3Solo", "slot3Play", "slot3Stop", "slot3Generate",
-		"slot4Mute", "slot4Solo", "slot4Play", "slot4Stop", "slot4Generate",
-		"slot5Mute", "slot5Solo", "slot5Play", "slot5Stop", "slot5Generate",
-		"slot6Mute", "slot6Solo", "slot6Play", "slot6Stop", "slot6Generate",
-		"slot7Mute", "slot7Solo", "slot7Play", "slot7Stop", "slot7Generate",
-		"slot8Mute", "slot8Solo", "slot8Play", "slot8Stop", "slot8Generate",
-		"nextTrack", "prevTrack" };
+	"generate", "play",
+	"slot1Mute", "slot1Solo", "slot1Play", "slot1Stop", "slot1Generate", "slot1RandomRetrigger",
+	"slot2Mute", "slot2Solo", "slot2Play", "slot2Stop", "slot2Generate", "slot2RandomRetrigger",
+	"slot3Mute", "slot3Solo", "slot3Play", "slot3Stop", "slot3Generate", "slot3RandomRetrigger",
+	"slot4Mute", "slot4Solo", "slot4Play", "slot4Stop", "slot4Generate", "slot4RandomRetrigger",
+	"slot5Mute", "slot5Solo", "slot5Play", "slot5Stop", "slot5Generate", "slot5RandomRetrigger",
+	"slot6Mute", "slot6Solo", "slot6Play", "slot6Stop", "slot6Generate", "slot6RandomRetrigger",
+	"slot7Mute", "slot7Solo", "slot7Play", "slot7Stop", "slot7Generate", "slot7RandomRetrigger",
+	"slot8Mute", "slot8Solo", "slot8Play", "slot8Stop", "slot8Generate", "slot8RandomRetrigger",
+	"nextTrack", "prevTrack",
+	"slot1PageA", "slot1PageB", "slot1PageC", "slot1PageD",
+	"slot2PageA", "slot2PageB", "slot2PageC", "slot2PageD",
+	"slot3PageA", "slot3PageB", "slot3PageC", "slot3PageD",
+	"slot4PageA", "slot4PageB", "slot4PageC", "slot4PageD",
+	"slot5PageA", "slot5PageB", "slot5PageC", "slot5PageD",
+	"slot6PageA", "slot6PageB", "slot6PageC", "slot6PageD",
+	"slot7PageA", "slot7PageB", "slot7PageC", "slot7PageD",
+	"slot8PageA", "slot8PageB", "slot8PageC", "slot8PageD"
+	};
 
 	juce::StringArray floatParamIds = {
 		"bpm", "masterVolume", "masterPan", "masterHigh", "masterMid", "masterLow",
@@ -452,6 +461,7 @@ private:
 	void checkBeatRepeatWithSampleCounter();
 	void generateLoopFromGlobalSettings();
 	void clearMasterChannel(juce::AudioSampleBuffer& mainOutput);
+	void handlePageChange(const juce::String& parameterID);
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DjIaVstProcessor);
 };

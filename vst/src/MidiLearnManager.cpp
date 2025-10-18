@@ -367,6 +367,47 @@ void MidiLearnManager::processMidiMappings(const juce::MidiMessage& message)
 				}
 				continue;
 			}
+
+			if (mapping.parameterName.contains("slot") && mapping.parameterName.contains("Page"))
+			{
+				if (message.isNoteOn())
+				{
+					juce::String slotStr = mapping.parameterName.substring(4, 5);
+					int slotNumber = slotStr.getIntValue();
+
+					int pageIndex = -1;
+					if (mapping.parameterName.contains("PageA")) pageIndex = 0;
+					else if (mapping.parameterName.contains("PageB")) pageIndex = 1;
+					else if (mapping.parameterName.contains("PageC")) pageIndex = 2;
+					else if (mapping.parameterName.contains("PageD")) pageIndex = 3;
+
+					if (slotNumber >= 1 && slotNumber <= 8 && pageIndex >= 0)
+					{
+						auto* param = mapping.processor->getParameterTreeState().getParameter(mapping.parameterName);
+						if (param)
+						{
+							param->setValueNotifyingHost(1.0f);
+
+							statusMessage += " (Page " + juce::String((char)('A' + pageIndex)) + " triggered)";
+
+							juce::MessageManager::callAsync([mapping, statusMessage]()
+								{
+									if (auto* editor = dynamic_cast<DjIaVstEditor*>(mapping.processor->getActiveEditor()))
+									{
+										editor->statusLabel.setText(statusMessage, juce::dontSendNotification);
+										juce::Timer::callAfterDelay(2000, [mapping]() {
+											if (auto* editor = dynamic_cast<DjIaVstEditor*>(mapping.processor->getActiveEditor())) {
+												editor->statusLabel.setText("Ready", juce::dontSendNotification);
+											}
+											});
+									}
+								});
+						}
+					}
+				}
+
+				continue;
+			}
 			if (mapping.parameterName == "generate")
 			{
 				if (message.isNoteOn() && isBooleanParameter(mapping.parameterName))

@@ -612,7 +612,37 @@ void TrackComponent::setupPagesUI()
 		pageButtons[i].setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonDangerLight);
 		pageButtons[i].setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
 		pageButtons[i].setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
+
+		pageButtons[i].onMidiLearn = [this, i]()
+			{
+				if (track && track->slotIndex != -1)
+				{
+					const char* pageNames[4] = { "PageA", "PageB", "PageC", "PageD" };
+					char pageLetter = 'A' + static_cast<char>(i);
+					juce::String paramName = "slot" + juce::String(track->slotIndex + 1) + pageNames[i];
+					juce::String description = "Slot " + juce::String(track->slotIndex + 1) + " Page " + juce::String::charToString(pageLetter);
+
+					statusCallback("Learning MIDI for " + description + "...");
+
+					audioProcessor.getMidiLearnManager().startLearning(paramName, &audioProcessor, nullptr, description);
+				}
+			};
+
+		pageButtons[i].onMidiRemove = [this, i]()
+			{
+				if (track && track->slotIndex != -1)
+				{
+					const char* pageNames[4] = { "PageA", "PageB", "PageC", "PageD" };
+					juce::String paramName = "slot" + juce::String(track->slotIndex + 1) + pageNames[i];
+
+					char pageLetter = 'A' + static_cast<char>(i);
+					statusCallback("MIDI mapping removed for Page " + juce::String::charToString(pageLetter));
+
+					audioProcessor.getMidiLearnManager().removeMappingForParameter(paramName);
+				}
+			};
 	}
+
 
 	addAndMakeVisible(togglePagesButton);
 	togglePagesButton.setButtonText(juce::String::fromUTF8("\xE2\x97\xA8"));
@@ -665,43 +695,33 @@ void TrackComponent::onPageSelected(int pageIndex)
 {
 	if (!track || !pagesMode || pageIndex < 0 || pageIndex >= 4)
 		return;
-	if (track->currentPageIndex == pageIndex)
+
+	if (track->currentPageIndex == pageIndex && !track->pageChangePending.load())
+	{
 		return;
+	}
 
 	if (track->pageChangePending.load() && track->pendingPageIndex.load() == pageIndex)
 	{
 		track->pageChangePending = false;
 		track->pendingPageIndex = -1;
 		stopTimer();
-		pageButtons[pageIndex].setToggleState(false, juce::dontSendNotification);
 		updatePagesDisplay();
 		statusCallback("Page change cancelled");
 		return;
 	}
 
-	if (track->pages[pageIndex].numSamples == 0)
+	if (track->slotIndex != -1)
 	{
-		performPageChange(pageIndex);
-		return;
+		const char* pageNames[4] = { "PageA", "PageB", "PageC", "PageD" };
+		juce::String paramName = "slot" + juce::String(track->slotIndex + 1) + pageNames[pageIndex];
+
+		auto* param = audioProcessor.getParameterTreeState().getParameter(paramName);
+		if (param)
+		{
+			param->setValueNotifyingHost(1.0f);
+		}
 	}
-
-	if (!audioProcessor.getPlayHead() ||
-		!audioProcessor.getPlayHead()->getPosition() ||
-		!audioProcessor.getPlayHead()->getPosition()->getIsPlaying())
-	{
-		performPageChange(pageIndex);
-		return;
-	}
-
-	track->pageChangePending = true;
-	track->pendingPageIndex = pageIndex;
-
-	if (!isTimerRunning())
-	{
-		startTimer(200);
-	}
-
-	statusCallback("Page " + juce::String((char)('A' + pageIndex)) + " will switch at next measure");
 }
 
 void TrackComponent::performPageChange(int pageIndex)
