@@ -146,7 +146,7 @@ private:
 	void setupUI();
 	void adjustLoopPointsToTempo();
 	void updateTrackInfo();
-	void learn(juce::String param, std::function<void(float)> uiCallback = nullptr);
+	void learn(juce::String param, MidiLearnableBase* component, std::function<void(float)> uiCallback = nullptr);
 	void removeMidiMapping(const juce::String& param);
 	void addListener(juce::String name);
 	void removeListener(juce::String name);

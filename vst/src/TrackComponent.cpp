@@ -624,7 +624,7 @@ void TrackComponent::setupPagesUI()
 
 					statusCallback("Learning MIDI for " + description + "...");
 
-					audioProcessor.getMidiLearnManager().startLearning(paramName, &audioProcessor, nullptr, description);
+					audioProcessor.getMidiLearnManager().startLearning(paramName, &audioProcessor, nullptr, description, &pageButtons[i]);
 				}
 			};
 
@@ -1709,7 +1709,7 @@ void TrackComponent::updatePromptSelection(const juce::String& promptText)
 	repaint();
 }
 
-void TrackComponent::learn(juce::String param, std::function<void(float)> uiCallback)
+void TrackComponent::learn(juce::String param, MidiLearnableBase* component, std::function<void(float)> uiCallback)
 {
 	if (audioProcessor.getActiveEditor() && track && track->slotIndex != -1)
 	{
@@ -1720,9 +1720,10 @@ void TrackComponent::learn(juce::String param, std::function<void(float)> uiCall
 				if (auto* editor = dynamic_cast<DjIaVstEditor*>(audioProcessor.getActiveEditor()))
 				{
 					editor->statusLabel.setText("Learning MIDI for " + description + "...", juce::dontSendNotification);
-				} });
-				audioProcessor.getMidiLearnManager()
-					.startLearning(parameterName, &audioProcessor, uiCallback, description);
+				}
+			});
+		audioProcessor.getMidiLearnManager()
+			.startLearning(parameterName, &audioProcessor, uiCallback, description, component);
 	}
 }
 
@@ -1741,19 +1742,33 @@ void TrackComponent::setupMidiLearn()
 		return;
 
 	generateButton.onMidiLearn = [this]()
-		{ learn("Generate"); };
+		{
+			learn("Generate", &generateButton);
+		};
 	generateButton.onMidiRemove = [this]()
-		{ removeMidiMapping("Generate"); };
+		{
+			removeMidiMapping("Generate");
+		};
 
 	randomRetriggerButton.onMidiLearn = [this]()
-		{ learn("RandomRetrigger"); };
+		{
+			learn("RandomRetrigger", &randomRetriggerButton);
+		};
 	randomRetriggerButton.onMidiRemove = [this]()
-		{ removeMidiMapping("RandomRetrigger"); };
+		{
+			removeMidiMapping("RandomRetrigger");
+		};
+
 
 	intervalKnob.onMidiLearn = [this]()
-		{ learn("RetriggerInterval"); };
+		{
+			learn("RetriggerInterval", &intervalKnob);
+		};
 	intervalKnob.onMidiRemove = [this]()
-		{ removeMidiMapping("RetriggerInterval"); };
+		{
+			removeMidiMapping("RetriggerInterval");
+		};
+
 
 	juce::String paramName = "promptSelector_slot" + juce::String(track->slotIndex + 1);
 	auto promptCallback = [this](float value)
@@ -1764,16 +1779,24 @@ void TrackComponent::setupMidiLearn()
 					if (numItems > 0) {
 						int selectedIndex = (int)(value * (numItems - 1));
 						promptPresetSelector.setSelectedItemIndex(selectedIndex, juce::sendNotification);
-					} });
+					}
+				});
 		};
 
 	audioProcessor.getMidiLearnManager().registerUICallback(paramName, promptCallback);
+
 	promptPresetSelector.onMidiLearn = [this, paramName, promptCallback]()
 		{
 			if (audioProcessor.getActiveEditor() && track && track->slotIndex != -1)
 			{
 				juce::String description = "Slot " + juce::String(track->slotIndex + 1) + " Prompt Selector";
-				audioProcessor.getMidiLearnManager().startLearning(paramName, &audioProcessor, promptCallback, description);
+				audioProcessor.getMidiLearnManager().startLearning(
+					paramName,
+					&audioProcessor,
+					promptCallback,
+					description,
+					&promptPresetSelector
+				);
 			}
 		};
 

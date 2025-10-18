@@ -16,16 +16,25 @@ MidiLearnManager::~MidiLearnManager()
 void MidiLearnManager::startLearning(const juce::String& parameterName,
 	DjIaVstProcessor* processor,
 	std::function<void(float)> uiCallback,
-	const juce::String& description)
+	const juce::String& description,
+	MidiLearnableBase* component)
 {
 	stopLearning();
 	learningParameter = parameterName;
 	learningProcessor = processor;
 	learningUiCallback = uiCallback;
 	learningDescription = description;
+	currentLearningComponent = component;
 	isLearning = true;
 	learnStartTime = juce::Time::currentTimeMillis();
 	startTimerHz(10);
+
+	if (currentLearningComponent)
+	{
+		DBG("Activation du clignotement pour: " + parameterName);
+		currentLearningComponent->setLearningMode(true);
+	}
+
 	DBG("MIDI Learn started for parameter: " + parameterName);
 }
 
@@ -34,11 +43,16 @@ void MidiLearnManager::stopLearning()
 	if (!isLearning)
 		return;
 
+	if (currentLearningComponent)
+	{
+		currentLearningComponent->setLearningMode(false);
+		currentLearningComponent = nullptr;
+	}
+
 	isLearning = false;
 	stopTimer();
 	learningUiCallback = nullptr;
 	learningDescription.clear();
-
 	DBG("MIDI Learn stopped");
 }
 
@@ -47,20 +61,28 @@ void MidiLearnManager::timerCallback()
 	if (juce::Time::currentTimeMillis() - learnStartTime > LEARN_TIMEOUT_MS)
 	{
 		DBG("MIDI Learn timeout");
+
+		stopLearning();
+
 		juce::MessageManager::callAsync([this]()
 			{
-				if (auto* editor = dynamic_cast<DjIaVstEditor*>(learningProcessor->getActiveEditor()))
+				if (learningProcessor && learningProcessor->getActiveEditor())
 				{
-					editor->statusLabel.setText("MIDI Learn timeout - no controller received", juce::dontSendNotification);
-					juce::Timer::callAfterDelay(2000, [this]() {
-						if (auto* editor = dynamic_cast<DjIaVstEditor*>(learningProcessor->getActiveEditor())) {
-							editor->statusLabel.setText("Ready", juce::dontSendNotification);
-						}
-						});
-				} });
+					if (auto* editor = dynamic_cast<DjIaVstEditor*>(learningProcessor->getActiveEditor()))
+					{
+						editor->statusLabel.setText("MIDI Learn timeout - no controller received", juce::dontSendNotification);
+						juce::Timer::callAfterDelay(2000, [editor]()
+							{
+								if (editor)
+								{
+									editor->statusLabel.setText("Ready", juce::dontSendNotification);
+								}
+							});
+					}
+				}
+			});
 
-				stopLearning();
-				return;
+		return;
 	}
 }
 
