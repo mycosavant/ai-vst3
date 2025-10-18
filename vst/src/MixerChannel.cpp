@@ -987,7 +987,7 @@ void MixerChannel::stopGeneratingAnimation()
 	repaint();
 }
 
-void MixerChannel::learn(juce::String param, std::function<void(float)> uiCallback)
+void MixerChannel::learn(juce::String param, MidiLearnableBase* component, std::function<void(float)> uiCallback)
 {
 	if (audioProcessor.getActiveEditor() && track && track->slotIndex != -1)
 	{
@@ -1000,7 +1000,7 @@ void MixerChannel::learn(juce::String param, std::function<void(float)> uiCallba
 					editor->statusLabel.setText("Learning MIDI for " + description + "...", juce::dontSendNotification);
 				} });
 				audioProcessor.getMidiLearnManager()
-					.startLearning(parameterName, &audioProcessor, uiCallback, description);
+					.startLearning(parameterName, &audioProcessor, uiCallback, description, component);
 	}
 }
 
@@ -1017,31 +1017,31 @@ void MixerChannel::setupMidiLearn()
 {
 	playButton.onMidiLearn = [this]()
 		{
-			learn("Play");
+			learn("Play", &playButton);
 		};
 	muteButton.onMidiLearn = [this]()
 		{
-			learn("Mute");
+			learn("Mute", &muteButton);
 		};
 	soloButton.onMidiLearn = [this]()
 		{
-			learn("Solo");
+			learn("Solo", &soloButton);
 		};
 	volumeSlider.onMidiLearn = [this]()
 		{
-			learn("Volume");
+			learn("Volume", &volumeSlider);
 		};
 	pitchKnob.onMidiLearn = [this]()
 		{
-			learn("Pitch");
+			learn("Pitch", &pitchKnob);
 		};
 	fineKnob.onMidiLearn = [this]()
 		{
-			learn("Fine");
+			learn("Fine", &fineKnob);
 		};
 	panKnob.onMidiLearn = [this]()
 		{
-			learn("Pan");
+			learn("Pan", &panKnob);
 		};
 	playButton.onMidiRemove = [this]()
 		{
