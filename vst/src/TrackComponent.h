@@ -78,6 +78,7 @@ public:
 	void updatePromptSelection(const juce::String& promptText);
 	void onPageSelected(int pageIndex);
 	void performPageChange(int pageIndex);
+	void updatePagesDisplay();
 
 	bool isEditingLabel = false;
 	MidiLearnableComboBox promptPresetSelector;
@@ -124,7 +125,7 @@ private:
 	bool blinkState = false;
 	bool sequencerVisible = false;
 
-	juce::TextButton pageButtons[4];
+	MidiLearnableButton pageButtons[4];
 	juce::TextButton togglePagesButton;
 	bool pagesMode = false;
 	static const int PAGE_BUTTON_SIZE = 14;
@@ -132,7 +133,6 @@ private:
 	bool pageBlinkState = false;
 
 	void setupPagesUI();
-	void updatePagesDisplay();
 	void onTogglePagesMode();
 	void loadPageIfNeeded(int pageIndex);
 	void loadPageAudioFile(int pageIndex, const juce::File& audioFile);
@@ -146,7 +146,7 @@ private:
 	void setupUI();
 	void adjustLoopPointsToTempo();
 	void updateTrackInfo();
-	void learn(juce::String param, std::function<void(float)> uiCallback = nullptr);
+	void learn(juce::String param, MidiLearnableBase* component, std::function<void(float)> uiCallback = nullptr);
 	void removeMidiMapping(const juce::String& param);
 	void addListener(juce::String name);
 	void removeListener(juce::String name);

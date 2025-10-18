@@ -16,16 +16,25 @@ MidiLearnManager::~MidiLearnManager()
 void MidiLearnManager::startLearning(const juce::String& parameterName,
 	DjIaVstProcessor* processor,
 	std::function<void(float)> uiCallback,
-	const juce::String& description)
+	const juce::String& description,
+	MidiLearnableBase* component)
 {
 	stopLearning();
 	learningParameter = parameterName;
 	learningProcessor = processor;
 	learningUiCallback = uiCallback;
 	learningDescription = description;
+	currentLearningComponent = component;
 	isLearning = true;
 	learnStartTime = juce::Time::currentTimeMillis();
 	startTimerHz(10);
+
+	if (currentLearningComponent)
+	{
+		DBG("Activation du clignotement pour: " + parameterName);
+		currentLearningComponent->setLearningMode(true);
+	}
+
 	DBG("MIDI Learn started for parameter: " + parameterName);
 }
 
@@ -34,11 +43,16 @@ void MidiLearnManager::stopLearning()
 	if (!isLearning)
 		return;
 
+	if (currentLearningComponent)
+	{
+		currentLearningComponent->setLearningMode(false);
+		currentLearningComponent = nullptr;
+	}
+
 	isLearning = false;
 	stopTimer();
 	learningUiCallback = nullptr;
 	learningDescription.clear();
-
 	DBG("MIDI Learn stopped");
 }
 
@@ -47,20 +61,28 @@ void MidiLearnManager::timerCallback()
 	if (juce::Time::currentTimeMillis() - learnStartTime > LEARN_TIMEOUT_MS)
 	{
 		DBG("MIDI Learn timeout");
+
+		stopLearning();
+
 		juce::MessageManager::callAsync([this]()
 			{
-				if (auto* editor = dynamic_cast<DjIaVstEditor*>(learningProcessor->getActiveEditor()))
+				if (learningProcessor && learningProcessor->getActiveEditor())
 				{
-					editor->statusLabel.setText("MIDI Learn timeout - no controller received", juce::dontSendNotification);
-					juce::Timer::callAfterDelay(2000, [this]() {
-						if (auto* editor = dynamic_cast<DjIaVstEditor*>(learningProcessor->getActiveEditor())) {
-							editor->statusLabel.setText("Ready", juce::dontSendNotification);
-						}
-						});
-				} });
+					if (auto* editor = dynamic_cast<DjIaVstEditor*>(learningProcessor->getActiveEditor()))
+					{
+						editor->statusLabel.setText("MIDI Learn timeout - no controller received", juce::dontSendNotification);
+						juce::Timer::callAfterDelay(2000, [editor]()
+							{
+								if (editor)
+								{
+									editor->statusLabel.setText("Ready", juce::dontSendNotification);
+								}
+							});
+					}
+				}
+			});
 
-				stopLearning();
-				return;
+		return;
 	}
 }
 
@@ -365,6 +387,47 @@ void MidiLearnManager::processMidiMappings(const juce::MidiMessage& message)
 									});
 							} });
 				}
+				continue;
+			}
+
+			if (mapping.parameterName.contains("slot") && mapping.parameterName.contains("Page"))
+			{
+				if (message.isNoteOn())
+				{
+					juce::String slotStr = mapping.parameterName.substring(4, 5);
+					int slotNumber = slotStr.getIntValue();
+
+					int pageIndex = -1;
+					if (mapping.parameterName.contains("PageA")) pageIndex = 0;
+					else if (mapping.parameterName.contains("PageB")) pageIndex = 1;
+					else if (mapping.parameterName.contains("PageC")) pageIndex = 2;
+					else if (mapping.parameterName.contains("PageD")) pageIndex = 3;
+
+					if (slotNumber >= 1 && slotNumber <= 8 && pageIndex >= 0)
+					{
+						auto* param = mapping.processor->getParameterTreeState().getParameter(mapping.parameterName);
+						if (param)
+						{
+							param->setValueNotifyingHost(1.0f);
+
+							statusMessage += " (Page " + juce::String((char)('A' + pageIndex)) + " triggered)";
+
+							juce::MessageManager::callAsync([mapping, statusMessage]()
+								{
+									if (auto* editor = dynamic_cast<DjIaVstEditor*>(mapping.processor->getActiveEditor()))
+									{
+										editor->statusLabel.setText(statusMessage, juce::dontSendNotification);
+										juce::Timer::callAfterDelay(2000, [mapping]() {
+											if (auto* editor = dynamic_cast<DjIaVstEditor*>(mapping.processor->getActiveEditor())) {
+												editor->statusLabel.setText("Ready", juce::dontSendNotification);
+											}
+											});
+									}
+								});
+						}
+					}
+				}
+
 				continue;
 			}
 			if (mapping.parameterName == "generate")

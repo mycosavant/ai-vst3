@@ -891,7 +891,7 @@ void DjIaVstEditor::addEventListeners()
 								promptPresetSelector.setSelectedItemIndex(selectedIndex, juce::sendNotification);
 							} });
 				},
-				"Prompt Preset Selector");
+				"Prompt Preset Selector", &promptPresetSelector);
 		};
 
 	promptPresetSelector.onMidiRemove = [this]()
@@ -938,7 +938,7 @@ void DjIaVstEditor::addEventListeners()
 				"nextTrack",
 				&audioProcessor,
 				nullptr,
-				"Next Track");
+				"Next Track", &nextTrackButton);
 		};
 
 	nextTrackButton.onMidiRemove = [this]()
@@ -957,7 +957,7 @@ void DjIaVstEditor::addEventListeners()
 				"prevTrack",
 				&audioProcessor,
 				nullptr,
-				"Previous Track");
+				"Previous Track", &prevTrackButton);
 		};
 
 	prevTrackButton.onMidiRemove = [this]()
@@ -976,7 +976,7 @@ void DjIaVstEditor::addEventListeners()
 				"generate",
 				&audioProcessor,
 				nullptr,
-				"Generate Loop");
+				"Generate Loop", &generateButton);
 		};
 
 	generateButton.onMidiRemove = [this]()

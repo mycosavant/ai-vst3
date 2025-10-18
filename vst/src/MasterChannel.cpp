@@ -444,7 +444,8 @@ void MasterChannel::updateMasterLevels()
 		{ repaint(); });
 }
 
-void MasterChannel::learn(juce::String param, juce::String description, std::function<void(float)> uiCallback)
+
+void MasterChannel::learn(juce::String param, juce::String description, MidiLearnableBase* component, std::function<void(float)> uiCallback)
 {
 	if (audioProcessor.getActiveEditor())
 	{
@@ -455,7 +456,7 @@ void MasterChannel::learn(juce::String param, juce::String description, std::fun
 					editor->statusLabel.setText("Learning MIDI for " + description + "...", juce::dontSendNotification);
 				} });
 				audioProcessor.getMidiLearnManager()
-					.startLearning(param, &audioProcessor, uiCallback, description);
+					.startLearning(param, &audioProcessor, uiCallback, description, component);
 	}
 }
 
@@ -469,23 +470,23 @@ void MasterChannel::setupMidiLearn()
 {
 	masterVolumeSlider.onMidiLearn = [this]()
 		{
-			learn("masterVolume", "Master Volume");
+			learn("masterVolume", "Master Volume", &masterVolumeSlider);
 		};
 	masterPanKnob.onMidiLearn = [this]()
 		{
-			learn("masterPan", "Master Pan");
+			learn("masterPan", "Master Pan", &masterPanKnob);
 		};
 	highKnob.onMidiLearn = [this]()
 		{
-			learn("masterHigh", "Master High EQ");
+			learn("masterHigh", "Master High EQ", &highKnob);
 		};
 	midKnob.onMidiLearn = [this]()
 		{
-			learn("masterMid", "Master Mid EQ");
+			learn("masterMid", "Master Mid EQ", &midKnob);
 		};
 	lowKnob.onMidiLearn = [this]()
 		{
-			learn("masterLow", "Master Low EQ");
+			learn("masterLow", "Master Low EQ", &lowKnob);
 		};
 
 	masterVolumeSlider.onMidiRemove = [this]()
