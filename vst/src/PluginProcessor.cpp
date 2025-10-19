@@ -2924,6 +2924,12 @@ void DjIaVstProcessor::handlePageChange(const juce::String& parameterID)
 			if (track->pages[pageIndex].numSamples == 0)
 			{
 				track->setCurrentPage(pageIndex);
+				if (!getActiveEditor())
+				{
+					track->isPlaying = false;
+					track->isCurrentlyPlaying = false;
+					track->readPosition = 0.0;
+				}
 
 				if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
 				{
@@ -2933,7 +2939,7 @@ void DjIaVstProcessor::handlePageChange(const juce::String& parameterID)
 							{
 								if (trackComp->getTrackId() == trackId)
 								{
-									trackComp->updatePagesDisplay();
+									trackComp->performPageChange(pageIndex);
 									break;
 								}
 							}
@@ -2965,8 +2971,7 @@ void DjIaVstProcessor::handlePageChange(const juce::String& parameterID)
 							{
 								if (trackComp->getTrackId() == trackId)
 								{
-									trackComp->updatePagesDisplay();
-									trackComp->updateFromTrackData();
+									trackComp->performPageChange(pageIndex);
 									break;
 								}
 							}

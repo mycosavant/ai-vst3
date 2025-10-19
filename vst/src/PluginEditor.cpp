@@ -878,6 +878,7 @@ void DjIaVstEditor::addEventListeners()
 
 	promptPresetSelector.onMidiLearn = [this]()
 		{
+			statusLabel.setText("Learning MIDI for prompt selector...", juce::dontSendNotification);
 			audioProcessor.getMidiLearnManager().startLearning(
 				"promptPresetSelector",
 				&audioProcessor,
@@ -934,6 +935,7 @@ void DjIaVstEditor::addEventListeners()
 
 	nextTrackButton.onMidiLearn = [this]()
 		{
+			statusLabel.setText("Learning MIDI for next track button...", juce::dontSendNotification);
 			audioProcessor.getMidiLearnManager().startLearning(
 				"nextTrack",
 				&audioProcessor,
@@ -953,6 +955,7 @@ void DjIaVstEditor::addEventListeners()
 
 	prevTrackButton.onMidiLearn = [this]()
 		{
+			statusLabel.setText("Learning MIDI for previous track button...", juce::dontSendNotification);
 			audioProcessor.getMidiLearnManager().startLearning(
 				"prevTrack",
 				&audioProcessor,
@@ -972,6 +975,7 @@ void DjIaVstEditor::addEventListeners()
 
 	generateButton.onMidiLearn = [this]()
 		{
+			statusLabel.setText("Learning MIDI for generate button...", juce::dontSendNotification);
 			audioProcessor.getMidiLearnManager().startLearning(
 				"generate",
 				&audioProcessor,
