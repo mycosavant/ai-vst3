@@ -148,6 +148,21 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 
 ---
 
+## 🎯 Community Milestone
+
+**Road to 200 Stars!** Currently at 120+ 🌟
+
+When we hit 200 stars, we're celebrating with a community giveaway:
+
+**Prize:** 1 year of Starter Pack free access (€179.88 value)  
+**Eligibility:** Active community members (stars, discussions, issues, contributions)
+
+👉 [Join the discussion](https://github.com/innermost47/ai-dj/discussions/156)
+
+Every star, contribution, and piece of feedback helps make Obsidian Neural better. Thank you for being part of this journey! 🙏
+
+---
+
 ## License
 
 - 🆓 **GNU Affero General Public License v3.0** (Open source)
