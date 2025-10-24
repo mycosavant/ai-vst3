@@ -2,9 +2,10 @@
 
 🎵 **Real-time AI music generation VST3 plugin for live performance**
 
+**⚡ Quick Start:** [Get your API key](https://obsidian-neural.com) and start generating in minutes — no GPU or setup required. 🔥 [Free codes available ↓](#-free-pro-pack-codes)
+
 📄 **[Late Breaking Paper - AIMLA 2025](https://drive.google.com/file/d/1cwqmrV0_qC462LLQgQUz-5Cd422gL-8F/view)** - Presented at the first AES International Conference on Artificial Intelligence and Machine Learning for Audio (Queen Mary University London, Sept 8-10, 2025)  
-🎓 **[Tutorial](https://youtu.be/-qdFo_PcKoY)** - From DAW setup to live performance (French + English subtitles)  
-🌐 **[Official Website](https://obsidian-neural.com)** - Learn more about the project
+🎓 **[Tutorial](https://youtu.be/-qdFo_PcKoY)** - From DAW setup to live performance (French + English subtitles)
 
 ---
 
@@ -16,7 +17,6 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 - **4 pages per track** (A/B/C/D) - Switch variations instantly by clicking page buttons
 - **Perfect DAW sync** - Auto time-stretch to project tempo
 - **Real-time generation** - No pre-recorded samples
-- **Stems separation** - Isolated drums, bass, vocals
 
 **Example:** Type "dark techno kick" → AI generates techno loop → Trigger with MIDI while jamming
 
@@ -24,9 +24,9 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 
 ## Quick Start
 
-### 🟣 Cloud Inference API (New - Recommended for Beginners)
+### 🟣 Cloud Inference API (Recommended)
 
-**Generate AI loops directly from your DAW with zero setup. Professional quality with stems separation.**
+**Generate AI loops directly from your DAW with zero setup. Professional quality.**
 
 1. Download VST3 from [Releases](https://github.com/innermost47/ai-dj/releases)
 2. Get your API key from [obsidian-neural.com](https://obsidian-neural.com)
@@ -55,6 +55,8 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 - No GPU or powerful hardware required
 - Perfect for live performance
 
+---
+
 ### 🔵 Self-Hosted Server + GPU (Advanced)
 
 **Best for privacy, customization, and unlimited generations.**
@@ -74,6 +76,8 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 **Benefits:** Unlimited generations, full privacy, variable duration
 
 **Requirements:** GPU with CUDA support, Python environment
+
+---
 
 ### 🟢 Local Models (Offline)
 
@@ -107,6 +111,32 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 | **Privacy**               | Data processed on cloud | Full privacy                   | Full privacy          |
 | **Internet Required**     | ✅ Yes                  | ❌ No                          | ❌ No                 |
 | **Best For**              | Beginners, live gigs    | Privacy-focused, unlimited use | Offline work, testing |
+
+---
+
+## 🎁 Free Pro Pack Codes
+
+Get **1 month of Pro Pack free** (€29.99 value) — first 10 users per platform!
+
+**Redeem at:** [obsidian-neural.com](https://obsidian-neural.com)
+
+| Platform                   | Code                  | Remaining |
+| -------------------------- | --------------------- | --------- |
+| **Discord**                | `DISCORD100`          | 10/10     |
+| **Bedroom Producers Blog** | `BEDROOMPRODUCERS100` | 10/10     |
+| **AudioSEX**               | `AUDIOSEX100`         | 9/10      |
+| **Audiofanzine**           | `AUDIOFANZINE100`     | 10/10     |
+| **KVR Audio**              | `KVRAUDIO100`         | 10/10     |
+| **Facebook**               | `FACEBOOK100`         | 10/10     |
+
+**What you get:**
+
+- 1500 AI-generated samples
+- Up to 30-second loops
+- Real-time generation in your DAW
+- Cancel anytime, no credit card required
+
+First come, first served! 🔥
 
 ---
 
