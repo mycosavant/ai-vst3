@@ -134,7 +134,7 @@ Get **1 month of Pro Pack free** (€29.99 value) — first 10 users per platfor
 - 1500 AI-generated samples
 - Up to 30-second loops
 - Real-time generation in your DAW
-- Cancel anytime, no credit card required
+- Cancel anytime
 
 First come, first served! 🔥
 
