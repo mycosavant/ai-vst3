@@ -124,6 +124,7 @@ MidiMappingEditorWindow::MidiMappingEditorContent::MidiMappingEditorContent(Midi
 
 	mappingsViewport.setViewedComponent(&mappingsContainer, false);
 	mappingsViewport.setScrollBarsShown(true, false);
+	mappingsViewport.setLookAndFeel(&customLookAndFeel);
 	addAndMakeVisible(mappingsViewport);
 
 	refreshMappingsList();
@@ -131,6 +132,7 @@ MidiMappingEditorWindow::MidiMappingEditorContent::MidiMappingEditorContent(Midi
 
 MidiMappingEditorWindow::MidiMappingEditorContent::~MidiMappingEditorContent()
 {
+	mappingsViewport.setLookAndFeel(nullptr);
 }
 
 void MidiMappingEditorWindow::MidiMappingEditorContent::paint(juce::Graphics& g)

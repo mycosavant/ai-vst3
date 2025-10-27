@@ -3,6 +3,7 @@
 #include "MidiMapping.h"
 #include "MidiLearnManager.h"
 #include "PluginProcessor.h"
+#include "CustomLookAndFeel.h"
 
 class MidiMappingRow : public juce::Component,
 	public juce::Button::Listener
@@ -72,6 +73,8 @@ private:
 
 	private:
 		MidiLearnManager* midiLearnManager = nullptr;
+
+		CustomLookAndFeel customLookAndFeel;
 
 		juce::Label titleLabel;
 		juce::TextButton clearAllButton;
