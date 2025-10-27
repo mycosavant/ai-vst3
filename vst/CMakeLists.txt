@@ -4,7 +4,7 @@ if(UNIX AND NOT APPLE)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-project(OBSIDIAN-Neural VERSION 1.0.0)
+project(OBSIDIAN-Neural VERSION 1.0.1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -78,6 +78,7 @@ target_sources(ObsidianNeuralVST PRIVATE
     src/SampleBank.cpp
     src/SampleBankPanel.cpp
     src/CategoryWindow.cpp
+    src/MidiMappingEditorWindow.cpp
 )
 
 target_include_directories(ObsidianNeuralVST PRIVATE

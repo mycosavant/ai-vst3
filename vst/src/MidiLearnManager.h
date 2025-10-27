@@ -42,9 +42,12 @@ public:
 	juce::String getMappingDescription(const juce::String& parameterName) const;
 	void removeMappingsForSlot(int slotNumber);
 	void moveMappingsFromSlotToSlot(int fromSlot, int toSlot);
+	void setProcessor(DjIaVstProcessor* p) { learningProcessor = p; }
+	DjIaVstProcessor* getProcessor() const { return learningProcessor; }
 
 private:
 	void timerCallback() override;
+	juce::CriticalSection learnLock;
 	bool isLearning = false;
 	std::map<juce::String, std::function<void(float)>> registeredUICallbacks;
 	std::function<void(float)> learningUiCallback;

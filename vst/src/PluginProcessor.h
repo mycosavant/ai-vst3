@@ -218,6 +218,7 @@ public:
 	DjIaClient& getApiClient() { return apiClient; }
 	const DjIaClient& getApiClient() const { return apiClient; }
 
+
 private:
 	DjIaVstEditor* currentEditor = nullptr;
 	SimpleEQ masterEQ;

@@ -10,8 +10,13 @@ MidiLearnManager::MidiLearnManager()
 
 MidiLearnManager::~MidiLearnManager()
 {
-	stopLearning();
+	const juce::ScopedLock lock(learnLock);
+	stopTimer();
+	currentLearningComponent = nullptr;
+	learningProcessor = nullptr;
+	isLearning = false;
 }
+
 
 void MidiLearnManager::startLearning(const juce::String& parameterName,
 	DjIaVstProcessor* processor,
@@ -19,6 +24,11 @@ void MidiLearnManager::startLearning(const juce::String& parameterName,
 	const juce::String& description,
 	MidiLearnableBase* component)
 {
+	const juce::ScopedLock lock(learnLock);
+	if (isLearning)
+	{
+		return;
+	}
 	stopLearning();
 	learningParameter = parameterName;
 	learningProcessor = processor;
@@ -31,15 +41,13 @@ void MidiLearnManager::startLearning(const juce::String& parameterName,
 
 	if (currentLearningComponent)
 	{
-		DBG("Activation du clignotement pour: " + parameterName);
 		currentLearningComponent->setLearningMode(true);
 	}
-
-	DBG("MIDI Learn started for parameter: " + parameterName);
 }
 
 void MidiLearnManager::stopLearning()
 {
+	const juce::ScopedLock lock(learnLock);
 	if (!isLearning)
 		return;
 
@@ -47,6 +55,19 @@ void MidiLearnManager::stopLearning()
 	{
 		currentLearningComponent->setLearningMode(false);
 		currentLearningComponent = nullptr;
+	}
+
+	if (learningUiCallback != nullptr)
+	{
+		if (learningProcessor != nullptr)
+		{
+			auto* param = learningProcessor->getParameters().getParameter(learningParameter);
+			if (param != nullptr)
+			{
+				float currentValue = param->getValue();
+				learningUiCallback(currentValue);
+			}
+		}
 	}
 
 	isLearning = false;

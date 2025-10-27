@@ -5,6 +5,7 @@
 #include "MidiLearnableComponents.h"
 #include "SampleBankPanel.h"
 #include "CustomLookAndFeel.h"
+#include "MidiMappingEditorWindow.h"
 
 class SequencerComponent;
 
@@ -65,6 +66,10 @@ private:
 		QWERTZ
 	};
 	KeyboardLayout detectKeyboardLayout();
+	juce::TextButton openMidiEditorButton;
+	MidiMappingEditorWindow* midiEditorWindow = nullptr;
+
+	void openMidiMappingEditor();
 	bool keyMatches(const juce::KeyPress& pressed, const juce::KeyPress& expected);
 	bool keyPressed(const juce::KeyPress& key) override;
 	void setupUI();
