@@ -4,7 +4,6 @@
 #include "MidiLearnManager.h"
 #include "PluginProcessor.h"
 
-
 class MidiMappingRow : public juce::Component,
 	public juce::Button::Listener
 {
@@ -17,44 +16,22 @@ public:
 	void buttonClicked(juce::Button* button) override;
 
 	std::function<void()> onDeleteClicked;
-	std::function<void()> onEditClicked;
 	std::function<void()> onLearnClicked;
 
 	const MidiMapping& getMapping() const { return mapping; }
+	void setLearningActive(bool active);
+	void toggleBlink();
 	void updateMapping(const MidiMapping& newMapping);
-
-	void setLearningActive(bool active)
-	{
-		isLearning = active;
-		if (!active)
-		{
-			blinkState = false;
-			learnButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkgreen);
-			repaint();
-		}
-	}
-
-	void toggleBlink()
-	{
-		if (isLearning)
-		{
-			blinkState = !blinkState;
-			learnButton.setColour(juce::TextButton::buttonColourId,
-				blinkState ? juce::Colours::limegreen : juce::Colours::darkgreen);
-			repaint();
-		}
-	}
 
 private:
 	MidiMapping mapping;
 	MidiLearnManager* midiLearnManager = nullptr;
 
 	juce::Label parameterLabel;
-	juce::Label descriptionLabel;
 	juce::Label midiInfoLabel;
 	juce::TextButton deleteButton;
-	juce::TextButton editButton;
 	juce::TextButton learnButton;
+
 	bool isLearning = false;
 	bool blinkState = false;
 
@@ -64,7 +41,6 @@ private:
 };
 
 class MidiMappingEditorWindow : public juce::DocumentWindow,
-	public juce::Button::Listener,
 	public juce::Timer
 {
 public:
@@ -72,15 +48,13 @@ public:
 	~MidiMappingEditorWindow() override;
 
 	void closeButtonPressed() override;
-	void buttonClicked(juce::Button* button) override;
 	void timerCallback() override;
 
 	std::function<void()> onWindowClosed;
 
 private:
 	class MidiMappingEditorContent : public juce::Component,
-		public juce::Button::Listener,
-		public juce::ComboBox::Listener
+		public juce::Button::Listener
 	{
 	public:
 		MidiMappingEditorContent(MidiLearnManager* manager);
@@ -89,17 +63,10 @@ private:
 		void paint(juce::Graphics& g) override;
 		void resized() override;
 		void buttonClicked(juce::Button* button) override;
-		void comboBoxChanged(juce::ComboBox* comboBox) override;
 
 		void refreshMappingsList();
 		void deleteMapping(const MidiMapping& mapping);
 		void startLearningForMapping(const MidiMapping& mapping);
-		void editMapping(const MidiMapping& mapping);
-		void exportMappings();
-		void importMappings();
-		void sortMappings();
-		void filterMappings();
-		void createNewMapping();
 
 		juce::OwnedArray<MidiMappingRow> mappingRows;
 
@@ -108,33 +75,10 @@ private:
 
 		juce::Label titleLabel;
 		juce::TextButton clearAllButton;
-		juce::TextButton exportButton;
-		juce::TextButton importButton;
-		juce::TextButton refreshButton;
-		juce::TextButton addMappingButton;
-
-		juce::ComboBox sortComboBox;
-		juce::Label sortLabel;
-		juce::TextEditor searchBox;
-		juce::Label searchLabel;
 
 		juce::Viewport mappingsViewport;
 		juce::Component mappingsContainer;
 
-		juce::String searchFilter;
-		enum SortMode
-		{
-			SORT_PARAMETER_NAME,
-			SORT_DESCRIPTION,
-			SORT_MIDI_NUMBER,
-			SORT_MIDI_CHANNEL
-		};
-		SortMode currentSortMode = SORT_PARAMETER_NAME;
-
-		std::vector<MidiMapping> filteredMappings;
-		std::unique_ptr<juce::FileChooser> fileChooser;
-
-		void updateFilteredMappings();
 		void createMappingRows();
 		void showConfirmationDialog(const juce::String& message, std::function<void()> onConfirm);
 
@@ -145,93 +89,4 @@ private:
 	std::unique_ptr<MidiMappingEditorContent> content;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditorWindow)
-};
-
-
-class MidiMappingEditDialog : public juce::DialogWindow
-{
-public:
-	MidiMappingEditDialog(MidiMapping& mapping, MidiLearnManager* manager, DjIaVstProcessor* processor);
-	~MidiMappingEditDialog() override;
-
-	void closeButtonPressed() override;
-	std::function<void(const MidiMapping&)> onMappingUpdated;
-
-private:
-	DjIaVstProcessor* processorRef = nullptr;
-	class EditContent : public juce::Component,
-		public juce::Button::Listener
-	{
-	public:
-		EditContent(MidiMapping& mapping, MidiLearnManager* manager, DjIaVstProcessor* processor);
-		~EditContent() override;
-
-		void paint(juce::Graphics& g) override;
-		void resized() override;
-		void buttonClicked(juce::Button* button) override;
-
-		MidiMapping getUpdatedMapping() const;
-
-	private:
-		MidiMapping& originalMapping;
-		MidiLearnManager* midiLearnManager = nullptr;
-		DjIaVstProcessor* processorRef = nullptr;
-
-		bool isLearning = false;
-		bool blinkState = false;
-		std::unique_ptr<juce::Timer> blinkTimer;
-
-		juce::Label parameterLabel;
-		juce::ComboBox parameterNameComboBox;
-
-		juce::Label descriptionLabel;
-		juce::TextEditor descriptionEditor;
-
-		juce::Label midiChannelLabel;
-		juce::Slider midiChannelSlider;
-		juce::Label midiNumberLabel;
-		juce::Slider midiNumberSlider;
-
-		juce::Label midiTypeLabel;
-		juce::ComboBox midiTypeComboBox;
-
-		juce::TextButton applyButton;
-		juce::TextButton cancelButton;
-		juce::TextButton learnButton;
-
-		void populateMidiTypeComboBox();
-		void populateParameterNameComboBox();
-
-		class BlinkTimer : public juce::Timer
-		{
-		public:
-			BlinkTimer(MidiMappingEditDialog::EditContent* parent) : owner(parent) {}
-			void timerCallback() override
-			{
-				if (!owner->isLearning || !owner->midiLearnManager->isLearningActive())
-				{
-					owner->learnButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkgreen);
-					stopTimer();
-					owner->isLearning = false;
-					return;
-				}
-
-				owner->blinkState = !owner->blinkState;
-				owner->learnButton.setColour(juce::TextButton::buttonColourId,
-					owner->blinkState ? juce::Colours::limegreen : juce::Colours::darkgreen);
-				owner->repaint();
-			}
-
-		private:
-			MidiMappingEditDialog::EditContent* owner;
-		};
-
-		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EditContent)
-	};
-
-	MidiMapping& mapping;
-	MidiLearnManager* midiLearnManager = nullptr;
-	std::unique_ptr<EditContent> content;
-
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditDialog)
 };
