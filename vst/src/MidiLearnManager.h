@@ -47,6 +47,7 @@ public:
 
 private:
 	void timerCallback() override;
+	juce::CriticalSection learnLock;
 	bool isLearning = false;
 	std::map<juce::String, std::function<void(float)>> registeredUICallbacks;
 	std::function<void(float)> learningUiCallback;

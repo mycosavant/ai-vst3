@@ -70,7 +70,17 @@ void MidiMappingRow::buttonClicked(juce::Button* button)
 	else if (button == &editButton && onEditClicked)
 		onEditClicked();
 	else if (button == &learnButton && onLearnClicked)
+	{
+		if (midiLearnManager->isLearningActive())
+		{
+			midiLearnManager->stopLearning();
+			setLearningActive(false);
+			repaint();
+			return;
+		}
+
 		onLearnClicked();
+	}
 }
 
 juce::String MidiMappingRow::getMidiInfoString() const
@@ -662,7 +672,6 @@ void MidiMappingEditDialog::EditContent::populateParameterNameComboBox()
 }
 
 
-
 MidiMappingEditDialog::EditContent::~EditContent()
 {
 }
@@ -731,16 +740,44 @@ void MidiMappingEditDialog::EditContent::buttonClicked(juce::Button* button)
 	}
 	else if (button == &learnButton)
 	{
+		if (midiLearnManager->isLearningActive())
+		{
+			midiLearnManager->stopLearning();
+			isLearning = false;
+			blinkState = false;
+			if (blinkTimer)
+			{
+				blinkTimer->stopTimer();
+				blinkTimer.reset();
+			}
+			learnButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkgreen);
+			repaint();
+			return;
+		}
+
+		if (blinkTimer)
+		{
+			blinkTimer->stopTimer();
+			blinkTimer.reset();
+		}
+
 		midiLearnManager->startLearning(
 			originalMapping.parameterName,
-			originalMapping.processor,
+			processorRef,
 			nullptr,
 			descriptionEditor.getText());
 
 		isLearning = true;
 		blinkState = false;
-		blinkTimer = std::make_unique<BlinkTimer>(this);
-		blinkTimer->startTimerHz(2);
+
+		juce::MessageManager::callAsync([this]()
+			{
+				if (isLearning)
+				{
+					blinkTimer = std::make_unique<BlinkTimer>(this);
+					blinkTimer->startTimerHz(2);
+				}
+			});
 	}
 }
 
