@@ -31,11 +31,8 @@ void MidiLearnManager::startLearning(const juce::String& parameterName,
 
 	if (currentLearningComponent)
 	{
-		DBG("Activation du clignotement pour: " + parameterName);
 		currentLearningComponent->setLearningMode(true);
 	}
-
-	DBG("MIDI Learn started for parameter: " + parameterName);
 }
 
 void MidiLearnManager::stopLearning()
@@ -47,6 +44,19 @@ void MidiLearnManager::stopLearning()
 	{
 		currentLearningComponent->setLearningMode(false);
 		currentLearningComponent = nullptr;
+	}
+
+	if (learningUiCallback != nullptr)
+	{
+		if (learningProcessor != nullptr)
+		{
+			auto* param = learningProcessor->getParameters().getParameter(learningParameter);
+			if (param != nullptr)
+			{
+				float currentValue = param->getValue();
+				learningUiCallback(currentValue);
+			}
+		}
 	}
 
 	isLearning = false;
