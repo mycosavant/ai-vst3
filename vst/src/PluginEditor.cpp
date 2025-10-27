@@ -820,7 +820,7 @@ void DjIaVstEditor::setupUI()
 		sampleBankPanel->setVisible(false);
 	}
 
-	openMidiEditorButton.setButtonText("MIDI Mappings");
+	openMidiEditorButton.setButtonText("Edit Mappings");
 	openMidiEditorButton.setTooltip("Open MIDI mappings editor");
 	addAndMakeVisible(openMidiEditorButton);
 
