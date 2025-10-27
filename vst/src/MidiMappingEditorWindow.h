@@ -23,6 +23,28 @@ public:
 	const MidiMapping& getMapping() const { return mapping; }
 	void updateMapping(const MidiMapping& newMapping);
 
+	void setLearningActive(bool active)
+	{
+		isLearning = active;
+		if (!active)
+		{
+			blinkState = false;
+			learnButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkgreen);
+			repaint();
+		}
+	}
+
+	void toggleBlink()
+	{
+		if (isLearning)
+		{
+			blinkState = !blinkState;
+			learnButton.setColour(juce::TextButton::buttonColourId,
+				blinkState ? juce::Colours::limegreen : juce::Colours::darkgreen);
+			repaint();
+		}
+	}
+
 private:
 	MidiMapping mapping;
 	MidiLearnManager* midiLearnManager = nullptr;
@@ -33,6 +55,8 @@ private:
 	juce::TextButton deleteButton;
 	juce::TextButton editButton;
 	juce::TextButton learnButton;
+	bool isLearning = false;
+	bool blinkState = false;
 
 	juce::String getMidiInfoString() const;
 
@@ -77,6 +101,8 @@ private:
 		void filterMappings();
 		void createNewMapping();
 
+		juce::OwnedArray<MidiMappingRow> mappingRows;
+
 	private:
 		MidiLearnManager* midiLearnManager = nullptr;
 
@@ -94,7 +120,6 @@ private:
 
 		juce::Viewport mappingsViewport;
 		juce::Component mappingsContainer;
-		juce::OwnedArray<MidiMappingRow> mappingRows;
 
 		juce::String searchFilter;
 		enum SortMode
@@ -152,6 +177,10 @@ private:
 		MidiLearnManager* midiLearnManager = nullptr;
 		DjIaVstProcessor* processorRef = nullptr;
 
+		bool isLearning = false;
+		bool blinkState = false;
+		std::unique_ptr<juce::Timer> blinkTimer;
+
 		juce::Label parameterLabel;
 		juce::ComboBox parameterNameComboBox;
 
@@ -172,6 +201,30 @@ private:
 
 		void populateMidiTypeComboBox();
 		void populateParameterNameComboBox();
+
+		class BlinkTimer : public juce::Timer
+		{
+		public:
+			BlinkTimer(MidiMappingEditDialog::EditContent* parent) : owner(parent) {}
+			void timerCallback() override
+			{
+				if (!owner->isLearning || !owner->midiLearnManager->isLearningActive())
+				{
+					owner->learnButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkgreen);
+					stopTimer();
+					owner->isLearning = false;
+					return;
+				}
+
+				owner->blinkState = !owner->blinkState;
+				owner->learnButton.setColour(juce::TextButton::buttonColourId,
+					owner->blinkState ? juce::Colours::limegreen : juce::Colours::darkgreen);
+				owner->repaint();
+			}
+
+		private:
+			MidiMappingEditDialog::EditContent* owner;
+		};
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EditContent)
 	};

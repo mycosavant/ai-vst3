@@ -358,7 +358,20 @@ void MidiMappingEditorWindow::MidiMappingEditorContent::startLearningForMapping(
 		mapping.processor,
 		mapping.uiCallback,
 		mapping.description);
+
+	for (auto* row : mappingRows)
+		row->setLearningActive(false);
+
+	for (auto* row : mappingRows)
+	{
+		if (row->getMapping().parameterName == mapping.parameterName)
+		{
+			row->setLearningActive(true);
+			break;
+		}
+	}
 }
+
 
 void MidiMappingEditorWindow::MidiMappingEditorContent::editMapping(const MidiMapping& mapping)
 {
@@ -527,7 +540,13 @@ void MidiMappingEditorWindow::timerCallback()
 	{
 		if (midiLearnManager->isLearningActive())
 		{
-
+			for (auto* row : content->mappingRows)
+				row->toggleBlink();
+		}
+		else
+		{
+			for (auto* row : content->mappingRows)
+				row->setLearningActive(false);
 		}
 	}
 }
@@ -701,27 +720,30 @@ void MidiMappingEditDialog::EditContent::buttonClicked(juce::Button* button)
 		if (auto* dialog = findParentComponentOfClass<MidiMappingEditDialog>())
 		{
 			if (dialog->onMappingUpdated)
-			{
 				dialog->onMappingUpdated(getUpdatedMapping());
-			}
 			dialog->closeButtonPressed();
 		}
 	}
 	else if (button == &cancelButton)
 	{
 		if (auto* dialog = findParentComponentOfClass<MidiMappingEditDialog>())
-		{
 			dialog->closeButtonPressed();
-		}
 	}
 	else if (button == &learnButton)
 	{
-		midiLearnManager->startLearning(originalMapping.parameterName,
+		midiLearnManager->startLearning(
+			originalMapping.parameterName,
 			originalMapping.processor,
-			originalMapping.uiCallback,
+			nullptr,
 			descriptionEditor.getText());
+
+		isLearning = true;
+		blinkState = false;
+		blinkTimer = std::make_unique<BlinkTimer>(this);
+		blinkTimer->startTimerHz(2);
 	}
 }
+
 
 MidiMapping MidiMappingEditDialog::EditContent::getUpdatedMapping() const
 {
