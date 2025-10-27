@@ -66,6 +66,12 @@ DjIaVstEditor::~DjIaVstEditor()
 	audioProcessor.setGenerationListener(nullptr);
 	audioProcessor.getMidiLearnManager().registerUICallback("promptPresetSelector", nullptr);
 	setLookAndFeel(nullptr);
+	if (midiEditorWindow != nullptr)
+	{
+		midiEditorWindow->setVisible(false);
+		delete midiEditorWindow;
+		midiEditorWindow = nullptr;
+	}
 }
 
 void DjIaVstEditor::updateMidiIndicator(const juce::String& noteInfo)
@@ -814,6 +820,10 @@ void DjIaVstEditor::setupUI()
 		sampleBankPanel->setVisible(false);
 	}
 
+	openMidiEditorButton.setButtonText("MIDI Mappings");
+	openMidiEditorButton.setTooltip("Open MIDI mappings editor");
+	addAndMakeVisible(openMidiEditorButton);
+
 	refreshTrackComponents();
 	addEventListeners();
 }
@@ -1001,6 +1011,8 @@ void DjIaVstEditor::addEventListeners()
 			audioProcessor.loadSampleFromBank(sampleId, trackId);
 			setStatusWithTimeout("Sample loaded from bank: " + sampleId.substring(0, 8) + "...", 3000);
 		};
+
+	openMidiEditorButton.onClick = [this] { openMidiMappingEditor(); };
 }
 
 void DjIaVstEditor::notifyTracksPromptUpdate()
@@ -1260,13 +1272,14 @@ void DjIaVstEditor::resized()
 	}
 
 	auto buttonsRow = area.removeFromTop(40);
-	auto buttonWidth = buttonsRow.getWidth() / 9;
+	auto buttonWidth = buttonsRow.getWidth() / 10;
 	bypassSequencerButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	autoLoadButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	addTrackButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	generateButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	loadSampleButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	showSampleBankButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
+	openMidiEditorButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	auto trackNavArea = buttonsRow.removeFromRight(buttonWidth * 2);
 	prevTrackButton.setBounds(trackNavArea.removeFromLeft(buttonWidth).reduced(5));
 	nextTrackButton.setBounds(trackNavArea.reduced(5));
@@ -1290,6 +1303,28 @@ void DjIaVstEditor::resized()
 	}
 	resizing = false;
 }
+
+void DjIaVstEditor::openMidiMappingEditor()
+{
+	if (midiEditorWindow != nullptr)
+	{
+		midiEditorWindow->toFront(true);
+		return;
+	}
+
+	midiEditorWindow = new MidiMappingEditorWindow(&audioProcessor.getMidiLearnManager());
+
+	midiEditorWindow->onWindowClosed = [this]()
+		{
+			midiEditorWindow = nullptr;
+		};
+
+	midiEditorWindow->centreAroundComponent(this,
+		midiEditorWindow->getWidth(),
+		midiEditorWindow->getHeight());
+}
+
+
 
 void DjIaVstEditor::setAllGenerateButtonsEnabled(bool enabled)
 {
