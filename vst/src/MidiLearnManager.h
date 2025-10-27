@@ -42,6 +42,8 @@ public:
 	juce::String getMappingDescription(const juce::String& parameterName) const;
 	void removeMappingsForSlot(int slotNumber);
 	void moveMappingsFromSlotToSlot(int fromSlot, int toSlot);
+	void setProcessor(DjIaVstProcessor* p) { learningProcessor = p; }
+	DjIaVstProcessor* getProcessor() const { return learningProcessor; }
 
 private:
 	void timerCallback() override;

@@ -2,6 +2,8 @@
 #include <JuceHeader.h>
 #include "MidiMapping.h"
 #include "MidiLearnManager.h"
+#include "PluginProcessor.h"
+
 
 class MidiMappingRow : public juce::Component,
 	public juce::Button::Listener
@@ -23,7 +25,7 @@ public:
 
 private:
 	MidiMapping mapping;
-	MidiLearnManager* midiLearnManager;
+	MidiLearnManager* midiLearnManager = nullptr;
 
 	juce::Label parameterLabel;
 	juce::Label descriptionLabel;
@@ -73,15 +75,17 @@ private:
 		void importMappings();
 		void sortMappings();
 		void filterMappings();
+		void createNewMapping();
 
 	private:
-		MidiLearnManager* midiLearnManager;
+		MidiLearnManager* midiLearnManager = nullptr;
 
 		juce::Label titleLabel;
 		juce::TextButton clearAllButton;
 		juce::TextButton exportButton;
 		juce::TextButton importButton;
 		juce::TextButton refreshButton;
+		juce::TextButton addMappingButton;
 
 		juce::ComboBox sortComboBox;
 		juce::Label sortLabel;
@@ -93,7 +97,8 @@ private:
 		juce::OwnedArray<MidiMappingRow> mappingRows;
 
 		juce::String searchFilter;
-		enum SortMode {
+		enum SortMode
+		{
 			SORT_PARAMETER_NAME,
 			SORT_DESCRIPTION,
 			SORT_MIDI_NUMBER,
@@ -102,18 +107,16 @@ private:
 		SortMode currentSortMode = SORT_PARAMETER_NAME;
 
 		std::vector<MidiMapping> filteredMappings;
-
 		std::unique_ptr<juce::FileChooser> fileChooser;
 
 		void updateFilteredMappings();
 		void createMappingRows();
-		void showConfirmationDialog(const juce::String& message,
-			std::function<void()> onConfirm);
+		void showConfirmationDialog(const juce::String& message, std::function<void()> onConfirm);
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditorContent)
 	};
 
-	MidiLearnManager* midiLearnManager;
+	MidiLearnManager* midiLearnManager = nullptr;
 	std::unique_ptr<MidiMappingEditorContent> content;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditorWindow)
@@ -123,19 +126,19 @@ private:
 class MidiMappingEditDialog : public juce::DialogWindow
 {
 public:
-	MidiMappingEditDialog(MidiMapping& mapping, MidiLearnManager* manager);
+	MidiMappingEditDialog(MidiMapping& mapping, MidiLearnManager* manager, DjIaVstProcessor* processor);
 	~MidiMappingEditDialog() override;
 
 	void closeButtonPressed() override;
-
 	std::function<void(const MidiMapping&)> onMappingUpdated;
 
 private:
+	DjIaVstProcessor* processorRef = nullptr;
 	class EditContent : public juce::Component,
 		public juce::Button::Listener
 	{
 	public:
-		EditContent(MidiMapping& mapping, MidiLearnManager* manager);
+		EditContent(MidiMapping& mapping, MidiLearnManager* manager, DjIaVstProcessor* processor);
 		~EditContent() override;
 
 		void paint(juce::Graphics& g) override;
@@ -146,17 +149,17 @@ private:
 
 	private:
 		MidiMapping& originalMapping;
-		MidiLearnManager* midiLearnManager;
+		MidiLearnManager* midiLearnManager = nullptr;
+		DjIaVstProcessor* processorRef = nullptr;
 
 		juce::Label parameterLabel;
-		juce::Label parameterValueLabel;
+		juce::ComboBox parameterNameComboBox;
 
 		juce::Label descriptionLabel;
 		juce::TextEditor descriptionEditor;
 
 		juce::Label midiChannelLabel;
 		juce::Slider midiChannelSlider;
-
 		juce::Label midiNumberLabel;
 		juce::Slider midiNumberSlider;
 
@@ -168,12 +171,13 @@ private:
 		juce::TextButton learnButton;
 
 		void populateMidiTypeComboBox();
+		void populateParameterNameComboBox();
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EditContent)
 	};
 
 	MidiMapping& mapping;
-	MidiLearnManager* midiLearnManager;
+	MidiLearnManager* midiLearnManager = nullptr;
 	std::unique_ptr<EditContent> content;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMappingEditDialog)

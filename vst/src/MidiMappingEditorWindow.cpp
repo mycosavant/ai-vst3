@@ -1,4 +1,4 @@
-#include "MidiMappingEditorWindow.h"
+﻿#include "MidiMappingEditorWindow.h"
 #include "ColourPalette.h"
 
 
@@ -52,17 +52,16 @@ void MidiMappingRow::paint(juce::Graphics& g)
 void MidiMappingRow::resized()
 {
 	auto bounds = getLocalBounds().reduced(5);
-
 	auto buttonArea = bounds.removeFromRight(250);
 	deleteButton.setBounds(buttonArea.removeFromRight(80).reduced(2));
 	learnButton.setBounds(buttonArea.removeFromRight(80).reduced(2));
 	editButton.setBounds(buttonArea.removeFromRight(80).reduced(2));
-
 	auto labelArea = bounds;
 	parameterLabel.setBounds(labelArea.removeFromLeft(200));
 	midiInfoLabel.setBounds(labelArea.removeFromLeft(150));
 	descriptionLabel.setBounds(labelArea);
 }
+
 
 void MidiMappingRow::buttonClicked(juce::Button* button)
 {
@@ -152,6 +151,11 @@ MidiMappingEditorWindow::MidiMappingEditorContent::MidiMappingEditorContent(Midi
 	mappingsViewport.setScrollBarsShown(true, false);
 	addAndMakeVisible(mappingsViewport);
 
+	addMappingButton.setButtonText("Add Mapping");
+	addMappingButton.addListener(this);
+	addMappingButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkgreen);
+	addAndMakeVisible(addMappingButton);
+
 	refreshMappingsList();
 }
 
@@ -176,6 +180,10 @@ void MidiMappingEditorWindow::MidiMappingEditorContent::resized()
 	bounds.removeFromTop(10);
 
 	auto toolbarBounds = bounds.removeFromTop(35);
+
+
+	addMappingButton.setBounds(toolbarBounds.removeFromLeft(100).reduced(2));
+	toolbarBounds.removeFromLeft(5);
 
 	clearAllButton.setBounds(toolbarBounds.removeFromLeft(100).reduced(2));
 	toolbarBounds.removeFromLeft(5);
@@ -219,7 +227,34 @@ void MidiMappingEditorWindow::MidiMappingEditorContent::buttonClicked(juce::Butt
 	{
 		refreshMappingsList();
 	}
+	else if (button == &addMappingButton)
+	{
+		createNewMapping();
+	}
+
 }
+
+void MidiMappingEditorWindow::MidiMappingEditorContent::createNewMapping()
+{
+	MidiMapping newMapping;
+	newMapping.parameterName = "NewParameter";
+	newMapping.description = "New MIDI mapping";
+	newMapping.midiType = 1;
+	newMapping.midiNumber = 0;
+	newMapping.midiChannel = 0;
+	newMapping.processor = midiLearnManager->getProcessor();
+
+	auto* dialog = new MidiMappingEditDialog(newMapping, midiLearnManager, midiLearnManager->getProcessor());
+
+	dialog->onMappingUpdated = [this](const MidiMapping& updated)
+		{
+			midiLearnManager->addMapping(updated);
+			refreshMappingsList();
+		};
+
+	dialog->setVisible(true);
+}
+
 
 void MidiMappingEditorWindow::MidiMappingEditorContent::comboBoxChanged(juce::ComboBox* comboBox)
 {
@@ -329,7 +364,7 @@ void MidiMappingEditorWindow::MidiMappingEditorContent::editMapping(const MidiMa
 {
 	auto editableMapping = mapping;
 
-	auto* dialog = new MidiMappingEditDialog(editableMapping, midiLearnManager);
+	auto* dialog = new MidiMappingEditDialog(editableMapping, midiLearnManager, midiLearnManager->getProcessor());
 	dialog->onMappingUpdated = [this, oldName = mapping.parameterName](const MidiMapping& updated)
 		{
 			midiLearnManager->removeMapping(oldName);
@@ -497,15 +532,16 @@ void MidiMappingEditorWindow::timerCallback()
 	}
 }
 
-MidiMappingEditDialog::EditContent::EditContent(MidiMapping& mapping, MidiLearnManager* manager)
-	: originalMapping(mapping), midiLearnManager(manager)
+MidiMappingEditDialog::EditContent::EditContent(MidiMapping& mapping, MidiLearnManager* manager, DjIaVstProcessor* processor)
+	: originalMapping(mapping), midiLearnManager(manager), processorRef(processor)
 {
 	parameterLabel.setText("Parameter:", juce::dontSendNotification);
 	addAndMakeVisible(parameterLabel);
 
-	parameterValueLabel.setText(mapping.parameterName, juce::dontSendNotification);
-	parameterValueLabel.setColour(juce::Label::backgroundColourId, juce::Colours::darkgrey);
-	addAndMakeVisible(parameterValueLabel);
+	populateParameterNameComboBox();
+	parameterNameComboBox.setEditableText(true);
+	parameterNameComboBox.setText(originalMapping.parameterName, juce::dontSendNotification);
+	addAndMakeVisible(parameterNameComboBox);
 
 	descriptionLabel.setText("Description:", juce::dontSendNotification);
 	addAndMakeVisible(descriptionLabel);
@@ -553,6 +589,61 @@ MidiMappingEditDialog::EditContent::EditContent(MidiMapping& mapping, MidiLearnM
 	setSize(400, 350);
 }
 
+void MidiMappingEditDialog::EditContent::populateParameterNameComboBox()
+{
+	parameterNameComboBox.clear();
+
+	auto* processor = processorRef;
+	if (processor == nullptr)
+	{
+		DBG("populateParameterNameComboBox: processor is null!");
+		return;
+	}
+
+	auto& apvts = processor->getParameters();
+	const auto& params = apvts.processor.getParameters();
+
+	DBG("Listing parameters from AudioProcessorValueTreeState...");
+
+	for (auto* param : params)
+	{
+		if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*>(param))
+		{
+			juce::String id = ranged->paramID;
+			juce::String name = ranged->getName(64);
+
+			bool alreadyAdded = false;
+			for (int i = 0; i < parameterNameComboBox.getNumItems(); ++i)
+			{
+				if (parameterNameComboBox.getItemText(i).startsWith(id))
+				{
+					alreadyAdded = true;
+					break;
+				}
+			}
+
+			if (!alreadyAdded)
+			{
+				parameterNameComboBox.addItem(id + " (" + name + ")", parameterNameComboBox.getNumItems() + 1);
+				DBG("Added parameter: " + id);
+			}
+		}
+	}
+
+	DBG("Total parameters found: " + juce::String(parameterNameComboBox.getNumItems()));
+
+	for (int i = 0; i < parameterNameComboBox.getNumItems(); ++i)
+	{
+		if (parameterNameComboBox.getItemText(i).contains(originalMapping.parameterName))
+		{
+			parameterNameComboBox.setSelectedId(i + 1, juce::dontSendNotification);
+			break;
+		}
+	}
+}
+
+
+
 MidiMappingEditDialog::EditContent::~EditContent()
 {
 }
@@ -568,7 +659,7 @@ void MidiMappingEditDialog::EditContent::resized()
 
 	auto row = bounds.removeFromTop(30);
 	parameterLabel.setBounds(row.removeFromLeft(100));
-	parameterValueLabel.setBounds(row);
+	parameterNameComboBox.setBounds(row);
 
 	bounds.removeFromTop(10);
 
@@ -602,6 +693,7 @@ void MidiMappingEditDialog::EditContent::resized()
 	learnButton.setBounds(buttonArea.removeFromLeft(100).reduced(5));
 }
 
+
 void MidiMappingEditDialog::EditContent::buttonClicked(juce::Button* button)
 {
 	if (button == &applyButton)
@@ -634,19 +726,19 @@ void MidiMappingEditDialog::EditContent::buttonClicked(juce::Button* button)
 MidiMapping MidiMappingEditDialog::EditContent::getUpdatedMapping() const
 {
 	MidiMapping updated = originalMapping;
+	updated.parameterName = parameterNameComboBox.getText();
 	updated.description = descriptionEditor.getText();
 	updated.midiChannel = static_cast<int>(midiChannelSlider.getValue()) - 1;
 	updated.midiNumber = static_cast<int>(midiNumberSlider.getValue());
 
 	switch (midiTypeComboBox.getSelectedId())
 	{
-	case 1: updated.midiType = 0xB0; break;
-	case 2: updated.midiType = 0x90; break;
-	case 3: updated.midiType = 0xE0; break;
-	default: break;
+	case 1: updated.midiType = 1; break;
+	case 2: updated.midiType = 0; break;
+	case 3: updated.midiType = 2; break;
 	}
-
 	return updated;
+
 }
 
 void MidiMappingEditDialog::EditContent::populateMidiTypeComboBox()
@@ -665,17 +757,17 @@ void MidiMappingEditDialog::EditContent::populateMidiTypeComboBox()
 	}
 }
 
-MidiMappingEditDialog::MidiMappingEditDialog(MidiMapping& mapping, MidiLearnManager* manager)
+MidiMappingEditDialog::MidiMappingEditDialog(MidiMapping& mapping, MidiLearnManager* manager, DjIaVstProcessor* processor)
 	: DialogWindow("Edit MIDI Mapping", juce::Colour(0xff2a2a2a), true),
-	mapping(mapping), midiLearnManager(manager)
+	mapping(mapping), midiLearnManager(manager), processorRef(processor)
 {
-	content = std::make_unique<EditContent>(mapping, manager);
+	content = std::make_unique<EditContent>(mapping, manager, processorRef);
 	setContentOwned(content.release(), true);
-
 	setResizable(false, false);
 	centreAroundComponent(nullptr, getWidth(), getHeight());
 	setVisible(true);
 }
+
 
 MidiMappingEditDialog::~MidiMappingEditDialog()
 {
