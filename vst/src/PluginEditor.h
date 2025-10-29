@@ -48,6 +48,7 @@ public:
 	void updateSelectedTrack();
 	void onGenerateButtonClicked();
 	void toggleSampleBank();
+	void onSampleLoaded(const juce::String& trackId);
 
 private:
 	DjIaVstProcessor& audioProcessor;

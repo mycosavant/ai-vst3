@@ -43,6 +43,7 @@ constexpr auto COLOR_VU_GREEN = 0xffD4A5A0;
 constexpr auto COLOR_VU_ORANGE = 0xffC97571;
 constexpr auto COLOR_VU_RED = 0xffB8605C;
 constexpr auto COLOR_PLAY_ACTIVE = 0xff8B4545;
+constexpr auto COLOR_SAMPLE_PENDING = COLOR_PLAY_ARMED;
 
 const juce::Colour ColourPalette::track1(COLOR_TRACK1);
 const juce::Colour ColourPalette::track2(COLOR_TRACK2);
@@ -105,6 +106,8 @@ const juce::Colour ColourPalette::indigo(COLOR_INDIGO);
 const juce::Colour ColourPalette::teal(COLOR_TEAL);
 const juce::Colour ColourPalette::amber(COLOR_AMBER);
 const juce::Colour ColourPalette::textInactive(COLOR_INACTIVE);
+
+const juce::Colour ColourPalette::samplePending(COLOR_SAMPLE_PENDING);
 
 juce::Colour ColourPalette::getTrackColour(int trackIndex)
 {

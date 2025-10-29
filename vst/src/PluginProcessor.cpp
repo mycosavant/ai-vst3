@@ -1992,6 +1992,14 @@ void DjIaVstProcessor::performAtomicSwap(TrackData* track, const juce::String& t
 
 	juce::MessageManager::callAsync([this, trackId]()
 		{ updateWaveformDisplay(trackId); });
+
+	if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+	{
+		juce::MessageManager::callAsync([editor, trackId]()
+			{
+				editor->onSampleLoaded(trackId);
+			});
+	}
 }
 
 void DjIaVstProcessor::updateWaveformDisplay(const juce::String& trackId)

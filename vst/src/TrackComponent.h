@@ -79,6 +79,8 @@ public:
 	void onPageSelected(int pageIndex);
 	void performPageChange(int pageIndex);
 	void updatePagesDisplay();
+	void setSamplePending(bool pending);
+	bool isSamplePending() const { return hasSamplePending; }
 
 	bool isEditingLabel = false;
 	MidiLearnableComboBox promptPresetSelector;
@@ -129,6 +131,8 @@ private:
 	juce::TextButton togglePagesButton;
 	bool pagesMode = false;
 	static const int PAGE_BUTTON_SIZE = 14;
+
+	bool hasSamplePending = false;
 
 	bool pageBlinkState = false;
 

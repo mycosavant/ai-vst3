@@ -1386,25 +1386,53 @@ void DjIaVstEditor::stopGenerationUI(const juce::String& trackId, bool success, 
 		if (trackComp->getTrackId() == trackId)
 		{
 			trackComp->stopGeneratingAnimation();
+
 			if (success)
 			{
-				trackComp->updateFromTrackData();
-				trackComp->repaint();
+				trackComp->setSamplePending(true);
+
+				if (audioProcessor.getAutoLoadEnabled())
+				{
+					statusLabel.setText("Sample ready - Loading automatically...", juce::dontSendNotification);
+				}
+				else
+				{
+					statusLabel.setText("Sample ready - Click 'Load Sample' to use it", juce::dontSendNotification);
+				}
 			}
+
+			trackComp->repaint();
 			break;
 		}
 	}
+
 	if (mixerPanel)
 	{
 		mixerPanel->stopGeneratingAnimationForTrack(trackId);
 	}
+
 	isGenerating.store(false);
 	wasGenerating.store(false);
 	stopGenerationButtonAnimation();
 	stopTimer();
+
 	if (!success && !errorMessage.isEmpty())
 	{
 		statusLabel.setText("Error: " + errorMessage, juce::dontSendNotification);
+	}
+}
+
+void DjIaVstEditor::onSampleLoaded(const juce::String& trackId)
+{
+	for (auto& trackComp : trackComponents)
+	{
+		if (trackComp->getTrackId() == trackId)
+		{
+			trackComp->setSamplePending(false);
+			trackComp->updateFromTrackData();
+			trackComp->repaint();
+			break;
+		}
 	}
 }
 
@@ -1704,8 +1732,12 @@ void DjIaVstEditor::onLoadSampleClicked()
 {
 	if (audioProcessor.hasSampleWaiting())
 	{
+		juce::String trackId = audioProcessor.getSelectedTrackId();
+
 		audioProcessor.loadPendingSample();
 		statusLabel.setText("Sample loaded manually!", juce::dontSendNotification);
+
+		onSampleLoaded(trackId);
 		updateLoadButtonState();
 	}
 	else

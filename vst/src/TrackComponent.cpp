@@ -461,6 +461,10 @@ void TrackComponent::paint(juce::Graphics& g)
 	{
 		bgColour = ColourPalette::buttonSuccess.withAlpha(0.4f);
 	}
+	else if (hasSamplePending && !isGenerating)
+	{
+		bgColour = ColourPalette::samplePending.withAlpha(0.6f);
+	}
 	else if (isGenerating && blinkState)
 	{
 		bgColour = blinkState ? ColourPalette::buttonDangerLight.withAlpha(0.3f)
@@ -478,18 +482,39 @@ void TrackComponent::paint(juce::Graphics& g)
 	g.setColour(bgColour);
 	g.fillRoundedRectangle(bounds.toFloat(), 6.0f);
 
-	juce::Colour borderColour = isGenerating ? (blinkState ? ColourPalette::buttonDangerLight : ColourPalette::buttonDangerDark)
-		: (isSelected ? ColourPalette::trackSelected : ColourPalette::backgroundLight);
+	juce::Colour borderColour;
+	if (hasSamplePending && !isGenerating)
+	{
+		borderColour = ColourPalette::buttonWarning;
+	}
+	else if (isGenerating)
+	{
+		borderColour = blinkState ? ColourPalette::buttonDangerLight : ColourPalette::buttonDangerDark;
+	}
+	else if (isSelected)
+	{
+		borderColour = ColourPalette::trackSelected;
+	}
+	else
+	{
+		borderColour = ColourPalette::backgroundLight;
+	}
 
 	g.setColour(borderColour);
 	g.drawRoundedRectangle(bounds.toFloat().reduced(1), 6.0f,
-		isGenerating ? 3.0f : (isSelected ? 2.0f : 1.0f));
+		hasSamplePending && !isGenerating ? 2.0f : (isGenerating ? 3.0f : (isSelected ? 2.0f : 1.0f)));
 
 	if (isSelected)
 	{
 		g.setColour(borderColour.withAlpha(0.3f));
 		g.drawRoundedRectangle(bounds.toFloat().expanded(1), 8.0f, 1.0f);
 	}
+}
+
+void TrackComponent::setSamplePending(bool pending)
+{
+	hasSamplePending = pending;
+	repaint();
 }
 
 void TrackComponent::resized()
