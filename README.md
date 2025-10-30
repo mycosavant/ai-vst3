@@ -40,7 +40,8 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 
 👉 **Detailed setup guide:**  
 📘 [Getting Started](https://obsidian-neural.com/documentation.html?page=getting-started)  
-🎚️ [First Step - Using the Plugin in Your DAW](https://obsidian-neural.com/documentation.html?page=first-step)
+🎚️ [First Step - Using the Plugin in Your DAW](https://obsidian-neural.com/documentation.html?page=first-step)  
+🎛️ [Bank Management - Organize and Manage Your Generated Sounds](https://obsidian-neural.com/documentation.html?page=bank-management)
 
 **Pricing:**
 
