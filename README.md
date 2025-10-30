@@ -38,6 +38,10 @@ Type words → Get musical loops instantly. No stopping your creative flow.
    - Enter your API key
    - Click "Save & Continue"
 
+👉 **Detailed setup guide:**  
+📘 [Getting Started](https://obsidian-neural.com/documentation.html?page=getting-started)  
+🎚️ [First Step - Using the Plugin in Your DAW](https://obsidian-neural.com/documentation.html?page=first-step)
+
 **Pricing:**
 
 - **Free**: 10 credits (10 samples) - Try it out
