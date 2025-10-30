@@ -35,6 +35,11 @@ void TrackComponent::addEventListeners()
 void TrackComponent::setTrackData(TrackData* trackData)
 {
 	track = trackData;
+	if (track && !track->usePages.load())
+	{
+		track->migrateToPages();
+		pagesMode = true;
+	}
 	updateFromTrackData();
 	if (track && track->slotIndex != -1)
 	{
@@ -1303,6 +1308,12 @@ void TrackComponent::setupUI()
 			}
 		};
 
+	pagesMode = true;
+	togglePagesButton.setVisible(false);
+	for (int i = 0; i < 4; ++i)
+	{
+		pageButtons[i].setVisible(true);
+	}
 	setupPagesUI();
 }
 
