@@ -463,9 +463,19 @@ jobs:
 
             **⚠️ Choose the right version for your Mac:**
             - **Intel Macs**: Use `*-Intel.*` files
-            - **Apple Silicon (M1/M2/M3)**: Use `*-ARM64.*` files
+            - **Apple Silicon (M1/M2/M3/M4)**: Use `*-ARM64.*` files
 
-            **⚠️ Important:** Files are not signed, so macOS will block them initially.
+            **⚠️ IMPORTANT - VST3 Plugin Not Signed:**
+            The VST3 plugin is currently **not code-signed**. macOS will block it on first launch.
+
+            **Quick Fix (required for VST3 to load in your DAW):**
+            ```bash
+            xattr -cr ~/Library/Audio/Plug-Ins/VST3/OBSIDIAN-Neural.vst3
+            ```
+
+            Or: Right-click the plugin in Finder → **Open** → **Open** again
+
+            **Note:** I am actively working on proper code signing and notarization. This will be resolved in an upcoming release to provide a seamless installation experience.
 
             ### Option 1: DMG (Recommended)
             1. **Download** the correct DMG for your architecture
