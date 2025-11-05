@@ -15,6 +15,9 @@ DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
 	setSize(1300, 800);
 	setLookAndFeel(&customLookAndFeel);
 	setWantsKeyboardFocus(true);
+	setMouseClickGrabsKeyboardFocus(false);
+	setFocusContainerType(FocusContainerType::focusContainer);
+	setInterceptsMouseClicks(true, true);
 	grabKeyboardFocus();
 	tooltipWindow = std::make_unique<juce::TooltipWindow>(this, 700);
 	logoImage = juce::ImageCache::getFromMemory(BinaryData::logo_png,
@@ -72,6 +75,18 @@ DjIaVstEditor::~DjIaVstEditor()
 		delete midiEditorWindow;
 		midiEditorWindow = nullptr;
 	}
+}
+
+bool DjIaVstEditor::keyStateChanged(bool isKeyDown)
+{
+	if (isKeyDown && !hasKeyboardFocus(true))
+	{
+		if (!promptInput.hasKeyboardFocus(true))
+		{
+			grabKeyboardFocus();
+		}
+	}
+	return false;
 }
 
 void DjIaVstEditor::updateMidiIndicator(const juce::String& noteInfo)
@@ -574,6 +589,7 @@ void DjIaVstEditor::setupUI()
 
 	addAndMakeVisible(promptInput);
 	promptInput.setMultiLine(false);
+	promptInput.setReturnKeyStartsNewLine(false);
 	promptInput.setTextToShowWhenEmpty("Enter custom prompt or select preset...", ColourPalette::textSecondary);
 	promptInput.setText(audioProcessor.getGlobalPrompt(), juce::dontSendNotification);
 
@@ -921,6 +937,29 @@ void DjIaVstEditor::addEventListeners()
 						promptPresetSelector.setSelectedItemIndex(selectedIndex, juce::sendNotification);
 					} });
 		});
+
+	promptInput.onReturnKey = [this]()
+		{
+			juce::String currentPrompt = promptInput.getText().trim();
+			if (currentPrompt.isNotEmpty())
+			{
+				audioProcessor.addCustomPrompt(currentPrompt);
+				loadPromptPresets();
+				notifyTracksPromptUpdate();
+				int totalItems = promptPresetSelector.getNumItems();
+				for (int i = 0; i < totalItems; ++i)
+				{
+					if (promptPresetSelector.getItemText(i) == currentPrompt)
+					{
+						promptPresetSelector.setSelectedId(i + 1, juce::dontSendNotification);
+						break;
+					}
+				}
+
+				statusLabel.setText("Preset saved: " + currentPrompt, juce::dontSendNotification);
+			}
+			grabKeyboardFocus();
+		};
 
 	bypassSequencerButton.onClick = [this]()
 		{

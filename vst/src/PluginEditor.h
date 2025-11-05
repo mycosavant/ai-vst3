@@ -26,6 +26,7 @@ public:
 	void onGenerationComplete(const juce::String& trackId, const juce::String& message) override;
 	void refreshMixerChannels();
 	void initUI();
+	bool keyStateChanged(bool isKeyDown) override;
 
 	juce::Label statusLabel;
 

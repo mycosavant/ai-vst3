@@ -2968,7 +2968,7 @@ void DjIaVstProcessor::handlePageChange(const juce::String& parameterID)
 				}
 			}
 
-			if (!isPlaying)
+			if (!isPlaying || !track->isCurrentlyPlaying.load())
 			{
 				track->setCurrentPage(pageIndex);
 
