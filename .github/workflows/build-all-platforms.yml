@@ -40,7 +40,7 @@ jobs:
           path: vst/build/ObsidianNeuralVST_artefacts/Release/VST3/
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-latest # C'est déjà bon, c'est arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -62,6 +62,10 @@ jobs:
         working-directory: vst
         run: |
           cmake --build build --config Release
+
+      - name: Fix macOS permissions
+        run: |
+          chmod +x vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/MacOS/*
 
       - name: Upload macOS VST
         uses: actions/upload-artifact@v4
@@ -115,10 +119,10 @@ jobs:
           - os: ubuntu-latest
             name: linux
 
-          - os: macos-13
+          - os: macos-15-intel # Nouveau runner Intel
             name: macos-intel
 
-          - os: macos-latest
+          - os: macos-latest # Apple Silicon (arm64)
             name: macos-arm64
 
     steps:
