@@ -210,14 +210,18 @@ void SampleBankItem::drawCategoryBadges(juce::Graphics& g)
 		juce::Colour badgeColor = getCategoryColor(category);
 
 		g.setColour(badgeColor);
-		g.fillRoundedRectangle(static_cast<float>(currentX), static_cast<float>(startY), static_cast<float>(badgeWidth), static_cast<float>(badgeHeight), 9.0f);
+		g.fillRoundedRectangle(static_cast<float>(currentX), static_cast<float>(startY),
+			static_cast<float>(badgeWidth), static_cast<float>(badgeHeight), 9.0f);
 
-		g.setColour(ColourPalette::textPrimary);
+		g.setColour(ColourPalette::textPrimary.withAlpha(0.3f));
 		g.drawRoundedRectangle(static_cast<float>(currentX), static_cast<float>(startY),
 			static_cast<float>(badgeWidth), static_cast<float>(badgeHeight),
 			9.0f, 0.35f);
 
-		g.setColour(ColourPalette::textPrimary);
+		float brightness = badgeColor.getBrightness();
+		juce::Colour textColor = brightness > 0.5f ? ColourPalette::textPrimary : juce::Colours::white;
+
+		g.setColour(textColor);
 		g.drawText(category, currentX, startY, badgeWidth, badgeHeight, juce::Justification::centred);
 
 		currentX += badgeWidth + badgeMargin;

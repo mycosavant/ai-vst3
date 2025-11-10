@@ -6,6 +6,10 @@ SampleBank::SampleBank()
 	bankIndexFile = bankDirectory.getChildFile("sample_bank.json");
 	ensureBankDirectoryExists();
 	loadBankData();
+	if (!bankIndexFile.exists())
+	{
+		saveBankData();
+	}
 }
 
 juce::String SampleBank::addSample(const juce::String& prompt,
@@ -245,41 +249,70 @@ void SampleBank::ensureBankDirectoryExists()
 
 void SampleBank::saveBankData()
 {
-	juce::DynamicObject::Ptr bankData = new juce::DynamicObject();
-	juce::Array<juce::var> samplesArray;
-
-	for (const auto& entry : samples)
+	try
 	{
-		juce::DynamicObject::Ptr sampleData = new juce::DynamicObject();
-		sampleData->setProperty("id", entry->id);
-		sampleData->setProperty("filename", entry->filename);
-		sampleData->setProperty("originalPrompt", entry->originalPrompt);
-		sampleData->setProperty("filePath", entry->filePath);
-		sampleData->setProperty("creationTime", entry->creationTime.toMilliseconds());
-		sampleData->setProperty("duration", entry->duration);
-		sampleData->setProperty("bpm", entry->bpm);
-		sampleData->setProperty("key", entry->key);
-		sampleData->setProperty("sampleRate", entry->sampleRate);
-		sampleData->setProperty("numChannels", entry->numChannels);
-		sampleData->setProperty("numSamples", entry->numSamples);
-		juce::Array<juce::var> categoriesArray;
-		for (const auto& category : entry->categories)
-			categoriesArray.add(category);
-		sampleData->setProperty("categories", categoriesArray);
+		if (!bankDirectory.exists())
+		{
+			auto result = bankDirectory.createDirectory();
+			if (!result.wasOk())
+				return;
+		}
 
-		juce::Array<juce::var> projectsArray;
-		for (const auto& project : entry->usedInProjects)
-			projectsArray.add(project);
-		sampleData->setProperty("usedInProjects", projectsArray);
+		juce::DynamicObject::Ptr bankData = new juce::DynamicObject();
+		juce::Array<juce::var> samplesArray;
 
-		samplesArray.add(sampleData.get());
+		for (const auto& entry : samples)
+		{
+			if (!entry) continue;
+
+			juce::DynamicObject::Ptr sampleData = new juce::DynamicObject();
+
+			sampleData->setProperty("id", entry->id.isEmpty() ? juce::Uuid().toString() : entry->id);
+			sampleData->setProperty("filename", entry->filename);
+			sampleData->setProperty("originalPrompt", entry->originalPrompt);
+			sampleData->setProperty("filePath", entry->filePath);
+			sampleData->setProperty("creationTime", entry->creationTime.toMilliseconds());
+			sampleData->setProperty("duration", static_cast<double>(entry->duration));
+			sampleData->setProperty("bpm", static_cast<double>(entry->bpm));
+			sampleData->setProperty("key", entry->key);
+			sampleData->setProperty("sampleRate", static_cast<double>(entry->sampleRate));
+			sampleData->setProperty("numChannels", static_cast<int>(entry->numChannels));
+			sampleData->setProperty("numSamples", static_cast<int>(entry->numSamples));
+
+			juce::Array<juce::var> categoriesArray;
+			for (const auto& category : entry->categories)
+			{
+				if (!category.isEmpty())
+					categoriesArray.add(category);
+			}
+			sampleData->setProperty("categories", categoriesArray);
+
+			juce::Array<juce::var> projectsArray;
+			for (const auto& project : entry->usedInProjects)
+			{
+				if (!project.isEmpty())
+					projectsArray.add(project);
+			}
+			sampleData->setProperty("usedInProjects", projectsArray);
+
+			samplesArray.add(sampleData.get());
+		}
+
+		bankData->setProperty("samples", samplesArray);
+		bankData->setProperty("version", "1.0");
+
+		juce::String jsonString = juce::JSON::toString(juce::var(bankData.get()), true);
+
+		if (jsonString.isEmpty())
+			return;
+
+		bankIndexFile.replaceWithText(jsonString);
+
 	}
-
-	bankData->setProperty("samples", samplesArray);
-	bankData->setProperty("version", "1.0");
-
-	juce::String jsonString = juce::JSON::toString(juce::var(bankData.get()));
-	bankIndexFile.replaceWithText(jsonString);
+	catch (...)
+	{
+		return;
+	}
 }
 
 void SampleBank::loadBankData()
