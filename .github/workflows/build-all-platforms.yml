@@ -431,64 +431,169 @@ jobs:
           body: |
             ## 🎵 OBSIDIAN-Neural Release v${{ github.run_number }}
 
-            ### 📥 Quick Install
-              Download the installer for your platform:
-              - **Windows**: `OBSIDIAN-Neural-Installer.py` (requires Python 3.10+)
-              - **macOS Intel**: 
-                - `OBSIDIAN-Neural-Installer-macOS-Intel.dmg` (for Intel Macs)
-                - `OBSIDIAN-Neural-Installer-macOS-Intel.pkg` (system-wide install)
-              - **macOS Apple Silicon**: 
-                - `OBSIDIAN-Neural-Installer-macOS-ARM64.dmg` (for Apple Silicon Macs)
-                - `OBSIDIAN-Neural-Installer-macOS-ARM64.pkg` (system-wide install)
-              - **Linux**: `OBSIDIAN-Neural-Installer-Linux`
+            ## 📥 Installation Guide
 
-              ### 🎛️ VST3 Plugins (for DAWs)
-              - **Windows**: `OBSIDIAN-Neural-Windows-VST3.zip`
-              - **macOS**: `OBSIDIAN-Neural-macOS-VST3.zip`
-              - **Linux**: `OBSIDIAN-Neural-Linux-VST3.tar.gz`
+            ### 🎯 Recommended: Cloud API (All Platforms)
 
-            ---
+            **Easiest setup - No GPU, Python, or technical knowledge required**
 
-            ## 🪟 Windows Installation
+            #### Windows
+            1. **Download** `OBSIDIAN-Neural-Windows-VST3.zip`
+            2. **Extract** to `C:\Program Files\Common Files\VST3\`
+            3. **Get your API key** at [obsidian-neural.com](https://obsidian-neural.com)
+            4. **Load in your DAW** and enter API key in settings
 
-            **Requirements:** Python 3.10+ installed from [python.org](https://python.org)
+            #### macOS
+            1. **Download** `OBSIDIAN-Neural-macOS-VST3.zip` and extract it
 
-            1. **Download** `OBSIDIAN-Neural-Installer.py` from the assets below
-            2. **Run** `python OBSIDIAN-Neural-Installer.py` 
-            3. **Follow** the installation prompts
-
-            ---
-
-            ## 🍎 macOS Installation
-
-            **⚠️ Choose the right version for your Mac:**
-            - **Intel Macs**: Use `*-Intel.*` files
-            - **Apple Silicon (M1/M2/M3/M4)**: Use `*-ARM64.*` files
-
-            **⚠️ IMPORTANT - VST3 Plugin Not Signed:**
-            The VST3 plugin is currently **not code-signed**. macOS will block it on first launch.
-
-            **Quick Fix (required for VST3 to load in your DAW):**
+            2. **Install the VST3** (requires admin password):
             ```bash
-            xattr -cr ~/Library/Audio/Plug-Ins/VST3/OBSIDIAN-Neural.vst3
+            sudo cp -r ~/Downloads/OBSIDIAN-Neural.vst3 /Library/Audio/Plug-Ins/VST3/
+            sudo xattr -cr /Library/Audio/Plug-Ins/VST3/OBSIDIAN-Neural.vst3
+            sudo chmod +x /Library/Audio/Plug-Ins/VST3/OBSIDIAN-Neural.vst3/Contents/MacOS/OBSIDIAN-Neural
             ```
 
-            Or: Right-click the plugin in Finder → **Open** → **Open** again
+            3. **Get your API key** at [obsidian-neural.com](https://obsidian-neural.com)
+            4. **Load in your DAW** and enter API key in settings
 
-            **Note:** I am actively working on proper code signing and notarization. This will be resolved in an upcoming release to provide a seamless installation experience.
+            **⚠️ Note:** VST3 not code-signed yet - working on proper signing/notarization.
 
-            ### Option 1: DMG (Recommended)
-            1. **Download** the correct DMG for your architecture
-            2. **Double-click** the `.dmg` file to mount it
-            3. **Double-click** `OBSIDIAN-Neural-Installer` in the opened window
-            4. If blocked: **Right-click** → **Open** → **Open** again
+            #### Linux
+            1. **Download** `OBSIDIAN-Neural-Linux-VST3.tar.gz`
+            2. **Extract** to `~/.vst3/`:
+            ```bash
+            mkdir -p ~/.vst3
+            tar -xzf OBSIDIAN-Neural-Linux-VST3.tar.gz -C ~/.vst3/
+            ```
+            3. **Get your API key** at [obsidian-neural.com](https://obsidian-neural.com)
+            4. **Load in your DAW** and enter API key in settings
 
-            ### Option 2: PKG (System-wide)
-            1. **Download** the correct PKG for your architecture
-            2. **Double-click** the `.pkg` file
-            3. If blocked by Gatekeeper, run: `sudo spctl --master-disable`
-            4. **Install** the package, then re-enable: `sudo spctl --master-enable`
-            5. **Run** `obsidian-neural` from terminal
+            ---
+
+            ### 🔧 Advanced: Self-Hosted Server
+
+            **For unlimited generations, privacy, or offline use**
+
+            **Requirements:**
+            - NVIDIA GPU with CUDA support
+            - Python 3.10+
+            - ~10GB disk space for models
+
+            **Setup:**
+
+            1. **Install Python dependencies** (all platforms):
+            ```bash
+            pip install torch torchaudio transformers stable-audio-tools scipy numpy fastapi uvicorn pydantic
+            ```
+
+            2. **Get Stability AI model access:**
+                - Create account at [huggingface.co](https://huggingface.co)
+                - Accept license at [stable-audio-open-1.0](https://huggingface.co/stabilityai/stable-audio-open-1.0)
+
+            3. **Download the server script:**
+                - **Windows**: `OBSIDIAN-Neural-Installer.py`
+                - **macOS Intel**: `OBSIDIAN-Neural-Installer-macOS-Intel.dmg`
+                - **macOS ARM**: `OBSIDIAN-Neural-Installer-macOS-ARM64.dmg`
+                - **Linux**: `OBSIDIAN-Neural-Installer-Linux`
+
+            4. **Run the installer** to download models and setup the server:
+                - **Windows**: `python OBSIDIAN-Neural-Installer.py`
+                - **macOS**: Open the DMG and run `OBSIDIAN-Neural-Installer`
+                - **Linux**: `chmod +x OBSIDIAN-Neural-Installer-Linux && ./OBSIDIAN-Neural-Installer-Linux`
+
+            5. **Start the server:**
+                - The installer will set up everything and start the server
+                - Default URL: `http://localhost:8000`
+
+            6. **Configure VST3:**
+                - Open plugin in your DAW
+                - Click ⚙️ settings button
+                - Choose "Server/API" mode
+                - Enter: `http://localhost:8000`
+                - Leave API key empty
+                - Click "Save & Continue"
+
+            **Benefits:**
+            - ✅ Unlimited generations (no credit cost)
+            - ✅ Full privacy (everything runs locally)
+            - ✅ Variable duration (up to 47 seconds)
+            - ✅ Works offline (after initial setup)
+
+            **Note:** First generation will be slower as models download (~8GB).
+
+            ---
+
+            ### 🖥️ Python Tools Installation (Optional)
+
+            **For GUI installer and server management**
+
+            #### Windows
+            - **Requirements:** Python 3.10+ from [python.org](https://python.org)
+            - **Download:** `OBSIDIAN-Neural-Installer.py`
+            - **Run:** `python OBSIDIAN-Neural-Installer.py`
+
+            #### macOS
+            - **Intel Macs:** Use `*-Intel.dmg` or `*-Intel.pkg`
+            - **Apple Silicon:** Use `*-ARM64.dmg` or `*-ARM64.pkg`
+
+            **DMG Installation:**
+            1. Download and double-click the `.dmg`
+            2. Run `OBSIDIAN-Neural-Installer`
+            3. If blocked: Right-click → **Open** → **Open** again
+
+            **PKG Installation (system-wide):**
+            1. Download the `.pkg` file
+            2. If blocked by Gatekeeper: `sudo spctl --master-disable`
+            3. Install package
+            4. Re-enable Gatekeeper: `sudo spctl --master-enable`
+            5. Run `obsidian-neural` from terminal
+
+            #### Linux
+            - **Download:** `OBSIDIAN-Neural-Installer-Linux`
+            - **Run:**
+            ```bash
+            chmod +x OBSIDIAN-Neural-Installer-Linux
+            ./OBSIDIAN-Neural-Installer-Linux
+            ```
+
+            ---
+
+            ### 🎛️ Configuration Options
+
+            **Cloud API Mode** (Default, Recommended)
+            - Server URL: `https://ai-harmony.duckdns.org/obsidian`
+            - API Key: Get from [obsidian-neural.com](https://obsidian-neural.com)
+            - Perfect for: Beginners, live performance, no setup hassle
+
+            **Self-Hosted Mode** (Advanced)
+            - Server URL: `http://localhost:8000`
+            - API Key: Leave empty
+            - Perfect for: Privacy, unlimited use, offline work
+
+            **Local Model Mode** (Experimental, Windows only)
+            - No server needed
+            - Download models from [innermost47/stable-audio-open-small-tflite](https://huggingface.co/innermost47/stable-audio-open-small-tflite)
+            - Copy to `%APPDATA%\OBSIDIAN-Neural\stable-audio\`
+            - ⚠️ Limited: Fixed 10s duration, high RAM usage
+
+            ---
+
+            ### 📖 Full Documentation
+
+            - **Getting Started:** [obsidian-neural.com/documentation](https://obsidian-neural.com/documentation.html?page=getting-started)
+            - **DAW Setup Guide:** [First Steps](https://obsidian-neural.com/documentation.html?page=first-step)
+            - **Build from Source:** [INSTALLATION.md](https://github.com/innermost47/ai-dj/blob/main/INSTALLATION.md)
+            - **Troubleshooting:** [GitHub Issues](https://github.com/innermost47/ai-dj/issues)
+
+            ---
+
+            ### 💡 Quick Comparison
+
+            | Setup Type | Difficulty | Cost | Privacy | Best For |
+            |------------|-----------|------|---------|----------|
+            | **Cloud API** | ⭐ Easy | €14.99+/month | Cloud | Everyone |
+            | **Self-Hosted** | ⭐⭐⭐ Hard | Free (GPU needed) | Local | Advanced users |
+            | **Local Model** | ⭐⭐ Medium | Free | Local | Testing only |
 
           files: |
             OBSIDIAN-Neural-Installer-macOS-Intel.dmg
