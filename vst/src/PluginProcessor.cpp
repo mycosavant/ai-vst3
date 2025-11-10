@@ -2360,40 +2360,111 @@ void DjIaVstProcessor::saveBufferToFile(const juce::AudioBuffer<float>& buffer,
 	if (sampleBank && outputFile.getFileName().endsWith(".wav") && !isLoadingFromBank.load())
 	{
 		juce::String filename = outputFile.getFileNameWithoutExtension();
-		juce::String trackId = filename.replace("_original", "");
 
-		if (trackId != currentBankLoadTrackId)
+		if (filename.contains("_original"))
 		{
-			TrackData* track = trackManager.getTrack(trackId);
-			if (track && (!track->generationPrompt.isEmpty() || !track->selectedPrompt.isEmpty()))
-			{
-				if (!filename.contains("_original"))
-				{
-					juce::String prompt = track->generationPrompt;
-					if (prompt.isEmpty())
-						prompt = track->selectedPrompt;
-					if (prompt.isEmpty())
-						prompt = "Generated sample";
-					if (!track->currentSampleId.isEmpty())
-					{
-						sampleBank->markSampleAsUnused(track->currentSampleId, projectId);
-						DBG("Marked previous sample as unused: " + track->currentSampleId);
-					}
-					juce::String sampleId = sampleBank->addSample(
-						prompt,
-						outputFile,
-						track->generationBpm > 0 ? track->generationBpm : track->originalBpm,
-						track->generationKey.isEmpty() ? "Unknown" : track->generationKey);
+			DBG("Skipping original file for bank: " + filename);
+			return;
+		}
 
-					if (!sampleId.isEmpty())
-					{
-						sampleBank->markSampleAsUsed(sampleId, projectId);
-						track->currentSampleId = sampleId;
-						DBG("Sample added to bank: " + sampleId + " for prompt: " + prompt);
-						track->generationPrompt = "";
-					}
-				}
+		juce::String trackId = filename;
+
+		for (char page = 'A'; page <= 'D'; ++page)
+		{
+			juce::String pageSuffix = "_" + juce::String::charToString(page);
+			if (trackId.endsWith(pageSuffix))
+			{
+				trackId = trackId.dropLastCharacters(2);
+				DBG("Removed new format page suffix: " + pageSuffix);
+				break;
 			}
+		}
+
+		for (int asciiCode = 65; asciiCode <= 68; ++asciiCode)
+		{
+			juce::String asciiSuffix = "_" + juce::String(asciiCode);
+			if (trackId.endsWith(asciiSuffix))
+			{
+				trackId = trackId.dropLastCharacters(asciiSuffix.length());
+				DBG("Removed legacy ASCII page suffix: " + asciiSuffix);
+				break;
+			}
+		}
+
+		DBG("Extracted trackId: " + trackId + " from filename: " + filename);
+
+		if (trackId == currentBankLoadTrackId)
+		{
+			DBG("Skipping bank save - loading from bank: " + trackId);
+			return;
+		}
+
+		TrackData* track = trackManager.getTrack(trackId);
+		if (!track)
+		{
+			DBG("Track not found for ID: " + trackId);
+			return;
+		}
+
+		juce::String prompt;
+		float bpm = 126.0f;
+		juce::String key = "Unknown";
+
+		if (track->usePages.load())
+		{
+			auto& currentPage = track->getCurrentPage();
+			prompt = currentPage.generationPrompt;
+			if (prompt.isEmpty())
+				prompt = currentPage.selectedPrompt;
+			bpm = currentPage.generationBpm > 0 ? currentPage.generationBpm : currentPage.originalBpm;
+			key = currentPage.generationKey.isEmpty() ? "Unknown" : currentPage.generationKey;
+
+			DBG("Using pages - Page " + juce::String((char)('A' + track->currentPageIndex)) +
+				" - Prompt: " + prompt + " - BPM: " + juce::String(bpm));
+		}
+		else
+		{
+			prompt = track->generationPrompt;
+			if (prompt.isEmpty())
+				prompt = track->selectedPrompt;
+			bpm = track->generationBpm > 0 ? track->generationBpm : track->originalBpm;
+			key = track->generationKey.isEmpty() ? "Unknown" : track->generationKey;
+
+			DBG("Not using pages - Prompt: " + prompt + " - BPM: " + juce::String(bpm));
+		}
+
+		if (prompt.isEmpty())
+		{
+			DBG("No prompt found for track: " + trackId);
+			return;
+		}
+
+		if (!track->currentSampleId.isEmpty())
+		{
+			sampleBank->markSampleAsUnused(track->currentSampleId, projectId);
+			DBG("Marked previous sample as unused: " + track->currentSampleId);
+		}
+
+		juce::String sampleId = sampleBank->addSample(prompt, outputFile, bpm, key);
+
+		if (!sampleId.isEmpty())
+		{
+			sampleBank->markSampleAsUsed(sampleId, projectId);
+			track->currentSampleId = sampleId;
+			DBG("✓ Sample added to bank: " + sampleId + " for prompt: " + prompt);
+
+			if (track->usePages.load())
+			{
+				track->getCurrentPage().generationPrompt = "";
+			}
+			else
+			{
+				track->generationPrompt = "";
+			}
+		}
+		else
+		{
+			DBG("✗ Failed to add sample to bank");
 		}
 	}
 }
