@@ -43,7 +43,7 @@ jobs:
 
   build-macos-universal:
     name: Build macOS Universal (10.15+)
-    runs-on: macos-12
+    runs-on: macos-13
 
     steps:
       - uses: actions/checkout@v4
@@ -137,8 +137,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-12
-            name: "12-Monterey"
           - runner: macos-13
             name: "13-Ventura"
           - runner: macos-14
@@ -216,7 +214,7 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux
-          - os: macos-12
+          - os: macos-13
             name: macos-intel
           - os: macos-latest
             name: macos-arm64
