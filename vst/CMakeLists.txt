@@ -1,5 +1,9 @@
 ﻿cmake_minimum_required(VERSION 3.16)
 
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum macOS version")
+endif()
+
 if(UNIX AND NOT APPLE)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -133,6 +137,7 @@ elseif(APPLE)
     endif()
     set_target_properties(ObsidianNeuralVST PROPERTIES
         OSX_ARCHITECTURES "x86_64;arm64"
+        XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "10.15"
     )
 elseif(UNIX AND NOT APPLE)
     target_compile_options(ObsidianNeuralVST PRIVATE -fPIC)
