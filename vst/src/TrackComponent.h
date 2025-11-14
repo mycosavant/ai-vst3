@@ -83,6 +83,7 @@ public:
 	bool isSamplePending() const { return hasSamplePending; }
 
 	bool isEditingLabel = false;
+	bool sequencerVisible = false;
 	MidiLearnableComboBox promptPresetSelector;
 
 	juce::TextButton* getGenerateButton() { return &generateButton; }
@@ -98,9 +99,8 @@ private:
 	std::unique_ptr<SequencerComponent> sequencer;
 	DjIaVstProcessor& audioProcessor;
 	CustomInfoLabelLookAndFeel customLookAndFeel;
-	juce::Label trackNumberLabel;
+	juce::TextButton trackNumberButton;
 	bool isDragOver = false;
-	juce::TextButton selectButton;
 	juce::Label trackNameLabel;
 	juce::TextButton deleteButton;
 	MidiLearnableButton generateButton;
@@ -125,7 +125,6 @@ private:
 
 	bool isGenerating = false;
 	bool blinkState = false;
-	bool sequencerVisible = false;
 
 	MidiLearnableButton pageButtons[4];
 	juce::TextButton togglePagesButton;
@@ -166,6 +165,8 @@ private:
 	void onIntervalChanged();
 	void setSliderParameter(juce::String name, juce::Slider& slider);
 	void addEventListeners();
+	void updateRandomRetriggerButtonColor();
+	void updateRandomDurationButtonColor();
 
 	float calculateEffectiveBpm();
 

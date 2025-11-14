@@ -87,7 +87,7 @@ jobs:
   build-macos-test:
     name: Test Build - macOS ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    if: github.event_name == 'pull_request' # Uniquement sur les PRs
+    if: github.event_name == 'pull_request'
 
     strategy:
       fail-fast: false
