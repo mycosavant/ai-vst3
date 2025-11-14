@@ -76,19 +76,10 @@ void TrackComponent::updateUIFromParameter(const juce::String& paramName,
 	{
 		bool isEnabled = newValue > 0.5f;
 
-		if (isEnabled)
-		{
-			randomRetriggerButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonSuccess);
-		}
-		else
-		{
-			randomRetriggerButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundDark);
-		}
-		randomRetriggerButton.repaint();
-
 		if (track)
 		{
 			track->randomRetriggerEnabled = isEnabled;
+			updateRandomRetriggerButtonColor();
 		}
 	}
 	else if (paramName == slotPrefix + " Retrigger Interval")
@@ -384,20 +375,6 @@ void TrackComponent::updateFromTrackData()
 		}
 	}
 
-	if (!randomRetriggerButton.isMouseButtonDown())
-	{
-		bool isEnabled = track->randomRetriggerEnabled.load();
-		if (isEnabled)
-		{
-			randomRetriggerButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonSuccess);
-		}
-		else
-		{
-			randomRetriggerButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundDark);
-		}
-		randomRetriggerButton.repaint();
-	}
-
 	if (!intervalKnob.isMouseButtonDown())
 	{
 		int interval = track->randomRetriggerInterval.load();
@@ -405,6 +382,8 @@ void TrackComponent::updateFromTrackData()
 		intervalLabel.setText(getIntervalName(interval), juce::dontSendNotification);
 	}
 
+	updateRandomRetriggerButtonColor();
+	updateRandomDurationButtonColor();
 	updateTrackInfo();
 }
 
@@ -1269,9 +1248,9 @@ void TrackComponent::setupUI()
 
 	randomRetriggerButton.setButtonText(juce::String::fromUTF8("\xE2\x86\xBB"));
 	randomRetriggerButton.setTooltip("Beat Repeat - Loop current section while held");
-	randomRetriggerButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundDark);
-	randomRetriggerButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::backgroundDark);
-	randomRetriggerButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
+	randomRetriggerButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
+	randomRetriggerButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonPrimary);
+	randomRetriggerButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
 	randomRetriggerButton.setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
 
 	addAndMakeVisible(randomRetriggerButton);
@@ -1298,12 +1277,17 @@ void TrackComponent::setupUI()
 	addAndMakeVisible(randomDurationToggle);
 	randomDurationToggle.setButtonText("R");
 	randomDurationToggle.setTooltip("Auto-randomize beat repeat duration");
-	randomDurationToggle.setColour(juce::ToggleButton::textColourId, ColourPalette::textSecondary);
+	randomDurationToggle.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
+	randomDurationToggle.setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonPrimary);
+	randomDurationToggle.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
+	randomDurationToggle.setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
+	randomDurationToggle.setClickingTogglesState(true);
 	randomDurationToggle.onClick = [this]()
 		{
 			if (track)
 			{
 				track->randomRetriggerDurationEnabled = randomDurationToggle.getToggleState();
+				updateRandomDurationButtonColor();
 				statusCallback("Auto-random duration: " + juce::String(track->randomRetriggerDurationEnabled.load() ? "ON" : "OFF"));
 			}
 		};
@@ -1315,6 +1299,32 @@ void TrackComponent::setupUI()
 		pageButtons[i].setVisible(true);
 	}
 	setupPagesUI();
+}
+
+void TrackComponent::updateRandomRetriggerButtonColor()
+{
+	if (!track) return;
+
+	bool isEnabled = track->randomRetriggerEnabled.load();
+
+	randomRetriggerButton.setColour(juce::TextButton::buttonColourId,
+		isEnabled ? ColourPalette::buttonPrimary : ColourPalette::backgroundLight);
+
+	randomRetriggerButton.repaint();
+}
+
+void TrackComponent::updateRandomDurationButtonColor()
+{
+	if (!track) return;
+
+	bool isEnabled = randomDurationToggle.getToggleState();
+
+	randomDurationToggle.setColour(juce::TextButton::buttonColourId,
+		isEnabled ? ColourPalette::buttonPrimary : ColourPalette::backgroundLight);
+	randomDurationToggle.setColour(juce::TextButton::buttonOnColourId,
+		ColourPalette::buttonPrimary);
+
+	randomDurationToggle.repaint();
 }
 
 void TrackComponent::onRandomRetriggerToggled()
@@ -1334,6 +1344,7 @@ void TrackComponent::onRandomRetriggerToggled()
 		track->beatRepeatStopPending.store(true);
 	}
 
+	updateRandomRetriggerButtonColor();
 	statusCallback("Beat Repeat " + juce::String(isEnabled ? "ON" : "OFF"));
 	setButtonParameter("RandomRetrigger");
 }
@@ -1790,11 +1801,12 @@ void TrackComponent::setupMidiLearn()
 		{
 			learn("RandomRetrigger", &randomRetriggerButton);
 		};
+
 	randomRetriggerButton.onMidiRemove = [this]()
 		{
 			removeMidiMapping("RandomRetrigger");
+			updateRandomRetriggerButtonColor();
 		};
-
 
 	intervalKnob.onMidiLearn = [this]()
 		{

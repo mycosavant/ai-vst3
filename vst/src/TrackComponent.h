@@ -166,6 +166,8 @@ private:
 	void onIntervalChanged();
 	void setSliderParameter(juce::String name, juce::Slider& slider);
 	void addEventListeners();
+	void updateRandomRetriggerButtonColor();
+	void updateRandomDurationButtonColor();
 
 	float calculateEffectiveBpm();
 
