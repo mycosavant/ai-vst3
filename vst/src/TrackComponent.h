@@ -98,9 +98,8 @@ private:
 	std::unique_ptr<SequencerComponent> sequencer;
 	DjIaVstProcessor& audioProcessor;
 	CustomInfoLabelLookAndFeel customLookAndFeel;
-	juce::Label trackNumberLabel;
+	juce::TextButton trackNumberButton;
 	bool isDragOver = false;
-	juce::TextButton selectButton;
 	juce::Label trackNameLabel;
 	juce::TextButton deleteButton;
 	MidiLearnableButton generateButton;

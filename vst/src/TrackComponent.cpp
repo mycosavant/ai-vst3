@@ -346,11 +346,14 @@ void TrackComponent::updateFromTrackData()
 	}
 
 	trackNameLabel.setText(track->trackName, juce::dontSendNotification);
+
 	juce::String noteName = juce::MidiMessage::getMidiNoteName(track->midiNote, true, true, 3);
-	trackNumberLabel.setText(noteName, juce::dontSendNotification);
+	trackNumberButton.setButtonText(noteName);
+	trackNumberButton.setColour(juce::TextButton::buttonColourId,
+		ColourPalette::getTrackColour(track->slotIndex));
 
 	bpmOffsetSlider.setValue(track->bpmOffset, juce::dontSendNotification);
-	trackNumberLabel.setColour(juce::Label::backgroundColourId, ColourPalette::getTrackColour(track->slotIndex));
+
 	if (!track->selectedPrompt.isEmpty())
 	{
 		for (int i = 0; i < promptPresetSelector.getNumItems(); ++i)
@@ -505,11 +508,9 @@ void TrackComponent::resized()
 {
 	auto area = getLocalBounds().reduced(6);
 	auto trackNumberArea = area.removeFromLeft(40);
-	trackNumberLabel.setBounds(trackNumberArea);
+	trackNumberButton.setBounds(trackNumberArea);
 	area.removeFromLeft(5);
 	auto headerArea = area.removeFromTop(30);
-	selectButton.setBounds(headerArea.removeFromLeft(35));
-	headerArea.removeFromLeft(5);
 
 	if (pagesMode)
 	{
@@ -1104,15 +1105,6 @@ void TrackComponent::addListener(juce::String name)
 
 void TrackComponent::setupUI()
 {
-	addAndMakeVisible(selectButton);
-	selectButton.setButtonText(juce::String::fromUTF8("\xE2\x97\x89"));
-	selectButton.setTooltip("Select this track");
-	selectButton.onClick = [this]()
-		{
-			if (onSelectTrack)
-				onSelectTrack(trackId);
-		};
-
 	addAndMakeVisible(deleteButton);
 	deleteButton.setButtonText(juce::String::fromUTF8("\xE2\x9C\x95"));
 	deleteButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonDanger);
@@ -1224,10 +1216,14 @@ void TrackComponent::setupUI()
 		};
 	trackNameLabel.toFront(false);
 
-	addAndMakeVisible(trackNumberLabel);
-	trackNumberLabel.setJustificationType(juce::Justification::centred);
-	trackNumberLabel.setFont(juce::FontOptions(14.0f, juce::Font::bold));
-	trackNumberLabel.setColour(juce::Label::textColourId, ColourPalette::textPrimary);
+	addAndMakeVisible(trackNumberButton);
+	trackNumberButton.setButtonText("--");
+	trackNumberButton.setTooltip("Select this track");
+	trackNumberButton.onClick = [this]()
+		{
+			if (onSelectTrack)
+				onSelectTrack(trackId);
+		};
 
 	addAndMakeVisible(previewButton);
 	previewButton.setButtonText(juce::String::fromUTF8("\xE2\x96\xB6"));
