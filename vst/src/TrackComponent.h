@@ -83,6 +83,7 @@ public:
 	bool isSamplePending() const { return hasSamplePending; }
 
 	bool isEditingLabel = false;
+	bool sequencerVisible = false;
 	MidiLearnableComboBox promptPresetSelector;
 
 	juce::TextButton* getGenerateButton() { return &generateButton; }
@@ -124,7 +125,6 @@ private:
 
 	bool isGenerating = false;
 	bool blinkState = false;
-	bool sequencerVisible = false;
 
 	MidiLearnableButton pageButtons[4];
 	juce::TextButton togglePagesButton;

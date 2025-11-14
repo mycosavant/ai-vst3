@@ -1852,6 +1852,8 @@ void DjIaVstEditor::refreshTrackComponents()
 
 	setEnabled(false);
 	juce::String previousSelectedId = audioProcessor.getSelectedTrackId();
+	juce::String generatingId = audioProcessor.getGeneratingTrackId();
+	bool wasGenerating = audioProcessor.getIsGenerating();
 
 	trackComponents.clear();
 	tracksContainer.removeAllChildren();
@@ -1933,6 +1935,10 @@ void DjIaVstEditor::refreshTrackComponents()
 				if (trackId == audioProcessor.getSelectedTrackId())
 				{
 					trackComp->setSelected(true);
+				}
+				if (wasGenerating && trackId == generatingId)
+				{
+					trackComp->startGeneratingAnimation();
 				}
 				tracksContainer.addAndMakeVisible(trackComp.get());
 				trackComponents.push_back(std::move(trackComp));
