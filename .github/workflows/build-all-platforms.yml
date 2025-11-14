@@ -70,6 +70,7 @@ jobs:
         run: chmod +x vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/MacOS/*
 
       - name: Import Code Signing Certificate
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
@@ -83,6 +84,7 @@ jobs:
           rm certificate.p12
 
       - name: Sign VST3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -93,16 +95,19 @@ jobs:
             vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3
 
       - name: Verify signature
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           codesign --verify --verbose vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3
 
       - name: Create ZIP for notarization
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           cd vst/build/ObsidianNeuralVST_artefacts/Release/VST3
           ditto -c -k --keepParent OBSIDIAN-Neural.vst3 OBSIDIAN-Neural.zip
           mv OBSIDIAN-Neural.zip ../../../../../
 
       - name: Notarize VST3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -158,6 +163,7 @@ jobs:
           done
 
       - name: Staple VST3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           xcrun stapler staple vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3
 
@@ -170,8 +176,12 @@ jobs:
           echo "Deployment target:"
           otool -l vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/MacOS/OBSIDIAN-Neural | grep -A 5 LC_BUILD_VERSION
           echo ""
-          echo "Code signature:"
-          codesign -dv --verbose=4 vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3
+          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "Code signature:"
+            codesign -dv --verbose=4 vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3
+          else
+            echo "⚠️ Unsigned build (PR only)"
+          fi
 
       - name: Upload macOS VST
         uses: actions/upload-artifact@v4
@@ -268,7 +278,7 @@ jobs:
             
             echo ""
             echo "Code signature:"
-            codesign -dv --verbose=4 "$VST_PATH" 2>&1 || echo "Not signed (expected in test build)"
+            codesign -dv --verbose=4 "$VST_PATH" 2>&1 || echo "⚠️ Not signed (expected in PR build)"
             
             echo ""
             echo "✅ Universal build successfully loaded on macOS ${{ matrix.name }}"
@@ -405,8 +415,6 @@ jobs:
             ---
 
             ⭐ Star the repo if you find OBSIDIAN-Neural useful!
-
-            Questions? Email: b03caa1n5@mozmail.com
 
           files: |
             OBSIDIAN-Neural-Windows-VST3.zip
