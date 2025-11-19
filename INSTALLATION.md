@@ -21,7 +21,7 @@ Complete installation instructions for OBSIDIAN-Neural VST3 plugin.
 
 ---
 
-## Option 1: Local Models (Recommended)
+## Option 1: Local Models (Windows only)
 
 **Completely offline. No servers, Python, or GPU needed.**
 
@@ -35,9 +35,7 @@ Complete installation instructions for OBSIDIAN-Neural VST3 plugin.
 
 1. Download VST3 from [Releases](https://github.com/innermost47/ai-dj/releases)
 2. Extract and copy to VST3 folder:
-   - **Windows:** `C:\Program Files\Common Files\VST3\`
-   - **macOS:** `~/Library/Audio/Plug-Ins/VST3/`
-   - **Linux:** `~/.vst3/`
+   - `C:\Program Files\Common Files\VST3\`
 
 ### Step 3: Configure Plugin
 
@@ -50,7 +48,6 @@ Complete installation instructions for OBSIDIAN-Neural VST3 plugin.
 - Fixed 10-second generation
 - Some timing/quantization issues
 - High RAM usage during generation
-- Windows only (macOS/Linux coming soon)
 
 ---
 
