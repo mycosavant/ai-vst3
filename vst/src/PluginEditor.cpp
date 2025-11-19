@@ -34,18 +34,8 @@ DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
 		{
 			loadPromptPresets();
 			refreshTracks();
+			refreshWavevormsAndSequencers();
 			refreshCreditsAsync();
-			for (auto& trackComp : trackComponents)
-			{
-				if (trackComp->getTrack() && trackComp->getTrack()->showWaveform)
-				{
-					trackComp->toggleWaveformDisplay();
-				}
-				if (trackComp->getTrack() && trackComp->getTrack()->showSequencer)
-				{
-					trackComp->toggleSequencerDisplay();
-				}
-			}
 			if (audioProcessor.getIsGenerating())
 			{
 				generateButton.setEnabled(false);
@@ -74,6 +64,21 @@ DjIaVstEditor::~DjIaVstEditor()
 		midiEditorWindow->setVisible(false);
 		delete midiEditorWindow;
 		midiEditorWindow = nullptr;
+	}
+}
+
+void DjIaVstEditor::refreshWavevormsAndSequencers()
+{
+	for (auto& trackComp : trackComponents)
+	{
+		if (trackComp->getTrack() && trackComp->getTrack()->showWaveform)
+		{
+			trackComp->toggleWaveformDisplay();
+		}
+		if (trackComp->getTrack() && trackComp->getTrack()->showSequencer)
+		{
+			trackComp->toggleSequencerDisplay();
+		}
 	}
 }
 
@@ -177,23 +182,35 @@ void DjIaVstEditor::onGenerationComplete(const juce::String& trackId, const juce
 {
 	bool isError = message.startsWith("ERROR:");
 	stopGenerationUI(trackId, !isError, isError ? message : "");
-	statusLabel.setText(message, juce::dontSendNotification);
 
-	if (isError)
+	if (isShowing())
 	{
-		statusLabel.setColour(juce::Label::textColourId, ColourPalette::textDanger);
-		juce::Timer::callAfterDelay(5000, [this]()
-			{
-				statusLabel.setText("Ready", juce::dontSendNotification);
-				statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet); });
-	}
-	else
-	{
-		statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
-		juce::Timer::callAfterDelay(3000, [this]()
-			{
-				statusLabel.setText("Ready", juce::dontSendNotification);
-				statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet); });
+		statusLabel.setText(message, juce::dontSendNotification);
+
+		if (isError)
+		{
+			statusLabel.setColour(juce::Label::textColourId, ColourPalette::textDanger);
+			juce::Timer::callAfterDelay(5000, [this]()
+				{
+					if (isShowing())
+					{
+						statusLabel.setText("Ready", juce::dontSendNotification);
+						statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
+					}
+				});
+		}
+		else
+		{
+			statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
+			juce::Timer::callAfterDelay(3000, [this]()
+				{
+					if (isShowing())
+					{
+						statusLabel.setText("Ready", juce::dontSendNotification);
+						statusLabel.setColour(juce::Label::textColourId, ColourPalette::violet);
+					}
+				});
+		}
 	}
 	refreshCredits();
 }
@@ -1889,7 +1906,10 @@ void DjIaVstEditor::refreshTrackComponents()
 						{
 							audioProcessor.deleteTrack(id);
 							juce::Timer::callAfterDelay(10, [this]()
-								{ refreshTrackComponents(); });
+								{
+									refreshTrackComponents();
+									refreshWavevormsAndSequencers();
+								});
 						}
 					};
 
@@ -1951,7 +1971,6 @@ void DjIaVstEditor::refreshTrackComponents()
 	{
 		mixerPanel->refreshMixerChannels();
 	}
-
 	setEnabled(true);
 	juce::MessageManager::callAsync([this]()
 		{
@@ -2098,7 +2117,7 @@ void DjIaVstEditor::onAddTrack()
 		juce::String newTrackId = audioProcessor.createNewTrack();
 
 		refreshTrackComponents();
-
+		refreshWavevormsAndSequencers();
 		if (mixerPanel)
 		{
 			mixerPanel->trackAdded(newTrackId);
@@ -2107,9 +2126,6 @@ void DjIaVstEditor::onAddTrack()
 				mixerPanel->trackSelected(currentSelectedId);
 			}
 		}
-
-		toggleWaveFormButtonOnTrack();
-		toggleSEQButtonOnTrack();
 		setStatusWithTimeout("New track created");
 	}
 	catch (const std::exception& e)
@@ -2381,6 +2397,7 @@ void DjIaVstEditor::menuItemSelected(int menuItemID, int /*topLevelMenuIndex*/)
 						audioProcessor.deleteTrack(trackIds[i]);
 					}
 					refreshTrackComponents();
+					refreshWavevormsAndSequencers();
 					statusLabel.setText("All tracks deleted except one", juce::dontSendNotification);
 				}
 			});

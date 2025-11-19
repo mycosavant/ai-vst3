@@ -5,24 +5,27 @@
 struct TrackPage
 {
 	juce::AudioSampleBuffer audioBuffer;
-	juce::String audioFilePath;
-	int numSamples = 0;
-	double sampleRate = 48000.0;
-	float originalBpm = 126.0f;
 
+	juce::AudioBuffer<float> originalStagingBuffer;
+
+	juce::String audioFilePath;
 	juce::String prompt;
 	juce::String selectedPrompt;
 	juce::String generationPrompt;
-	float generationBpm = 126.0f;
 	juce::String generationKey;
+
+	int numSamples = 0;
 	int generationDuration = 6;
 
+	double sampleRate = 48000.0;
 	double loopStart = 0.0;
 	double loopEnd = 4.0;
+
+	float originalBpm = 126.0f;
+	float generationBpm = 126.0f;
+
 	std::atomic<bool> useOriginalFile{ false };
 	std::atomic<bool> hasOriginalVersion{ false };
-	juce::AudioBuffer<float> originalStagingBuffer;
-
 	std::atomic<bool> isLoaded{ false };
 	std::atomic<bool> isLoading{ false };
 
@@ -75,95 +78,93 @@ struct TrackPage
 
 struct TrackData
 {
+	TrackPage pages[4];
+
+	juce::AudioSampleBuffer stagingBuffer;
+	juce::AudioSampleBuffer audioBuffer;
+
+	juce::AudioBuffer<float> originalStagingBuffer;
+
 	juce::String trackId;
 	juce::String trackName;
+	juce::String audioFilePath;
+	juce::String prompt;
+	juce::String style;
+	juce::String generationKey;
+	juce::String generationPrompt;
+	juce::String selectedPrompt;
+	juce::String currentSampleId;
+
+	bool showWaveform = true;
+	bool showSequencer = true;
+	bool isVersionSwitch = false;
+	bool preservedLoopLocked = false;
+
 	int slotIndex = -1;
-
-	TrackPage pages[4];
 	int currentPageIndex = 0;
-	std::atomic<bool> usePages{ false };
+	int timeStretchMode = 4;
+	int midiNote = 60;
+	int numSamples = 0;
+	int generationDuration;
+	int customStepCounter = 0;
 
+	float fineOffset = 0.0f;
+	float stagingOriginalBpm = 126.0f;
+	float bpm = 126.0f;
+	float originalBpm = 126.0f;
+	float generationBpm;
+
+	double timeStretchRatio = 1.0;
+	double bpmOffset = 0.0;
+	double sampleRate = 48000.0;
+	double loopStart = 0.0;
+	double loopEnd = 4.0;
+	double preservedLoopStart = 0.0;
+	double preservedLoopEnd = 4.0;
+	double lastPpqPosition = -1.0;
+
+	std::atomic<bool> usePages{ true };
 	std::atomic<bool> isPlaying{ false };
 	std::atomic<bool> isArmed{ false };
 	std::atomic<bool> isArmedToStop{ false };
 	std::atomic<bool> isCurrentlyPlaying{ false };
-
-	float fineOffset = 0.0f;
-	std::atomic<double> cachedPlaybackRatio{ 1.0 };
-
-	juce::AudioSampleBuffer stagingBuffer;
 	std::atomic<bool> hasStagingData{ false };
 	std::atomic<bool> swapRequested{ false };
-	std::atomic<int> stagingNumSamples{ 0 };
-	std::atomic<double> stagingSampleRate{ 48000.0 };
-	float stagingOriginalBpm = 126.0f;
-
-	int timeStretchMode = 4;
-	double timeStretchRatio = 1.0;
-	double bpmOffset = 0.0;
-	int midiNote = 60;
-
 	std::atomic<bool> isEnabled{ true };
 	std::atomic<bool> isSolo{ false };
 	std::atomic<bool> isMuted{ false };
 	std::atomic<bool> loopPointsLocked{ false };
-	std::atomic<float> volume{ 0.8f };
-	std::atomic<float> pan{ 0.0f };
-
-	float bpm = 126.0f;
-	std::atomic<double> readPosition{ 0.0 };
-
-	bool showWaveform = false;
-	bool showSequencer = false;
-
-	juce::AudioSampleBuffer audioBuffer;
-	juce::String audioFilePath;
-	double sampleRate = 48000.0;
-	int numSamples = 0;
-	double loopStart = 0.0;
-	double loopEnd = 4.0;
-	float originalBpm = 126.0f;
-	juce::String prompt;
-	juce::String style;
-	juce::String generationPrompt;
-	float generationBpm;
-	juce::String generationKey;
-	int generationDuration;
-	juce::String selectedPrompt;
 	std::atomic<bool> useOriginalFile{ false };
 	std::atomic<bool> hasOriginalVersion{ false };
 	std::atomic<bool> nextHasOriginalVersion{ false };
-	juce::AudioBuffer<float> originalStagingBuffer;
-
-	bool isVersionSwitch = false;
-	double preservedLoopStart = 0.0;
-	double preservedLoopEnd = 4.0;
-	bool preservedLoopLocked = false;
-
-	std::atomic<bool> randomRetriggerEnabled{ false };
-	std::atomic<int> randomRetriggerInterval{ 3 };
-	std::atomic<double> lastRetriggerTime{ -1.0 };
-	std::atomic<double> nextRetriggerTime{ 0.0 };
 	std::atomic<bool> randomRetriggerActive{ false };
 	std::atomic<bool> beatRepeatActive{ false };
+	std::atomic<bool> randomRetriggerEnabled{ false };
+	std::atomic<bool> beatRepeatPending{ false };
+	std::atomic<bool> beatRepeatStopPending{ false };
+	std::atomic<bool> randomRetriggerDurationEnabled{ false };
+	std::atomic<bool> pageChangePending{ false };
+
+	std::atomic<double> cachedPlaybackRatio{ 1.0 };
+	std::atomic<double> stagingSampleRate{ 48000.0 };
+	std::atomic<double> readPosition{ 0.0 };
 	std::atomic<double> beatRepeatStartPosition{ 0.0 };
 	std::atomic<double> beatRepeatEndPosition{ 0.0 };
 	std::atomic<double> beatRepeatDuration{ 0.25 };
 	std::atomic<double> originalReadPosition{ 0.0 };
-	std::atomic<bool> beatRepeatPending{ false };
+	std::atomic<double> lastRetriggerTime{ -1.0 };
+	std::atomic<double> nextRetriggerTime{ 0.0 };
 	std::atomic<double> lastBeatTime{ -1.0 };
-	std::atomic<bool> beatRepeatStopPending{ false };
-	std::atomic<bool> randomRetriggerDurationEnabled{ false };
-	std::atomic<int64_t> pendingBeatNumber{ -1 };
-	std::atomic<int64_t> pendingStopBeatNumber{ -1 };
 
-	std::atomic<bool> pageChangePending{ false };
+	std::atomic<int> stagingNumSamples{ 0 };
+	std::atomic<int> randomRetriggerInterval{ 3 };
 	std::atomic<int> pendingPageIndex{ -1 };
 
-	int customStepCounter = 0;
-	double lastPpqPosition = -1.0;
+	std::atomic<float> volume{ 0.8f };
+	std::atomic<float> pan{ 0.0f };
 
-	juce::String currentSampleId;
+	std::atomic<int64_t> pendingBeatNumber{ -1 };
+	std::atomic<int64_t> pendingStopBeatNumber{ -1 };
 
 	std::function<void(bool)> onPlayStateChanged;
 	std::function<void(bool)> onArmedStateChanged;
@@ -189,6 +190,12 @@ struct TrackData
 		int beatsPerMeasure = 4;
 		double stepAccumulator = 0.0;
 		double samplesPerStep = 0.0;
+
+		SequencerData()
+		{
+			steps[0][0] = true;
+			velocities[0][0] = 0.8f;
+		}
 	} sequencerData{};
 
 	TrackData() : trackId(juce::Uuid().toString())
