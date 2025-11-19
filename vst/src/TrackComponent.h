@@ -51,6 +51,7 @@ public:
 	static const int BASE_HEIGHT = 60;
 	static const int WAVEFORM_HEIGHT = 100;
 	static const int SEQUENCER_HEIGHT = 100;
+	static const int PAGE_BUTTON_SIZE = 14;
 
 	juce::TextButton showWaveformButton;
 	juce::TextButton sequencerToggleButton;
@@ -84,6 +85,7 @@ public:
 
 	bool isEditingLabel = false;
 	bool sequencerVisible = false;
+
 	MidiLearnableComboBox promptPresetSelector;
 
 	juce::TextButton* getGenerateButton() { return &generateButton; }
@@ -93,47 +95,51 @@ public:
 
 private:
 	juce::String trackId;
-	TrackData* track;
-	bool isSelected = false;
-	std::unique_ptr<WaveformDisplay> waveformDisplay;
-	std::unique_ptr<SequencerComponent> sequencer;
-	DjIaVstProcessor& audioProcessor;
-	CustomInfoLabelLookAndFeel customLookAndFeel;
-	juce::TextButton trackNumberButton;
-	bool isDragOver = false;
-	juce::Label trackNameLabel;
-	juce::TextButton deleteButton;
-	MidiLearnableButton generateButton;
-	juce::Label infoLabel;
-	juce::TextButton previewButton;
-	juce::TextButton originalSyncButton;
 
 	juce::StringArray promptPresets;
 
-	juce::ComboBox timeStretchModeSelector;
+	TrackData* track;
 
+	std::unique_ptr<WaveformDisplay> waveformDisplay;
+	std::unique_ptr<SequencerComponent> sequencer;
+
+	DjIaVstProcessor& audioProcessor;
+
+	CustomInfoLabelLookAndFeel customLookAndFeel;
+
+	MidiLearnableButton pageButtons[4];
+	MidiLearnableButton generateButton;
 	MidiLearnableButton randomRetriggerButton;
 	MidiLearnableSlider intervalKnob;
-	juce::Label intervalLabel;
 
-	juce::ToggleButton randomDurationToggle;
+	juce::TextButton trackNumberButton;
+	juce::TextButton previewButton;
+	juce::TextButton originalSyncButton;
+	juce::TextButton deleteButton;
 
 	juce::Slider bpmOffsetSlider;
+
+	juce::Label trackNameLabel;
+	juce::Label intervalLabel;
+
+	juce::Label infoLabel;
 	juce::Label bpmOffsetLabel;
+
+	juce::ComboBox timeStretchModeSelector;
+
+	juce::ToggleButton randomDurationToggle;
 
 	std::atomic<bool> isDestroyed{ false };
 
 	bool isGenerating = false;
 	bool blinkState = false;
-
-	MidiLearnableButton pageButtons[4];
-	juce::TextButton togglePagesButton;
-	bool pagesMode = false;
-	static const int PAGE_BUTTON_SIZE = 14;
-
+	bool isSelected = false;
+	bool isDragOver = false;
 	bool hasSamplePending = false;
-
+	bool pagesMode = true;
 	bool pageBlinkState = false;
+
+	juce::TextButton togglePagesButton;
 
 	void setupPagesUI();
 	void onTogglePagesMode();

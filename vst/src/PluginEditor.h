@@ -27,6 +27,7 @@ public:
 	void refreshMixerChannels();
 	void initUI();
 	bool keyStateChanged(bool isKeyDown) override;
+	void refreshWavevormsAndSequencers();
 
 	juce::Label statusLabel;
 

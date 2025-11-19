@@ -1288,7 +1288,6 @@ void TrackComponent::setupUI()
 			}
 		};
 
-	pagesMode = true;
 	togglePagesButton.setVisible(false);
 	for (int i = 0; i < 4; ++i)
 	{

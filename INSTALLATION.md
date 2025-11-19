@@ -50,27 +50,11 @@ Complete installation instructions for OBSIDIAN-Neural VST3 plugin.
 - Fixed 10-second generation
 - Some timing/quantization issues
 - High RAM usage during generation
-- No STEMS separation yet
 - Windows only (macOS/Linux coming soon)
 
 ---
 
-## Option 2: Free API Access
-
-**No setup required - just download and use.**
-
-### Steps
-
-1. Contact b03caa1n5@mozmail.com for free API key
-2. Download VST3 from [Releases](https://github.com/innermost47/ai-dj/releases)
-3. Install VST3 (see locations above)
-4. Load plugin and enter provided API key
-
-**Limited slots available - first come, first served.**
-
----
-
-## Option 3: Build from Source
+## Option 2: Build from Source
 
 **Full control with local server - for developers and advanced users.**
 
@@ -80,51 +64,6 @@ Complete installation instructions for OBSIDIAN-Neural VST3 plugin.
 - **Git** for cloning repository
 - **Build tools** for VST3 compilation (optional)
 - **CUDA/ROCm** for GPU acceleration (optional)
-
-### Windows Installation
-
-#### Using Python Installer (Recommended)
-
-```bash
-# Download installer from releases
-python OBSIDIAN-Neural-Installer.py
-```
-
-#### Manual Build
-
-```bash
-git clone https://github.com/innermost47/ai-dj.git
-cd ai-dj
-python installer.py
-```
-
-### macOS Installation
-
-#### Using DMG (Recommended)
-
-1. Download `OBSIDIAN-Neural-Installer-macOS.dmg`
-2. Mount and run installer
-
-#### Using PKG
-
-1. Download `OBSIDIAN-Neural-Installer-macOS.pkg`
-2. Install system-wide
-
-#### Manual Build
-
-```bash
-chmod +x OBSIDIAN-Neural-Installer-macOS
-./OBSIDIAN-Neural-Installer-macOS
-```
-
-### Linux Installation
-
-#### Using Executable
-
-```bash
-chmod +x OBSIDIAN-Neural-Installer-Linux
-./OBSIDIAN-Neural-Installer-Linux
-```
 
 #### Manual Build
 
@@ -191,7 +130,6 @@ python server_interface.py
 
 #### Windows Specific
 
-- Use Python installer for simplest setup
 - Ensure Python is added to PATH
 - Visual Studio Build Tools may be required for some dependencies
 
@@ -262,11 +200,11 @@ python server_interface.py
 
 - **Tutorial:** [YouTube Video](https://youtu.be/-qdFo_PcKoY)
 - **Community:** [GitHub Discussions](https://github.com/innermost47/ai-dj/discussions)
+- **Documentation:** [obsidian-neural.com/documentation.html](https://obsidian-neural.com/documentation.html)
 
 ### Support
 
 - **Issues:** [GitHub Issues](https://github.com/innermost47/ai-dj/issues)
-- **Email:** b03caa1n5@mozmail.com
 - **Status:** Check server interface logs for detailed error messages
 
 ### Before Reporting Issues
