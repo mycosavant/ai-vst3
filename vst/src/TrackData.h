@@ -190,6 +190,12 @@ struct TrackData
 		int beatsPerMeasure = 4;
 		double stepAccumulator = 0.0;
 		double samplesPerStep = 0.0;
+
+		SequencerData()
+		{
+			steps[0][0] = true;
+			velocities[0][0] = 0.8f;
+		}
 	} sequencerData{};
 
 	TrackData() : trackId(juce::Uuid().toString())
