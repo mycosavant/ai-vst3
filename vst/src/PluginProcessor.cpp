@@ -1374,7 +1374,7 @@ void DjIaVstProcessor::performTrackDeletion(const juce::String& trackId)
 			if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
 			{
 				editor->refreshTrackComponents();
-				editor->toggleWaveFormButtonOnTrack();
+				editor->refreshWavevormsAndSequencers();
 
 				juce::Timer::callAfterDelay(50, [editor, trackToSelect]()
 					{
