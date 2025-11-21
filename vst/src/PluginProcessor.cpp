@@ -866,6 +866,183 @@ void DjIaVstProcessor::handleGenerate()
 	}
 }
 
+void DjIaVstProcessor::generateSampleWithImage(const juce::String& trackId, const juce::String& base64Image)
+{
+	if (isGenerating)
+	{
+		DBG("Already generating, ignoring image generation request");
+		return;
+	}
+
+	TrackData* track = trackManager.getTrack(trackId);
+	if (!track)
+	{
+		DBG("Track not found: " << trackId);
+		return;
+	}
+
+	DBG("=== GENERATE WITH IMAGE START ===");
+	DBG("Track: " << track->trackName);
+	DBG("Base64 image length: " << base64Image.length());
+
+	setIsGenerating(true);
+	setGeneratingTrackId(trackId);
+
+	juce::MessageManager::callAsync([this, trackId]()
+		{
+			if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+			{
+				editor->startGenerationUI(trackId);
+				editor->statusLabel.setText("Analyzing image and generating audio...", juce::dontSendNotification);
+			}
+		});
+
+	juce::Thread::launch([this, trackId, base64Image]()
+		{
+			try
+			{
+				TrackData* track = trackManager.getTrack(trackId);
+				if (!track)
+				{
+					throw std::runtime_error("Track not found");
+				}
+
+				DjIaClient::LoopRequest request;
+				request.generationDuration = static_cast<float>(getGlobalDuration());
+
+				if (track->usePages.load())
+				{
+					auto& currentPage = track->getCurrentPage();
+					request.bpm = currentPage.generationBpm > 0 ? currentPage.generationBpm : static_cast<float>(getHostBpm());
+					request.key = !currentPage.generationKey.isEmpty() ? currentPage.generationKey : getGlobalKey();
+					request.generationDuration = currentPage.generationDuration > 0 ? currentPage.generationDuration : static_cast<float>(getGlobalDuration());
+				}
+				else
+				{
+					request.bpm = track->generationBpm > 0 ? track->generationBpm : static_cast<float>(getHostBpm());
+					request.key = !track->generationKey.isEmpty() ? track->generationKey : getGlobalKey();
+					request.generationDuration = track->generationDuration > 0 ? track->generationDuration : static_cast<float>(getGlobalDuration());
+				}
+
+				if (request.bpm <= 0) request.bpm = 127.0f;
+				if (request.key.isEmpty()) request.key = "C Minor";
+				if (request.generationDuration <= 0) request.generationDuration = 6.0f;
+
+				request.prompt = "";
+				request.useImage = true;
+				request.imageBase64 = base64Image;
+
+				DBG("Generation params - BPM: " << request.bpm << ", Key: " << request.key << ", Duration: " << request.generationDuration);
+				DBG("Image mode: ENABLED");
+
+				generateLoopWithImage(request, trackId, 300000);
+			}
+			catch (const std::exception& e)
+			{
+				DBG("=== GENERATE WITH IMAGE FAILED ===");
+				DBG("Error: " << e.what());
+
+				setIsGenerating(false);
+				setGeneratingTrackId("");
+
+				juce::String errorMessage = juce::String(e.what());
+
+				juce::MessageManager::callAsync([this, trackId, errorMessage]()
+					{
+						if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+						{
+							editor->stopGenerationUI(trackId, false, errorMessage);
+						}
+					});
+			}
+		});
+}
+
+void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& request, const juce::String& trackId, int timeoutMS)
+{
+	auto response = apiClient.generateLoop(request, hostSampleRate, timeoutMS);
+
+	try
+	{
+		if (!response.errorMessage.isEmpty())
+		{
+			setIsGenerating(false);
+			setGeneratingTrackId("");
+			notifyGenerationComplete(trackId, "ERROR: " + response.errorMessage);
+			return;
+		}
+
+		if (response.audioData.getFullPathName().isEmpty() ||
+			!response.audioData.exists() ||
+			response.audioData.getSize() == 0)
+		{
+			setIsGenerating(false);
+			setGeneratingTrackId("");
+			notifyGenerationComplete(trackId, "Invalid response from API");
+			return;
+		}
+	}
+	catch (const std::exception& /*e*/)
+	{
+		setIsGenerating(false);
+		setGeneratingTrackId("");
+		notifyGenerationComplete(trackId, "Response validation failed");
+		return;
+	}
+
+	{
+		const juce::ScopedLock lock(apiLock);
+		pendingTrackId = trackId;
+		pendingAudioFile = response.audioData;
+		hasPendingAudioData = true;
+		waitingForMidiToLoad = true;
+		trackIdWaitingForLoad = trackId;
+		correctMidiNoteReceived = false;
+	}
+
+	if (TrackData* track = trackManager.getTrack(trackId))
+	{
+		juce::String generatedPrompt = "Generated from image";
+
+		if (track->usePages.load())
+		{
+			auto& currentPage = track->getCurrentPage();
+			currentPage.prompt = generatedPrompt;
+			currentPage.generationPrompt = generatedPrompt;
+			currentPage.selectedPrompt = generatedPrompt;
+			currentPage.originalBpm = response.bpm;
+			currentPage.generationBpm = response.bpm;
+			currentPage.generationKey = response.key;
+			track->syncLegacyProperties();
+		}
+		else
+		{
+			track->prompt = generatedPrompt;
+			track->generationPrompt = generatedPrompt;
+			track->selectedPrompt = generatedPrompt;
+			track->originalBpm = response.bpm;
+			track->generationBpm = response.bpm;
+			track->generationKey = response.key;
+		}
+	}
+
+	setIsGenerating(false);
+	setGeneratingTrackId("");
+
+	juce::String successMessage = "Audio generated from image! Press Play to listen.";
+
+	if (response.isUnlimitedKey)
+	{
+		successMessage += " - Unlimited API key";
+	}
+	else if (response.creditsRemaining >= 0)
+	{
+		successMessage += " - " + juce::String(response.creditsRemaining) + " credits remaining";
+	}
+
+	notifyGenerationComplete(trackId, successMessage);
+}
+
 void DjIaVstProcessor::generateLoopFromMidi(const juce::String& trackId)
 {
 	if (isGenerating)

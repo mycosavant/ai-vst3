@@ -1,4 +1,5 @@
 import time
+import re
 import os
 from os import walk
 import random
@@ -42,6 +43,17 @@ def create_error_response(
         status_code=status_code,
         detail={"error": {"code": error_code, "message": message}},
     )
+
+
+def clean_base64(base64_string: str) -> str:
+    cleaned = re.sub(r"\s+", "", base64_string)
+    if "," in cleaned:
+        cleaned = cleaned.split(",", 1)[1]
+    missing_padding = len(cleaned) % 4
+    if missing_padding:
+        cleaned += "=" * (4 - missing_padding)
+
+    return cleaned
 
 
 async def verify_api_key(api_key: str = Depends(api_key_header)):
@@ -94,15 +106,13 @@ async def generate_loop(
         temp_image_path = None
         if request.use_image and request.image_base64:
             print(f"🖼️  Image base64 received ({len(request.image_base64)} chars)")
-            image_data = request.image_base64
-            if "base64," in image_data:
-                image_data = image_data.split("base64,")[1]
-
-            image_bytes = base64.b64decode(image_data)
-
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+            cleaned_base64 = clean_base64(request.image_base64)
+            image_bytes = base64.b64decode(cleaned_base64)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
                 tmp.write(image_bytes)
                 temp_image_path = tmp.name
+
+            print(f"✅ Image saved to: {temp_image_path}")
 
             print(
                 f"🎨 Analyzing image with BPM={request.bpm}, Key={request.key or 'C Major'}"

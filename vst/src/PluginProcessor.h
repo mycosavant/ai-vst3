@@ -155,7 +155,8 @@ public:
 	std::function<void(double)> onHostBpmChanged = nullptr;
 	void setGlobalPrompt(const juce::String& prompt) { globalPrompt = prompt; }
 	juce::String getGlobalPrompt() const { return globalPrompt; }
-
+	void generateSampleWithImage(const juce::String& trackId, const juce::String& base64Image);
+	void generateLoopWithImage(const DjIaClient::LoopRequest& request, const juce::String& trackId, int timeoutMS);
 	void setGlobalBpm(float bpm) { globalBpm = bpm; }
 	void setCanLoad(bool load) { canLoad = load; }
 	float getGlobalBpm() const

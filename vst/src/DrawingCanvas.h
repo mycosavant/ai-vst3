@@ -231,8 +231,16 @@ public:
 	{
 		juce::MemoryOutputStream memStream;
 		juce::PNGImageFormat pngFormat;
+
 		if (pngFormat.writeImageToStream(canvas, memStream))
-			return memStream.getMemoryBlock().toBase64Encoding();
+		{
+			juce::String base64 = memStream.getMemoryBlock().toBase64Encoding();
+
+			base64 = base64.removeCharacters("\r\n\t ");
+
+			return base64;
+		}
+
 		return {};
 	}
 

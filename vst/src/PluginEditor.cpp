@@ -1913,6 +1913,14 @@ void DjIaVstEditor::refreshTrackComponents()
 						}
 					};
 
+				trackComp->onGenerateWithImage = [this](const juce::String& id, const juce::String& base64Image)
+					{
+						DBG("onGenerateWithImage callback triggered for track: " << id);
+						DBG("Base64 image length: " << base64Image.length());
+
+						audioProcessor.generateSampleWithImage(id, base64Image);
+					};
+
 				trackComp->onTrackRenamed = [this](const juce::String& id, const juce::String& newName)
 					{
 						if (mixerPanel)

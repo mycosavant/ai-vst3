@@ -11,12 +11,16 @@ public:
 		float generationDuration;
 		float bpm;
 		juce::String key;
+		bool useImage = false;
+		juce::String imageBase64 = "";
 
 		LoopRequest()
 			: prompt(""),
 			generationDuration(6.0f),
 			bpm(120.0f),
-			key("")
+			key(""),
+			useImage(false),
+			imageBase64("")
 		{
 		}
 	};
@@ -179,6 +183,11 @@ public:
 			jsonRequest.getDynamicObject()->setProperty("key", request.key);
 			jsonRequest.getDynamicObject()->setProperty("sample_rate", sampleRate);
 			jsonRequest.getDynamicObject()->setProperty("generation_duration", request.generationDuration);
+			if (request.useImage && !request.imageBase64.isEmpty())
+			{
+				jsonRequest.getDynamicObject()->setProperty("use_image", true);
+				jsonRequest.getDynamicObject()->setProperty("image_base64", request.imageBase64);
+			}
 
 			auto jsonString = juce::JSON::toString(jsonRequest);
 

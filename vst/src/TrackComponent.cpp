@@ -629,6 +629,8 @@ void TrackComponent::openDrawingCanvas()
 				onGenerateWithImage(trackId, base64Image);
 			}
 
+			drawingWindowPtr = nullptr;
+
 			juce::MessageManager::callAsync([window]()
 				{
 					delete window;
@@ -652,6 +654,7 @@ void TrackComponent::openDrawingCanvas()
 
 				DBG("Canvas saved on window close");
 			}
+			drawingWindowPtr = nullptr;
 		};
 
 	window->setVisible(true);
