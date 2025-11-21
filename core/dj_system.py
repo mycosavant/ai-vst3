@@ -2,7 +2,6 @@ import os
 from core.llm_interface import DJAILL
 from core.music_generator import MusicGenerator
 from core.layer_manager import LayerManager
-from core.stems_manager import StemsManager
 
 BEATS_PER_BAR = 4
 
@@ -25,9 +24,6 @@ class DJSystem:
             return
         self.model_path = args.model_path
         self.output_dir_base = "./output"
-
-        print("🚀 Initializing OBSIDIAN-Neural system...")
-        self.stems_manager = StemsManager()
 
         initial_llm_state = {
             "current_tempo": 126,

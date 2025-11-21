@@ -167,7 +167,7 @@ async def generate_loop(
                             f"{request.bpm} BPM {request.prompt} {request.key}"
                         )
                 audio, _ = handler.generate_simple(request, llm_decision)
-                processed_path, used_stems = handler.process_audio_pipeline(
+                processed_path = handler.process_audio_pipeline(
                     audio, request, request_id
                 )
         else:
@@ -182,7 +182,6 @@ async def generate_loop(
                 layer_id=f"simple_loop_{request_id}",
                 sample_rate=int(request.sample_rate),
             )
-            used_stems = None
             time.sleep(3)
         if not processed_path or not os.path.exists(processed_path):
             raise create_error_response(
@@ -208,7 +207,7 @@ async def generate_loop(
             "X-Duration": str(duration),
             "X-BPM": str(request.bpm),
             "X-Key": str(request.key or ""),
-            "X-Stems-Used": ",".join(used_stems) if used_stems else "",
+            "X-Stems-Used": "",
             "X-Credits-Remaining": remaining_credits,
         }
         if key_info.get("is_limited") and key_info.get("date_of_expiration"):
