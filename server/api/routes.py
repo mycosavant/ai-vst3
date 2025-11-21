@@ -1,16 +1,24 @@
 import time
+import re
 import os
 from os import walk
 import random
 import librosa
+import base64
+import tempfile
 import hashlib
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import APIKeyHeader
 from fastapi.responses import Response
 from .models import GenerateRequest
+from core.dj_system import DJSystem
 from config.config import API_KEYS, ENVIRONMENT, lock, IS_TEST, BYPASS_LLM
 from server.api.api_request_handler import APIRequestHandler
 from core.api_keys_manager import check_api_key_status, increment_api_key_usage
+from core.image_to_sonic import (
+    generate_img_description,
+    extract_musicgen_prompt,
+)
 
 router = APIRouter()
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
@@ -20,7 +28,7 @@ def get_user_id_from_api_key(api_key):
     return hashlib.sha256(api_key.encode()).hexdigest()[:16]
 
 
-def get_dj_system(request: Request):
+def get_dj_system(request: Request) -> DJSystem:
     if hasattr(request.app, "dj_system"):
         return request.app.dj_system
     if hasattr(request.app, "state") and hasattr(request.app.state, "dj_system"):
@@ -35,6 +43,17 @@ def create_error_response(
         status_code=status_code,
         detail={"error": {"code": error_code, "message": message}},
     )
+
+
+def clean_base64(base64_string: str) -> str:
+    cleaned = re.sub(r"\s+", "", base64_string)
+    if "," in cleaned:
+        cleaned = cleaned.split(",", 1)[1]
+    missing_padding = len(cleaned) % 4
+    if missing_padding:
+        cleaned += "=" * (4 - missing_padding)
+
+    return cleaned
 
 
 async def verify_api_key(api_key: str = Depends(api_key_header)):
@@ -79,11 +98,66 @@ async def verify_key(_: str = Depends(verify_api_key)):
 async def generate_loop(
     request: GenerateRequest,
     api_key: str = Depends(verify_api_key),
-    dj_system=Depends(get_dj_system),
+    dj_system: DJSystem = Depends(get_dj_system),
 ):
     processed_path = None
     try:
         request_id = int(time.time())
+        temp_image_path = None
+        if request.use_image and request.image_base64:
+            cleaned_base64 = clean_base64(request.image_base64)
+            print(f"✅ Cleaned base64 length: {len(cleaned_base64)} chars")
+            print(f"📊 Length % 4 = {len(cleaned_base64) % 4}")
+
+            try:
+                image_bytes = base64.b64decode(cleaned_base64, validate=True)
+            except Exception as e:
+                print(f"⚠️  Standard decode failed: {e}")
+                print(f"🔄 Retrying with validate=False...")
+                image_bytes = base64.b64decode(cleaned_base64, validate=False)
+
+            print(f"✅ Image decoded: {len(image_bytes)} bytes")
+
+            if not image_bytes.startswith(b"\x89PNG"):
+                raise ValueError("Decoded data is not a valid PNG image")
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+                tmp.write(image_bytes)
+                temp_image_path = tmp.name
+
+            print(f"✅ Image saved to: {temp_image_path}")
+
+            print(
+                f"🎨 Analyzing image with BPM={request.bpm}, Key={request.key or 'C Major'}"
+            )
+
+            sonic_data = generate_img_description(
+                img_path=temp_image_path,
+                bpm=request.bpm,
+                scale=request.key or "C Major",
+                temperature=request.image_temperature,
+            )
+
+            generated_prompt = extract_musicgen_prompt(
+                sonic_data, request.bpm, request.key or "C Major"
+            )
+
+            print(f"🎵 Generated sonic prompt: {generated_prompt}")
+            print(f"🎭 Mood: {sonic_data['parameters']['sonic_analysis']['mood']}")
+            print(
+                f"⚡ Energy: {sonic_data['parameters']['sonic_analysis']['energy_level']}/10"
+            )
+
+            request.prompt = generated_prompt
+
+        elif request.use_image and not request.image_base64:
+            raise create_error_response(
+                "INVALID_REQUEST", "use_image=true but no image_base64 provided"
+            )
+        if not request.prompt or len(request.prompt.strip()) < 3:
+            raise create_error_response(
+                "INVALID_PROMPT", "Prompt required (or provide image)"
+            )
         print(f"===== 🎵 QUERY #{request_id} =====")
         print(
             f"📝 '{request.prompt}' | {request.bpm} BPM | {request.key} | SAMPLE RATE {str(int(request.sample_rate))} | GENERATION DURATION {str(int(request.generation_duration))}"
@@ -102,13 +176,21 @@ async def generate_loop(
             )
         if not IS_TEST:
             async with lock:
-                if not BYPASS_LLM:
-                    handler.setup_llm_session(request, request_id, user_id)
-                    llm_decision = handler.get_llm_decision()
+                if request.use_image:
+                    llm_decision = request.prompt
+                    print(
+                        f"🖼️  Using image-generated prompt directly (bypassing LLM decision)"
+                    )
                 else:
-                    llm_decision = f"{request.bpm} BPM {request.prompt} {request.key}"
+                    if not BYPASS_LLM:
+                        handler.setup_llm_session(request, request_id, user_id)
+                        llm_decision = handler.get_llm_decision()
+                    else:
+                        llm_decision = (
+                            f"{request.bpm} BPM {request.prompt} {request.key}"
+                        )
                 audio, _ = handler.generate_simple(request, llm_decision)
-                processed_path, used_stems = handler.process_audio_pipeline(
+                processed_path = handler.process_audio_pipeline(
                     audio, request, request_id
                 )
         else:
@@ -123,7 +205,6 @@ async def generate_loop(
                 layer_id=f"simple_loop_{request_id}",
                 sample_rate=int(request.sample_rate),
             )
-            used_stems = None
             time.sleep(3)
         if not processed_path or not os.path.exists(processed_path):
             raise create_error_response(
@@ -149,7 +230,7 @@ async def generate_loop(
             "X-Duration": str(duration),
             "X-BPM": str(request.bpm),
             "X-Key": str(request.key or ""),
-            "X-Stems-Used": ",".join(used_stems) if used_stems else "",
+            "X-Stems-Used": "",
             "X-Credits-Remaining": remaining_credits,
         }
         if key_info.get("is_limited") and key_info.get("date_of_expiration"):
@@ -170,8 +251,17 @@ async def generate_loop(
             500,
         )
     finally:
+        if temp_image_path and os.path.exists(temp_image_path):
+            try:
+                os.remove(temp_image_path)
+            except Exception as e:
+                print(f"⚠️  Warning: Could not delete temp image: {e}")
+
         if processed_path and os.path.exists(processed_path):
-            os.remove(processed_path)
+            try:
+                os.remove(processed_path)
+            except Exception as e:
+                print(f"⚠️  Warning: Could not delete processed audio: {e}")
 
 
 @router.get("/auth/credits/check/vst")

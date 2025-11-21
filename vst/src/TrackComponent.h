@@ -3,6 +3,7 @@
 #include "TrackManager.h"
 #include "MidiLearnableComponents.h"
 #include "ColourPalette.h"
+#include "DrawingCanvas.h"
 
 class WaveformDisplay;
 class SequencerComponent;
@@ -41,6 +42,7 @@ public:
 	std::function<void(const juce::String&, const juce::String&)> onTrackRenamed;
 	std::function<void(const juce::String&, const juce::String&)> onTrackPromptChanged;
 	std::function<void(const juce::String&)> onStatusMessage;
+	std::function<void(const juce::String& trackId, const juce::String& base64Image)> onGenerateWithImage;
 
 	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
 	void itemDragEnter(const SourceDetails& dragSourceDetails) override;
@@ -88,13 +90,53 @@ public:
 
 	MidiLearnableComboBox promptPresetSelector;
 
+	juce::Component::SafePointer<juce::DocumentWindow> drawingWindowPtr;
+
+	juce::String trackId;
+
 	juce::TextButton* getGenerateButton() { return &generateButton; }
 	juce::Slider* getBpmOffsetSlider() { return &bpmOffsetSlider; }
 
 	SequencerComponent* getSequencer() const { return sequencer.get(); }
 
+	void setCanvasGenerating(bool generating)
+	{
+		canvasIsGenerating = generating;
+		if (drawingWindowPtr != nullptr)
+		{
+			if (auto* window = drawingWindowPtr.getComponent())
+			{
+				if (auto* canvas = dynamic_cast<DrawingCanvas*>(window->getContentComponent()))
+				{
+					canvas->setGenerating(generating);
+				}
+			}
+		}
+	}
+
 private:
-	juce::String trackId;
+	class DrawingWindow : public juce::DocumentWindow
+	{
+	public:
+		DrawingWindow(const juce::String& name, DrawingCanvas* canvas)
+			: juce::DocumentWindow(name, juce::Colour(0xff2a2a2a),
+				juce::DocumentWindow::closeButton)
+		{
+			setContentOwned(canvas, true);
+			centreWithSize(620, 770);
+			setResizable(false, false);
+			setUsingNativeTitleBar(true);
+		}
+
+		void closeButtonPressed() override
+		{
+			if (onBeforeClose)
+				onBeforeClose();
+			delete this;
+		}
+
+		std::function<void()> onBeforeClose;
+	};
 
 	juce::StringArray promptPresets;
 
@@ -102,6 +144,7 @@ private:
 
 	std::unique_ptr<WaveformDisplay> waveformDisplay;
 	std::unique_ptr<SequencerComponent> sequencer;
+	std::unique_ptr<DrawingCanvas> drawingCanvas;
 
 	DjIaVstProcessor& audioProcessor;
 
@@ -116,6 +159,7 @@ private:
 	juce::TextButton previewButton;
 	juce::TextButton originalSyncButton;
 	juce::TextButton deleteButton;
+	juce::TextButton drawButton;
 
 	juce::Slider bpmOffsetSlider;
 
@@ -138,6 +182,7 @@ private:
 	bool hasSamplePending = false;
 	bool pagesMode = true;
 	bool pageBlinkState = false;
+	bool canvasIsGenerating = false;
 
 	juce::TextButton togglePagesButton;
 
@@ -173,6 +218,7 @@ private:
 	void addEventListeners();
 	void updateRandomRetriggerButtonColor();
 	void updateRandomDurationButtonColor();
+	void openDrawingCanvas();
 
 	float calculateEffectiveBpm();
 

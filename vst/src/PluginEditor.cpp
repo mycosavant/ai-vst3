@@ -1381,12 +1381,12 @@ void DjIaVstEditor::openMidiMappingEditor()
 }
 
 
-
 void DjIaVstEditor::setAllGenerateButtonsEnabled(bool enabled)
 {
 	for (auto& trackComp : trackComponents)
 	{
 		trackComp->setGenerateButtonEnabled(enabled);
+		trackComp->setCanvasGenerating(!enabled);
 	}
 }
 
@@ -1913,6 +1913,12 @@ void DjIaVstEditor::refreshTrackComponents()
 						}
 					};
 
+				trackComp->onGenerateWithImage = [this](const juce::String& id, const juce::String& base64Image)
+					{
+						setAllGenerateButtonsEnabled(false);
+						audioProcessor.generateSampleWithImage(id, base64Image);
+					};
+
 				trackComp->onTrackRenamed = [this](const juce::String& id, const juce::String& newName)
 					{
 						if (mixerPanel)
@@ -1977,6 +1983,11 @@ void DjIaVstEditor::refreshTrackComponents()
 			resized();
 			repaint(); });
 	tracksContainer.repaint();
+}
+
+void DjIaVstEditor::reEnableCanvasForTrack()
+{
+	setAllGenerateButtonsEnabled(true);
 }
 
 void DjIaVstEditor::generateFromTrackComponent(const juce::String& trackId)
@@ -2118,6 +2129,20 @@ void DjIaVstEditor::onAddTrack()
 
 		refreshTrackComponents();
 		refreshWavevormsAndSequencers();
+
+		if (audioProcessor.getIsGenerating())
+		{
+			for (auto& trackComp : trackComponents)
+			{
+				if (trackComp->trackId == newTrackId)
+				{
+					trackComp->setGenerateButtonEnabled(false);
+					trackComp->setCanvasGenerating(true);
+					break;
+				}
+			}
+		}
+
 		if (mixerPanel)
 		{
 			mixerPanel->trackAdded(newTrackId);

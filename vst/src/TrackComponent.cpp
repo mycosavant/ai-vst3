@@ -533,6 +533,8 @@ void TrackComponent::resized()
 	headerArea.removeFromRight(5);
 	generateButton.setBounds(headerArea.removeFromRight(35));
 	headerArea.removeFromRight(5);
+	drawButton.setBounds(headerArea.removeFromRight(35));
+	headerArea.removeFromRight(5);
 	originalSyncButton.setBounds(headerArea.removeFromRight(35));
 	headerArea.removeFromRight(5);
 	previewButton.setBounds(headerArea.removeFromRight(35));
@@ -578,6 +580,93 @@ void TrackComponent::resized()
 	{
 		sequencer->setVisible(false);
 	}
+}
+
+void TrackComponent::openDrawingCanvas()
+{
+	if (drawingWindowPtr != nullptr)
+	{
+		drawingWindowPtr->toFront(true);
+		return;
+	}
+
+	auto* canvas = new DrawingCanvas();
+
+	auto* window = new DrawingWindow("Draw Image - " + trackNameLabel.getText(), canvas);
+	drawingWindowPtr = window;
+	window->setVisible(true);
+
+	if (track && track->usePages.load())
+	{
+		const auto& currentPage = track->getCurrentPage();
+		if (!currentPage.canvasState.isEmpty())
+		{
+			auto state = DrawingCanvas::CanvasState::fromXml(currentPage.canvasState);
+			canvas->setState(state);
+		}
+		else if (!currentPage.canvasData.isEmpty())
+		{
+			canvas->loadFromBase64(currentPage.canvasData);
+		}
+	}
+	else if (track && !track->canvasState.isEmpty())
+	{
+		auto state = DrawingCanvas::CanvasState::fromXml(track->canvasState);
+		canvas->setState(state);
+	}
+	else if (track && !track->canvasData.isEmpty())
+	{
+		canvas->loadFromBase64(track->canvasData);
+	}
+
+	canvas->setGenerating(canvasIsGenerating);
+
+	canvas->onGenerate = [this, canvas](const juce::String& base64Image)
+		{
+			if (track)
+			{
+				auto canvasState = canvas->getState();
+				juce::String stateXml = canvasState.toXml();
+				if (track->usePages.load())
+				{
+					auto& currentPage = track->getCurrentPage();
+					currentPage.canvasState = stateXml;
+					currentPage.canvasData = base64Image;
+					track->syncLegacyProperties();
+				}
+				else
+				{
+					track->canvasState = stateXml;
+					track->canvasData = base64Image;
+				}
+			}
+			if (onGenerateWithImage)
+			{
+				onGenerateWithImage(trackId, base64Image);
+			}
+		};
+
+	window->onBeforeClose = [this, canvas]()
+		{
+			if (track)
+			{
+				auto canvasState = canvas->getState();
+				juce::String stateXml = canvasState.toXml();
+				if (track->usePages.load())
+				{
+					auto& currentPage = track->getCurrentPage();
+					currentPage.canvasState = stateXml;
+					currentPage.canvasData = canvasState.imageBase64;
+					track->syncLegacyProperties();
+				}
+				else
+				{
+					track->canvasState = stateXml;
+					track->canvasData = canvasState.imageBase64;
+				}
+			}
+			drawingWindowPtr = nullptr;
+		};
 }
 
 void TrackComponent::layoutPagesButtons(juce::Rectangle<int> area)
@@ -1116,6 +1205,12 @@ void TrackComponent::setupUI()
 				onDeleteTrack(trackId);
 			}
 		};
+
+	addAndMakeVisible(drawButton);
+	drawButton.setButtonText(juce::String::fromUTF8("\xE2\x9C\x8E"));
+	drawButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonPrimary);
+	drawButton.setTooltip("Draw image for AI generation");
+	drawButton.onClick = [this]() { openDrawingCanvas(); };
 
 	addAndMakeVisible(generateButton);
 	generateButton.setButtonText(juce::String::fromUTF8("\xE2\x9C\x93"));
