@@ -142,7 +142,7 @@ def generate_img_description(img_path, bpm=127, scale="C Minor", temperature=0.7
         verbose=False,
     )
 
-    user_message = f"""Translate this image into a sonic/musical description.
+    user_message = f""" Translate this image into a sonic/musical description.
 
 CONTEXT:
 - Tempo: {bpm} BPM
