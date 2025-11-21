@@ -1337,7 +1337,7 @@ class ObsidianNeuralInstaller:
                         "Server setup & desktop shortcut",
                         self.create_server_executable_and_shortcut,
                     ),
-                    ("AI Model Download (2.49 GB)", self.download_model),
+                    ("AI GGUF Models Download", self.download_model),
                     ("VST Setup", self.setup_vst),
                     ("Environment configuration", self.setup_environment),
                 ]
@@ -2119,23 +2119,67 @@ class ObsidianNeuralInstaller:
 
     def download_model(self, install_dir):
         models_dir = install_dir / "models"
-        model_path = models_dir / "gemma-3-4b-it.gguf"
+        gemma_model_path = models_dir / "gemma-3-4b-it.gguf"
+        if gemma_model_path.exists():
+            self.log("Gemma model already uploaded, ignored")
+        else:
+            gemma_url = "https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf"
+            self.log("Download the Gemma-3-4B model...")
 
-        if model_path.exists():
-            self.log("Model already uploaded, ignored")
-            return
+            def download_gemma_progress(block_num, block_size, total_size):
+                downloaded = block_num * block_size
+                percent = min(100, (downloaded / total_size) * 100)
+                self.update_progress(
+                    percent * 0.4, f"Download Gemma model: {percent:.1f}%"
+                )
 
-        model_url = "https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf"
+            urllib.request.urlretrieve(
+                gemma_url, gemma_model_path, reporthook=download_gemma_progress
+            )
+            self.log("✅ Gemma model downloaded successfully.")
 
-        self.log("Download the Gemma-3-4B model (2.49 GB)...")
+        vision_text_model_path = models_dir / "ggml-model-Q4_K_M.gguf"
+        if vision_text_model_path.exists():
+            self.log("Vision text model already uploaded, ignored")
+        else:
+            vision_text_url = "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/ggml-model-Q4_K_M.gguf"
+            self.log("Download MiniCPM-V text model...")
 
-        def download_progress(block_num, block_size, total_size):
-            downloaded = block_num * block_size
-            percent = min(100, (downloaded / total_size) * 100)
-            self.update_progress(percent * 0.7, f"Download model: {percent:.1f}%")
+            def download_vision_text_progress(block_num, block_size, total_size):
+                downloaded = block_num * block_size
+                percent = min(100, (downloaded / total_size) * 100)
+                self.update_progress(
+                    40 + (percent * 0.3), f"Download vision text model: {percent:.1f}%"
+                )
 
-        urllib.request.urlretrieve(model_url, model_path, reporthook=download_progress)
-        self.log("✅ Model downloaded successfully.")
+            urllib.request.urlretrieve(
+                vision_text_url,
+                vision_text_model_path,
+                reporthook=download_vision_text_progress,
+            )
+            self.log("✅ Vision text model downloaded successfully.")
+
+        mmproj_model_path = models_dir / "mmproj-model-f16.gguf"
+        if mmproj_model_path.exists():
+            self.log("Vision mmproj model already uploaded, ignored")
+        else:
+            mmproj_url = "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/mmproj-model-f16.gguf"
+            self.log("Download MiniCPM-V mmproj model...")
+
+            def download_mmproj_progress(block_num, block_size, total_size):
+                downloaded = block_num * block_size
+                percent = min(100, (downloaded / total_size) * 100)
+                self.update_progress(
+                    70 + (percent * 0.3),
+                    f"Download vision mmproj model: {percent:.1f}%",
+                )
+
+            urllib.request.urlretrieve(
+                mmproj_url, mmproj_model_path, reporthook=download_mmproj_progress
+            )
+            self.log("✅ Vision mmproj model downloaded successfully.")
+
+        self.log("✅ All GGUF models downloaded successfully.")
 
     def create_installation_registry(self, install_dir):
         if platform.system() == "Windows":
