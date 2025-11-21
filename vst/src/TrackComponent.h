@@ -3,6 +3,7 @@
 #include "TrackManager.h"
 #include "MidiLearnableComponents.h"
 #include "ColourPalette.h"
+#include "DrawingCanvas.h"
 
 class WaveformDisplay;
 class SequencerComponent;
@@ -41,6 +42,7 @@ public:
 	std::function<void(const juce::String&, const juce::String&)> onTrackRenamed;
 	std::function<void(const juce::String&, const juce::String&)> onTrackPromptChanged;
 	std::function<void(const juce::String&)> onStatusMessage;
+	std::function<void(const juce::String& trackId, const juce::String& base64Image)> onGenerateWithImage;
 
 	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
 	void itemDragEnter(const SourceDetails& dragSourceDetails) override;
@@ -94,6 +96,29 @@ public:
 	SequencerComponent* getSequencer() const { return sequencer.get(); }
 
 private:
+	class DrawingWindow : public juce::DocumentWindow
+	{
+	public:
+		DrawingWindow(const juce::String& name, DrawingCanvas* canvas)
+			: juce::DocumentWindow(name, juce::Colour(0xff2a2a2a),
+				juce::DocumentWindow::closeButton)
+		{
+			setContentOwned(canvas, true);
+			centreWithSize(620, 770);
+			setResizable(false, false);
+			setUsingNativeTitleBar(true);
+		}
+
+		void closeButtonPressed() override
+		{
+			if (onBeforeClose)
+				onBeforeClose();
+			delete this;
+		}
+
+		std::function<void()> onBeforeClose;
+	};
+
 	juce::String trackId;
 
 	juce::StringArray promptPresets;
@@ -102,6 +127,9 @@ private:
 
 	std::unique_ptr<WaveformDisplay> waveformDisplay;
 	std::unique_ptr<SequencerComponent> sequencer;
+	std::unique_ptr<DrawingCanvas> drawingCanvas;
+
+	juce::Component::SafePointer<juce::DocumentWindow> drawingWindowPtr;
 
 	DjIaVstProcessor& audioProcessor;
 
@@ -111,6 +139,7 @@ private:
 	MidiLearnableButton generateButton;
 	MidiLearnableButton randomRetriggerButton;
 	MidiLearnableSlider intervalKnob;
+	MidiLearnableButton drawButton;
 
 	juce::TextButton trackNumberButton;
 	juce::TextButton previewButton;
@@ -173,6 +202,7 @@ private:
 	void addEventListeners();
 	void updateRandomRetriggerButtonColor();
 	void updateRandomDurationButtonColor();
+	void openDrawingCanvas();
 
 	float calculateEffectiveBpm();
 

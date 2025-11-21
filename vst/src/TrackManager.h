@@ -220,6 +220,8 @@ public:
 			trackState.setProperty("randomRetriggerDurationEnabled", track->randomRetriggerDurationEnabled.load(), nullptr);
 			trackState.setProperty("usePages", track->usePages.load(), nullptr);
 			trackState.setProperty("currentPageIndex", track->currentPageIndex, nullptr);
+			trackState.setProperty("canvasData", track->canvasData, nullptr);
+
 			for (int pageIndex = 0; pageIndex < 4; ++pageIndex)
 			{
 				auto pageState = juce::ValueTree("Page");
@@ -241,6 +243,7 @@ public:
 				pageState.setProperty("useOriginalFile", page.useOriginalFile.load(), nullptr);
 				pageState.setProperty("hasOriginalVersion", page.hasOriginalVersion.load(), nullptr);
 				pageState.setProperty("isLoaded", page.isLoaded.load(), nullptr);
+				pageState.setProperty("canvasData", page.canvasData, nullptr);
 
 				trackState.appendChild(pageState, nullptr);
 			}
@@ -336,7 +339,7 @@ public:
 			track->beatRepeatEndPosition = trackState.getProperty("beatRepeatEndPosition", 0.0);
 			track->beatRepeatActive = trackState.getProperty("beatRepeatActive", false);
 			track->randomRetriggerDurationEnabled = trackState.getProperty("randomRetriggerDurationEnabled", false);
-
+			track->canvasData = trackState.getProperty("canvasData", "");
 			track->usePages = trackState.getProperty("usePages", false);
 			track->currentPageIndex = trackState.getProperty("currentPageIndex", 0);
 
@@ -379,6 +382,7 @@ public:
 						page.loopEnd = pageState.getProperty("loopEnd", 4.0);
 						page.useOriginalFile = pageState.getProperty("useOriginalFile", false);
 						page.hasOriginalVersion = pageState.getProperty("hasOriginalVersion", false);
+						page.canvasData = pageState.getProperty("canvasData", "").toString();
 						page.isLoaded = false;
 
 						if (!page.audioFilePath.isEmpty())

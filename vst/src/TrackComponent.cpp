@@ -533,6 +533,8 @@ void TrackComponent::resized()
 	headerArea.removeFromRight(5);
 	generateButton.setBounds(headerArea.removeFromRight(35));
 	headerArea.removeFromRight(5);
+	drawButton.setBounds(headerArea.removeFromRight(35));
+	headerArea.removeFromRight(5);
 	originalSyncButton.setBounds(headerArea.removeFromRight(35));
 	headerArea.removeFromRight(5);
 	previewButton.setBounds(headerArea.removeFromRight(35));
@@ -578,6 +580,81 @@ void TrackComponent::resized()
 	{
 		sequencer->setVisible(false);
 	}
+}
+
+void TrackComponent::openDrawingCanvas()
+{
+	if (drawingWindowPtr != nullptr)
+	{
+		drawingWindowPtr->toFront(true);
+		return;
+	}
+
+	auto* canvas = new DrawingCanvas();
+
+	if (track && track->usePages.load())
+	{
+		const auto& currentPage = track->getCurrentPage();
+		if (!currentPage.canvasData.isEmpty())
+		{
+			canvas->loadFromBase64(currentPage.canvasData);
+		}
+	}
+	else if (track && !track->canvasData.isEmpty())
+	{
+		canvas->loadFromBase64(track->canvasData);
+	}
+
+	auto* window = new DrawingWindow("Draw Image - " + trackNameLabel.getText(), canvas);
+	drawingWindowPtr = window;
+
+	canvas->onGenerate = [this, canvas, window](const juce::String& base64Image)
+		{
+			if (track)
+			{
+				if (track->usePages.load())
+				{
+					auto& currentPage = track->getCurrentPage();
+					currentPage.canvasData = canvas->getBase64Image();
+					track->syncLegacyProperties();
+				}
+				else
+				{
+					track->canvasData = canvas->getBase64Image();
+				}
+			}
+
+			if (onGenerateWithImage)
+			{
+				onGenerateWithImage(trackId, base64Image);
+			}
+
+			juce::MessageManager::callAsync([window]()
+				{
+					delete window;
+				});
+		};
+
+	window->onBeforeClose = [this, canvas]()
+		{
+			if (track)
+			{
+				if (track->usePages.load())
+				{
+					auto& currentPage = track->getCurrentPage();
+					currentPage.canvasData = canvas->getBase64Image();
+					track->syncLegacyProperties();
+				}
+				else
+				{
+					track->canvasData = canvas->getBase64Image();
+				}
+
+				DBG("Canvas saved on window close");
+			}
+		};
+
+	window->setVisible(true);
 }
 
 void TrackComponent::layoutPagesButtons(juce::Rectangle<int> area)
@@ -1116,6 +1193,12 @@ void TrackComponent::setupUI()
 				onDeleteTrack(trackId);
 			}
 		};
+
+	addAndMakeVisible(drawButton);
+	drawButton.setButtonText(juce::String::fromUTF8("\xE2\x9C\x8E"));
+	drawButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonPrimary);
+	drawButton.setTooltip("Draw image for AI generation");
+	drawButton.onClick = [this]() { openDrawingCanvas(); };
 
 	addAndMakeVisible(generateButton);
 	generateButton.setButtonText(juce::String::fromUTF8("\xE2\x9C\x93"));
