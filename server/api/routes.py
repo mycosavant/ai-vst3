@@ -105,9 +105,22 @@ async def generate_loop(
         request_id = int(time.time())
         temp_image_path = None
         if request.use_image and request.image_base64:
-            print(f"🖼️  Image base64 received ({len(request.image_base64)} chars)")
             cleaned_base64 = clean_base64(request.image_base64)
-            image_bytes = base64.b64decode(cleaned_base64)
+            print(f"✅ Cleaned base64 length: {len(cleaned_base64)} chars")
+            print(f"📊 Length % 4 = {len(cleaned_base64) % 4}")
+
+            try:
+                image_bytes = base64.b64decode(cleaned_base64, validate=True)
+            except Exception as e:
+                print(f"⚠️  Standard decode failed: {e}")
+                print(f"🔄 Retrying with validate=False...")
+                image_bytes = base64.b64decode(cleaned_base64, validate=False)
+
+            print(f"✅ Image decoded: {len(image_bytes)} bytes")
+
+            if not image_bytes.startswith(b"\x89PNG"):
+                raise ValueError("Decoded data is not a valid PNG image")
+
             with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
                 tmp.write(image_bytes)
                 temp_image_path = tmp.name
