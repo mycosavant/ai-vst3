@@ -8,7 +8,7 @@ if(UNIX AND NOT APPLE)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-project(OBSIDIAN-Neural VERSION 1.0.1)
+project(OBSIDIAN-Neural VERSION 1.0.2)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,7 +51,7 @@ configure_file(
 )
 
 juce_add_plugin(ObsidianNeuralVST
-    VERSION "1.0.1"
+    VERSION "1.0.2"
     PLUGIN_MANUFACTURER_CODE "OBSI"
     PLUGIN_CODE "Obsi"
     COMPANY_NAME "InnerMost47"

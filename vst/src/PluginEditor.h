@@ -14,6 +14,7 @@ class DjIaVstEditor : public juce::AudioProcessorEditor, public juce::MenuBarMod
 public:
 	explicit DjIaVstEditor(DjIaVstProcessor&);
 	~DjIaVstEditor() override;
+	std::vector<std::unique_ptr<TrackComponent>> trackComponents;
 	std::unique_ptr<MixerPanel> mixerPanel;
 	void paint(juce::Graphics&) override;
 	void layoutPromptSection(juce::Rectangle<int> area, int spacing);
@@ -51,6 +52,7 @@ public:
 	void onGenerateButtonClicked();
 	void toggleSampleBank();
 	void onSampleLoaded(const juce::String& trackId);
+	void reEnableCanvasForTrack();
 
 private:
 	DjIaVstProcessor& audioProcessor;
@@ -162,7 +164,6 @@ private:
 	juce::TextButton testMidiButton;
 	juce::Viewport tracksViewport;
 	juce::Component tracksContainer;
-	std::vector<std::unique_ptr<TrackComponent>> trackComponents;
 	juce::TextButton addTrackButton;
 	juce::Label tracksLabel;
 	juce::TextButton saveSessionButton;

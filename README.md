@@ -15,10 +15,60 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 
 - **8-track sampler** with MIDI triggering (C3-B3)
 - **4 pages per track** (A/B/C/D) - Switch variations instantly by clicking page buttons
+- **Draw-to-sound** - Sketch your ideas visually and let AI interpret them musically
 - **Perfect DAW sync** - Auto time-stretch to project tempo
 - **Real-time generation** - No pre-recorded samples
 
-**Example:** Type "dark techno kick" → AI generates techno loop → Trigger with MIDI while jamming
+**Text example:** Type "dark techno kick" → AI generates techno loop → Trigger with MIDI while jamming
+
+**Drawing example:** Draw a chaotic pattern → AI interprets visual elements as musical characteristics → Generates matching loop
+
+---
+
+## Features
+
+### Text-to-Audio Generation
+
+Type natural language descriptions and get instant musical loops:
+
+- "dark techno kick"
+- "ambient pad with reverb"
+- "808 bass with distortion"
+
+### Draw-to-Audio Generation
+
+**Express your musical ideas visually** _(original concept by A.D.)_ - Each track includes a drawing canvas where you can sketch patterns, shapes, or abstract concepts. The AI analyzes your drawing using a Vision Language Model (VLM) and translates visual elements into musical descriptions:
+
+1. Click the **Draw** button on any track
+2. Use pencil, brush, spray, or eraser tools
+3. Choose colors and brush sizes
+4. Click **Generate** to send your drawing
+
+**How it works:**
+
+- Your drawing is encoded as Base64 image data
+- A Vision Language Model interprets the visual elements using musical vocabulary
+- The generated textual description is sent to the audio generation model
+- Result: A unique sound that matches your visual concept
+
+**Example workflow:**
+
+- Draw sharp, angular lines → AI interprets as "aggressive staccato synth"
+- Sketch flowing curves → AI interprets as "smooth flowing pad"
+- Use red/orange colors → AI might associate with "warm analog tones"
+- Create chaotic patterns → AI interprets as "glitchy percussion"
+
+**Canvas features:**
+
+- 512x512 drawing area
+- 4 brush types (Pencil, Brush, Spray, Eraser)
+- 10 color presets
+- Adjustable brush size (1-50)
+- State preservation per track/page
+
+This feature bridges the gap between visual creativity and sonic experimentation, allowing producers to explore sound design through intuitive visual metaphors.
+
+**Note:** This draw-to-audio feature is currently experimental and under active development.
 
 ---
 
@@ -220,6 +270,7 @@ Every star, contribution, and piece of feedback helps make Obsidian Neural bette
 
 Special thanks to:
 
+- **A.D.** for the original draw-to-audio concept
 - Stability AI for Stable Audio Open
 - The open-source community
 - All beta testers and early adopters

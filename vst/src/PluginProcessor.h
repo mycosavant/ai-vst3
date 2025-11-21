@@ -155,7 +155,8 @@ public:
 	std::function<void(double)> onHostBpmChanged = nullptr;
 	void setGlobalPrompt(const juce::String& prompt) { globalPrompt = prompt; }
 	juce::String getGlobalPrompt() const { return globalPrompt; }
-
+	void generateSampleWithImage(const juce::String& trackId, const juce::String& base64Image);
+	void generateLoopWithImage(const DjIaClient::LoopRequest& request, const juce::String& trackId, int timeoutMS);
 	void setGlobalBpm(float bpm) { globalBpm = bpm; }
 	void setCanLoad(bool load) { canLoad = load; }
 	float getGlobalBpm() const
@@ -463,6 +464,7 @@ private:
 	void generateLoopFromGlobalSettings();
 	void clearMasterChannel(juce::AudioSampleBuffer& mainOutput);
 	void handlePageChange(const juce::String& parameterID);
+	void reEnableCanvasGenerate();
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DjIaVstProcessor);
 };
