@@ -968,6 +968,7 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 		{
 			setIsGenerating(false);
 			setGeneratingTrackId("");
+			reEnableCanvasGenerate(trackId);
 			notifyGenerationComplete(trackId, "ERROR: " + response.errorMessage);
 			return;
 		}
@@ -978,6 +979,7 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 		{
 			setIsGenerating(false);
 			setGeneratingTrackId("");
+			reEnableCanvasGenerate(trackId);
 			notifyGenerationComplete(trackId, "Invalid response from API");
 			return;
 		}
@@ -1028,6 +1030,7 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 
 	setIsGenerating(false);
 	setGeneratingTrackId("");
+	reEnableCanvasGenerate(trackId);
 
 	juce::String successMessage = "Audio generated from image! Press Play to listen.";
 
@@ -1041,6 +1044,17 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 	}
 
 	notifyGenerationComplete(trackId, successMessage);
+}
+
+void DjIaVstProcessor::reEnableCanvasGenerate(const juce::String& trackId)
+{
+	juce::MessageManager::callAsync([this, trackId]()
+		{
+			if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+			{
+				editor->reEnableCanvasForTrack(trackId);
+			}
+		});
 }
 
 void DjIaVstProcessor::generateLoopFromMidi(const juce::String& trackId)

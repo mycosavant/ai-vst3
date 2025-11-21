@@ -221,6 +221,7 @@ public:
 			trackState.setProperty("usePages", track->usePages.load(), nullptr);
 			trackState.setProperty("currentPageIndex", track->currentPageIndex, nullptr);
 			trackState.setProperty("canvasData", track->canvasData, nullptr);
+			trackState.setProperty("canvasState", track->canvasState, nullptr);
 
 			for (int pageIndex = 0; pageIndex < 4; ++pageIndex)
 			{
@@ -244,6 +245,7 @@ public:
 				pageState.setProperty("hasOriginalVersion", page.hasOriginalVersion.load(), nullptr);
 				pageState.setProperty("isLoaded", page.isLoaded.load(), nullptr);
 				pageState.setProperty("canvasData", page.canvasData, nullptr);
+				pageState.setProperty("canvasState", page.canvasState, nullptr);
 
 				trackState.appendChild(pageState, nullptr);
 			}
@@ -340,6 +342,7 @@ public:
 			track->beatRepeatActive = trackState.getProperty("beatRepeatActive", false);
 			track->randomRetriggerDurationEnabled = trackState.getProperty("randomRetriggerDurationEnabled", false);
 			track->canvasData = trackState.getProperty("canvasData", "");
+			track->canvasState = trackState.getProperty("canvasState", "");
 			track->usePages = trackState.getProperty("usePages", false);
 			track->currentPageIndex = trackState.getProperty("currentPageIndex", 0);
 
@@ -383,6 +386,7 @@ public:
 						page.useOriginalFile = pageState.getProperty("useOriginalFile", false);
 						page.hasOriginalVersion = pageState.getProperty("hasOriginalVersion", false);
 						page.canvasData = pageState.getProperty("canvasData", "").toString();
+						page.canvasState = pageState.getProperty("canvasState", "").toString();
 						page.isLoaded = false;
 
 						if (!page.audioFilePath.isEmpty())

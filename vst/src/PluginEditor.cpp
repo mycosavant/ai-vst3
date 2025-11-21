@@ -1987,6 +1987,26 @@ void DjIaVstEditor::refreshTrackComponents()
 	tracksContainer.repaint();
 }
 
+void DjIaVstEditor::reEnableCanvasForTrack(const juce::String& trackId)
+{
+	if (tracksViewport.getViewedComponent())
+	{
+		auto* container = tracksViewport.getViewedComponent();
+
+		for (int i = 0; i < container->getNumChildComponents(); ++i)
+		{
+			if (auto* trackComp = dynamic_cast<TrackComponent*>(container->getChildComponent(i)))
+			{
+				if (trackComp->trackId == trackId)
+				{
+					trackComp->setCanvasGenerating(false);
+					break;
+				}
+			}
+		}
+	}
+}
+
 void DjIaVstEditor::generateFromTrackComponent(const juce::String& trackId)
 {
 	audioProcessor.setIsGenerating(true);

@@ -595,65 +595,90 @@ void TrackComponent::openDrawingCanvas()
 	if (track && track->usePages.load())
 	{
 		const auto& currentPage = track->getCurrentPage();
-		if (!currentPage.canvasData.isEmpty())
+		if (!currentPage.canvasState.isEmpty())
+		{
+			auto state = DrawingCanvas::CanvasState::fromXml(currentPage.canvasState);
+			canvas->setState(state);
+			DBG("Canvas state restored from page");
+		}
+		else if (!currentPage.canvasData.isEmpty())
 		{
 			canvas->loadFromBase64(currentPage.canvasData);
+			DBG("Canvas image restored (legacy)");
 		}
+	}
+	else if (track && !track->canvasState.isEmpty())
+	{
+		auto state = DrawingCanvas::CanvasState::fromXml(track->canvasState);
+		canvas->setState(state);
+		DBG("Canvas state restored from track");
 	}
 	else if (track && !track->canvasData.isEmpty())
 	{
 		canvas->loadFromBase64(track->canvasData);
+		DBG("Canvas image restored (legacy)");
 	}
+
+	canvas->setGenerating(canvasIsGenerating);
 
 	auto* window = new DrawingWindow("Draw Image - " + trackNameLabel.getText(), canvas);
 	drawingWindowPtr = window;
 
-	canvas->onGenerate = [this, canvas, window](const juce::String& base64Image)
+	canvas->onGenerate = [this, canvas](const juce::String& base64Image)
 		{
+			DBG("Generate requested from canvas");
+
 			if (track)
 			{
+				auto canvasState = canvas->getState();
+				juce::String stateXml = canvasState.toXml();
+
 				if (track->usePages.load())
 				{
 					auto& currentPage = track->getCurrentPage();
-					currentPage.canvasData = canvas->getBase64Image();
+					currentPage.canvasState = stateXml;
+					currentPage.canvasData = base64Image;
 					track->syncLegacyProperties();
 				}
 				else
 				{
-					track->canvasData = canvas->getBase64Image();
+					track->canvasState = stateXml;
+					track->canvasData = base64Image;
 				}
+				DBG("Canvas state saved before generation");
 			}
+
+			canvas->setGenerating(true);
+			canvasIsGenerating = true;
 
 			if (onGenerateWithImage)
 			{
 				onGenerateWithImage(trackId, base64Image);
 			}
-
-			drawingWindowPtr = nullptr;
-
-			juce::MessageManager::callAsync([window]()
-				{
-					delete window;
-				});
 		};
 
 	window->onBeforeClose = [this, canvas]()
 		{
 			if (track)
 			{
+				auto canvasState = canvas->getState();
+				juce::String stateXml = canvasState.toXml();
+
 				if (track->usePages.load())
 				{
 					auto& currentPage = track->getCurrentPage();
-					currentPage.canvasData = canvas->getBase64Image();
+					currentPage.canvasState = stateXml;
+					currentPage.canvasData = canvasState.imageBase64;
 					track->syncLegacyProperties();
 				}
 				else
 				{
-					track->canvasData = canvas->getBase64Image();
+					track->canvasState = stateXml;
+					track->canvasData = canvasState.imageBase64;
 				}
-
-				DBG("Canvas saved on window close");
+				DBG("Canvas state saved on window close");
 			}
+
 			drawingWindowPtr = nullptr;
 		};
 

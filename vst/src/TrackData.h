@@ -14,6 +14,7 @@ struct TrackPage
 	juce::String generationPrompt;
 	juce::String generationKey;
 	juce::String canvasData;
+	juce::String canvasState;
 
 	int numSamples = 0;
 	int generationDuration = 6;
@@ -96,6 +97,7 @@ struct TrackData
 	juce::String selectedPrompt;
 	juce::String currentSampleId;
 	juce::String canvasData;
+	juce::String canvasState;
 
 	bool showWaveform = true;
 	bool showSequencer = true;
