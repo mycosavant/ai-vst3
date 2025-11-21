@@ -234,9 +234,16 @@ public:
 
 		if (pngFormat.writeImageToStream(canvas, memStream))
 		{
-			juce::String base64 = memStream.getMemoryBlock().toBase64Encoding();
+			juce::MemoryBlock block = memStream.getMemoryBlock();
+
+			juce::String base64 = juce::Base64::toBase64(block.getData(), block.getSize());
 
 			base64 = base64.removeCharacters("\r\n\t ");
+
+			DBG("Base64 length: " << base64.length());
+			DBG("Length % 4 = " << (base64.length() % 4));
+			DBG("First 50 chars: " << base64.substring(0, 50));
+			DBG("Last 50 chars: " << base64.substring(base64.length() - 50));
 
 			return base64;
 		}

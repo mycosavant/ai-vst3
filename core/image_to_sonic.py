@@ -81,6 +81,7 @@ def generate_img_description(img_path, bpm=127, scale="C Minor", temperature=0.7
         model_path="models/ggml-model-Q4_K_M.gguf",
         chat_handler=chat_handler,
         n_ctx=4096,
+        verbose=False,
     )
 
     user_message = f"""Translate this image into a sonic/musical description.
