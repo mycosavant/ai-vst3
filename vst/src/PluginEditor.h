@@ -52,7 +52,7 @@ public:
 	void onGenerateButtonClicked();
 	void toggleSampleBank();
 	void onSampleLoaded(const juce::String& trackId);
-	void reEnableCanvasForTrack(const juce::String& trackId);
+	void reEnableCanvasForTrack();
 
 private:
 	DjIaVstProcessor& audioProcessor;

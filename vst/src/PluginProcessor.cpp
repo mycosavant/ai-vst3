@@ -870,20 +870,14 @@ void DjIaVstProcessor::generateSampleWithImage(const juce::String& trackId, cons
 {
 	if (isGenerating)
 	{
-		DBG("Already generating, ignoring image generation request");
 		return;
 	}
 
 	TrackData* track = trackManager.getTrack(trackId);
 	if (!track)
 	{
-		DBG("Track not found: " << trackId);
 		return;
 	}
-
-	DBG("=== GENERATE WITH IMAGE START ===");
-	DBG("Track: " << track->trackName);
-	DBG("Base64 image length: " << base64Image.length());
 
 	setIsGenerating(true);
 	setGeneratingTrackId(trackId);
@@ -932,16 +926,10 @@ void DjIaVstProcessor::generateSampleWithImage(const juce::String& trackId, cons
 				request.useImage = true;
 				request.imageBase64 = base64Image;
 
-				DBG("Generation params - BPM: " << request.bpm << ", Key: " << request.key << ", Duration: " << request.generationDuration);
-				DBG("Image mode: ENABLED");
-
 				generateLoopWithImage(request, trackId, 300000);
 			}
 			catch (const std::exception& e)
 			{
-				DBG("=== GENERATE WITH IMAGE FAILED ===");
-				DBG("Error: " << e.what());
-
 				setIsGenerating(false);
 				setGeneratingTrackId("");
 
@@ -968,7 +956,7 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 		{
 			setIsGenerating(false);
 			setGeneratingTrackId("");
-			reEnableCanvasGenerate(trackId);
+			reEnableCanvasGenerate();
 			notifyGenerationComplete(trackId, "ERROR: " + response.errorMessage);
 			return;
 		}
@@ -979,7 +967,7 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 		{
 			setIsGenerating(false);
 			setGeneratingTrackId("");
-			reEnableCanvasGenerate(trackId);
+			reEnableCanvasGenerate();
 			notifyGenerationComplete(trackId, "Invalid response from API");
 			return;
 		}
@@ -1030,7 +1018,7 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 
 	setIsGenerating(false);
 	setGeneratingTrackId("");
-	reEnableCanvasGenerate(trackId);
+	reEnableCanvasGenerate();
 
 	juce::String successMessage = "Audio generated from image! Press Play to listen.";
 
@@ -1046,13 +1034,13 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 	notifyGenerationComplete(trackId, successMessage);
 }
 
-void DjIaVstProcessor::reEnableCanvasGenerate(const juce::String& trackId)
+void DjIaVstProcessor::reEnableCanvasGenerate()
 {
-	juce::MessageManager::callAsync([this, trackId]()
+	juce::MessageManager::callAsync([this]()
 		{
 			if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
 			{
-				editor->reEnableCanvasForTrack(trackId);
+				editor->reEnableCanvasForTrack();
 			}
 		});
 }

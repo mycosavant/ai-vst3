@@ -334,12 +334,11 @@ public:
 		{
 			juce::MemoryBlock block = memStream.getMemoryBlock();
 			juce::String base64 = juce::Base64::toBase64(block.getData(), block.getSize());
-			base64 = base64.removeCharacters("\r\n\t ");
 
-			DBG("Base64 length: " << base64.length());
-			DBG("Length % 4 = " << (base64.length() % 4));
-			DBG("First 50 chars: " << base64.substring(0, 50));
-			DBG("Last 50 chars: " << base64.substring(base64.length() - 50));
+
+			int padding = 0;
+			if (base64.endsWith("==")) padding = 2;
+			else if (base64.endsWith("=")) padding = 1;
 
 			return base64;
 		}
@@ -351,32 +350,31 @@ public:
 	{
 		if (base64Data.isEmpty())
 		{
-			DBG("loadFromBase64: empty data");
 			return;
 		}
 
-		juce::MemoryBlock block;
-		if (block.fromBase64Encoding(base64Data))
-		{
-			juce::MemoryInputStream memStream(block, false);
-			juce::PNGImageFormat pngFormat;
+		juce::MemoryOutputStream tempStream;
 
-			auto loadedImage = pngFormat.decodeImage(memStream);
-			if (loadedImage.isValid())
-			{
-				canvas = loadedImage;
-				DBG("Image loaded successfully: " << canvas.getWidth() << "x" << canvas.getHeight());
-				repaint();
-				needsRepaint = true;
-			}
-			else
-			{
-				DBG("loadFromBase64: invalid image");
-			}
-		}
-		else
+		bool success = juce::Base64::convertFromBase64(tempStream, base64Data);
+
+		if (!success || tempStream.getDataSize() == 0)
 		{
-			DBG("loadFromBase64: failed to decode base64");
+			return;
+		}
+		auto decodedData = tempStream.getMemoryBlock();
+		juce::MemoryInputStream imageStream(decodedData, false);
+
+		juce::PNGImageFormat pngFormat;
+		auto loadedImage = pngFormat.decodeImage(imageStream);
+
+
+		if (loadedImage.isValid())
+		{
+
+			canvas = loadedImage;
+
+			repaint();
+			needsRepaint = true;
 		}
 	}
 

@@ -1381,12 +1381,12 @@ void DjIaVstEditor::openMidiMappingEditor()
 }
 
 
-
 void DjIaVstEditor::setAllGenerateButtonsEnabled(bool enabled)
 {
 	for (auto& trackComp : trackComponents)
 	{
 		trackComp->setGenerateButtonEnabled(enabled);
+		trackComp->setCanvasGenerating(!enabled);
 	}
 }
 
@@ -1915,9 +1915,7 @@ void DjIaVstEditor::refreshTrackComponents()
 
 				trackComp->onGenerateWithImage = [this](const juce::String& id, const juce::String& base64Image)
 					{
-						DBG("onGenerateWithImage callback triggered for track: " << id);
-						DBG("Base64 image length: " << base64Image.length());
-
+						setAllGenerateButtonsEnabled(false);
 						audioProcessor.generateSampleWithImage(id, base64Image);
 					};
 
@@ -1987,24 +1985,9 @@ void DjIaVstEditor::refreshTrackComponents()
 	tracksContainer.repaint();
 }
 
-void DjIaVstEditor::reEnableCanvasForTrack(const juce::String& trackId)
+void DjIaVstEditor::reEnableCanvasForTrack()
 {
-	if (tracksViewport.getViewedComponent())
-	{
-		auto* container = tracksViewport.getViewedComponent();
-
-		for (int i = 0; i < container->getNumChildComponents(); ++i)
-		{
-			if (auto* trackComp = dynamic_cast<TrackComponent*>(container->getChildComponent(i)))
-			{
-				if (trackComp->trackId == trackId)
-				{
-					trackComp->setCanvasGenerating(false);
-					break;
-				}
-			}
-		}
-	}
+	setAllGenerateButtonsEnabled(true);
 }
 
 void DjIaVstEditor::generateFromTrackComponent(const juce::String& trackId)
@@ -2146,6 +2129,20 @@ void DjIaVstEditor::onAddTrack()
 
 		refreshTrackComponents();
 		refreshWavevormsAndSequencers();
+
+		if (audioProcessor.getIsGenerating())
+		{
+			for (auto& trackComp : trackComponents)
+			{
+				if (trackComp->trackId == newTrackId)
+				{
+					trackComp->setGenerateButtonEnabled(false);
+					trackComp->setCanvasGenerating(true);
+					break;
+				}
+			}
+		}
+
 		if (mixerPanel)
 		{
 			mixerPanel->trackAdded(newTrackId);

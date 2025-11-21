@@ -464,7 +464,7 @@ private:
 	void generateLoopFromGlobalSettings();
 	void clearMasterChannel(juce::AudioSampleBuffer& mainOutput);
 	void handlePageChange(const juce::String& parameterID);
-	void reEnableCanvasGenerate(const juce::String& trackId);
+	void reEnableCanvasGenerate();
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DjIaVstProcessor);
 };

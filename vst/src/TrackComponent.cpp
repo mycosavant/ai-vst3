@@ -592,6 +592,10 @@ void TrackComponent::openDrawingCanvas()
 
 	auto* canvas = new DrawingCanvas();
 
+	auto* window = new DrawingWindow("Draw Image - " + trackNameLabel.getText(), canvas);
+	drawingWindowPtr = window;
+	window->setVisible(true);
+
 	if (track && track->usePages.load())
 	{
 		const auto& currentPage = track->getCurrentPage();
@@ -599,40 +603,30 @@ void TrackComponent::openDrawingCanvas()
 		{
 			auto state = DrawingCanvas::CanvasState::fromXml(currentPage.canvasState);
 			canvas->setState(state);
-			DBG("Canvas state restored from page");
 		}
 		else if (!currentPage.canvasData.isEmpty())
 		{
 			canvas->loadFromBase64(currentPage.canvasData);
-			DBG("Canvas image restored (legacy)");
 		}
 	}
 	else if (track && !track->canvasState.isEmpty())
 	{
 		auto state = DrawingCanvas::CanvasState::fromXml(track->canvasState);
 		canvas->setState(state);
-		DBG("Canvas state restored from track");
 	}
 	else if (track && !track->canvasData.isEmpty())
 	{
 		canvas->loadFromBase64(track->canvasData);
-		DBG("Canvas image restored (legacy)");
 	}
 
 	canvas->setGenerating(canvasIsGenerating);
 
-	auto* window = new DrawingWindow("Draw Image - " + trackNameLabel.getText(), canvas);
-	drawingWindowPtr = window;
-
 	canvas->onGenerate = [this, canvas](const juce::String& base64Image)
 		{
-			DBG("Generate requested from canvas");
-
 			if (track)
 			{
 				auto canvasState = canvas->getState();
 				juce::String stateXml = canvasState.toXml();
-
 				if (track->usePages.load())
 				{
 					auto& currentPage = track->getCurrentPage();
@@ -645,12 +639,7 @@ void TrackComponent::openDrawingCanvas()
 					track->canvasState = stateXml;
 					track->canvasData = base64Image;
 				}
-				DBG("Canvas state saved before generation");
 			}
-
-			canvas->setGenerating(true);
-			canvasIsGenerating = true;
-
 			if (onGenerateWithImage)
 			{
 				onGenerateWithImage(trackId, base64Image);
@@ -663,7 +652,6 @@ void TrackComponent::openDrawingCanvas()
 			{
 				auto canvasState = canvas->getState();
 				juce::String stateXml = canvasState.toXml();
-
 				if (track->usePages.load())
 				{
 					auto& currentPage = track->getCurrentPage();
@@ -676,13 +664,9 @@ void TrackComponent::openDrawingCanvas()
 					track->canvasState = stateXml;
 					track->canvasData = canvasState.imageBase64;
 				}
-				DBG("Canvas state saved on window close");
 			}
-
 			drawingWindowPtr = nullptr;
 		};
-
-	window->setVisible(true);
 }
 
 void TrackComponent::layoutPagesButtons(juce::Rectangle<int> area)
