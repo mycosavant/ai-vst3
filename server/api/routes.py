@@ -91,6 +91,7 @@ async def generate_loop(
     processed_path = None
     try:
         request_id = int(time.time())
+        temp_image_path = None
         if request.use_image and request.image_base64:
             print(f"🖼️  Image base64 received ({len(request.image_base64)} chars)")
             image_data = request.image_base64
