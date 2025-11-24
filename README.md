@@ -227,7 +227,7 @@ First come, first served! 🔥
 ## Status & Support
 
 🚀 **Active development** - Updates pushed regularly  
-⭐ **[![GitHub stars](https://img.shields.io/github/stars/innermost47/ai-dj?style=flat&color=yellow&label=)](https://github.com/innermost47/ai-dj/stargazers) GitHub stars** - Thanks for the support!
+⭐ **136 GitHub stars** - Thanks for the support!  
 🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)  
 📊 **API Status:** Check [status page](https://obsidian-neural.com/status.html) for real-time service monitoring
 
@@ -258,9 +258,26 @@ Every star, contribution, and piece of feedback helps make Obsidian Neural bette
 
 ## More Projects
 
-🎵 **[YouTube](https://www.youtube.com/@innermost9675)** - Original compositions  
-🎙️ **[AI Harmony Radio](https://autogenius.anthony-charretier.fr/webradio)** - 24/7 experimental radio  
-🎛️ **[Randomizer](https://randomizer.anthony-charretier.fr/)** - Generative music studio
+### 🎵 Music Production Tools
+
+🥁 **[BeatCrafter](https://github.com/innermost47/beatcrafter)** - Intelligent MIDI drum pattern generator VST3  
+_Proof of concept for live performance with foot controller. Generates authentic drum patterns that evolve from simple to complex._
+
+🎛️ **[Randomizer](https://randomizer.anthony-charretier.fr/)** - Generative music studio  
+_Experimental web-based music creation tool with procedural generation._
+
+### 🎧 Audio Content
+
+🎵 **[YouTube Channel](https://www.youtube.com/@innermost9675)** - Original compositions  
+_Electronic music, ambient soundscapes, metal, and experimental productions by InnerMost (2010-2023)._
+
+🎙️ **[AI Harmony Radio](https://autogenius.anthony-charretier.fr/webradio)** - 24/7 automated radio  
+_Broadcasting original music compositions by Innermost with AI-generated news bulletins and stories._
+
+### 💬 Connect
+
+💬 **GitHub:** [@innermost47](https://github.com/innermost47)  
+🌐 **Website:** [anthony-charretier.fr](https://anthony-charretier.fr)
 
 ---
 
