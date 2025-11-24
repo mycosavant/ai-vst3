@@ -199,7 +199,7 @@ First come, first served! 🔥
 
 **🎯 Share your jams!** I'm the only one posting OBSIDIAN videos so far. Show me how YOU use it!
 
-📧 **Email:** b03caa1n5@mozmail.com  
+📧 **Contact:** [Form](https://obsidian-neural.com/contact.html)
 💬 **Discussions:** [GitHub Discussions](https://github.com/innermost47/ai-dj/discussions)  
 📺 **Examples:** [Community Sessions](YOUTUBE.md)  
 🌐 **Website:** [obsidian-neural.com](https://obsidian-neural.com)
@@ -235,7 +235,7 @@ First come, first served! 🔥
 
 ## 🎯 Community Milestone
 
-**Road to 200 Stars!** Currently at 120+ 🌟
+**Road to 200 Stars!** Currently at 136+ 🌟
 
 When we hit 200 stars, we're celebrating with a community giveaway:
 
@@ -276,6 +276,7 @@ _Broadcasting original music compositions by Innermost with AI-generated news bu
 
 ### 💬 Connect
 
+📧 **Contact:** [Form](https://obsidian-neural.com/contact.html)
 💬 **GitHub:** [@innermost47](https://github.com/innermost47)  
 🌐 **Website:** [anthony-charretier.fr](https://anthony-charretier.fr)
 
