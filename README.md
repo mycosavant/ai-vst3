@@ -227,7 +227,7 @@ First come, first served! 🔥
 ## Status & Support
 
 🚀 **Active development** - Updates pushed regularly  
-⭐ **120+ GitHub stars** - Thanks for the support!  
+⭐ **[![GitHub stars](https://img.shields.io/github/stars/innermost47/ai-dj?style=flat&color=yellow&label=)](https://github.com/innermost47/ai-dj/stargazers) GitHub stars** - Thanks for the support!
 🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)  
 📊 **API Status:** Check [status page](https://obsidian-neural.com/status.html) for real-time service monitoring
 
