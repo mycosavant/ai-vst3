@@ -169,37 +169,11 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 
 ---
 
-## 🎁 Free Pro Pack Codes
-
-Get **1 month of Pro Pack free** (€29.99 value) — first 10 users per platform!
-
-**Redeem at:** [obsidian-neural.com](https://obsidian-neural.com)
-
-| Platform                   | Code                  | Remaining |
-| -------------------------- | --------------------- | --------- |
-| **Discord**                | `DISCORD100`          | 10/10     |
-| **Bedroom Producers Blog** | `BEDROOMPRODUCERS100` | 10/10     |
-| **AudioSEX**               | `AUDIOSEX100`         | 9/10      |
-| **Audiofanzine**           | `AUDIOFANZINE100`     | 10/10     |
-| **KVR Audio**              | `KVRAUDIO100`         | 10/10     |
-| **Facebook**               | `FACEBOOK100`         | 10/10     |
-
-**What you get:**
-
-- 1500 AI-generated samples
-- Up to 30-second loops
-- Real-time generation in your DAW
-- Cancel anytime
-
-First come, first served! 🔥
-
----
-
 ## Community
 
 **🎯 Share your jams!** I'm the only one posting OBSIDIAN videos so far. Show me how YOU use it!
 
-📧 **Contact:** [Form](https://obsidian-neural.com/contact.html)
+📧 **Contact:** [Form](https://obsidian-neural.com/contact.html)  
 💬 **Discussions:** [GitHub Discussions](https://github.com/innermost47/ai-dj/discussions)  
 📺 **Examples:** [Community Sessions](YOUTUBE.md)  
 🌐 **Website:** [obsidian-neural.com](https://obsidian-neural.com)
@@ -227,7 +201,7 @@ First come, first served! 🔥
 ## Status & Support
 
 🚀 **Active development** - Updates pushed regularly  
-⭐ **136 GitHub stars** - Thanks for the support!  
+⭐ **136+ GitHub stars** - Thanks for the support!  
 🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)  
 📊 **API Status:** Check [status page](https://obsidian-neural.com/status.html) for real-time service monitoring
 
@@ -276,7 +250,7 @@ _Broadcasting original music compositions by Innermost with AI-generated news bu
 
 ### 💬 Connect
 
-📧 **Contact:** [Form](https://obsidian-neural.com/contact.html)
+📧 **Contact:** [Form](https://obsidian-neural.com/contact.html)  
 💬 **GitHub:** [@innermost47](https://github.com/innermost47)  
 🌐 **Website:** [anthony-charretier.fr](https://anthony-charretier.fr)
 
