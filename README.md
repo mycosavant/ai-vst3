@@ -229,7 +229,7 @@ First come, first served! 🔥
 🚀 **Active development** - Updates pushed regularly  
 ⭐ **120+ GitHub stars** - Thanks for the support!  
 🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)  
-📊 **API Status:** Check [obsidian-neural.com](https://obsidian-neural.com) for current operational status
+📊 **API Status:** Check [status page](https://obsidian-neural.com/status.html) for real-time service monitoring
 
 ---
 
@@ -282,6 +282,6 @@ Special thanks to:
 _Made with 🎵 in France_
 
 [![Website](https://img.shields.io/badge/Website-obsidian--neural.com-blue)](https://obsidian-neural.com)
-[![API Status](https://img.shields.io/badge/API-Operational-green)](https://obsidian-neural.com)
+[![API Status](https://img.shields.io/badge/API-Operational-green)](https://obsidian-neural.com/status.html)
 [![License](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/innermost47/ai-dj?style=social)](https://github.com/innermost47/ai-dj)
