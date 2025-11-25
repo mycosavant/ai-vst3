@@ -525,7 +525,7 @@ void TrackComponent::resized()
 	}
 
 	trackNameLabel.setBounds(headerArea.removeFromLeft(65));
-	int promptWidth = 200;
+	int promptWidth = 175;
 	promptPresetSelector.setBounds(headerArea.removeFromLeft(promptWidth).reduced(2));
 	headerArea.removeFromLeft(5);
 
