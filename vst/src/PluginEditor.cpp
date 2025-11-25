@@ -18,7 +18,6 @@ DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
 	setMouseClickGrabsKeyboardFocus(false);
 	setFocusContainerType(FocusContainerType::focusContainer);
 	setInterceptsMouseClicks(true, true);
-	grabKeyboardFocus();
 	tooltipWindow = std::make_unique<juce::TooltipWindow>(this, 700);
 	logoImage = juce::ImageCache::getFromMemory(BinaryData::logo_png,
 		BinaryData::logo_pngSize);

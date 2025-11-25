@@ -394,8 +394,47 @@ public:
 							juce::File audioFile(page.audioFilePath);
 							if (audioFile.existsAsFile())
 							{
-								DBG("Loading page " << (char)('A' + pageIndex) << " from: " << audioFile.getFullPathName());
-								loadAudioFileForPage(track.get(), pageIndex, audioFile);
+								juce::File fileToLoad = audioFile;
+
+								if (page.useOriginalFile.load() && page.hasOriginalVersion.load())
+								{
+									char pageName = static_cast<char>('A' + pageIndex);
+									juce::String fileName = audioFile.getFileNameWithoutExtension();
+									juce::String legacySuffix = "_" + juce::String(65 + pageIndex);
+									juce::String newSuffix = "_" + juce::String::charToString(pageName);
+
+									juce::String baseTrackId;
+									juce::String actualSuffix;
+
+									if (fileName.endsWith(newSuffix))
+									{
+										baseTrackId = fileName.dropLastCharacters(newSuffix.length());
+										actualSuffix = newSuffix;
+									}
+									else if (fileName.endsWith(legacySuffix))
+									{
+										baseTrackId = fileName.dropLastCharacters(legacySuffix.length());
+										actualSuffix = legacySuffix;
+									}
+									if (baseTrackId.isNotEmpty())
+									{
+										juce::File originalFile = audioFile.getParentDirectory()
+											.getChildFile(baseTrackId + "_original" + actualSuffix + ".wav");
+
+										if (originalFile.existsAsFile())
+										{
+											fileToLoad = originalFile;
+											DBG("Loading ORIGINAL version for page " << (char)('A' + pageIndex) << ": " << originalFile.getFullPathName());
+										}
+										else
+										{
+											DBG("Original file not found: " << originalFile.getFullPathName());
+										}
+									}
+								}
+
+								DBG("Loading page " << (char)('A' + pageIndex) << " from: " << fileToLoad.getFullPathName());
+								loadAudioFileForPage(track.get(), pageIndex, fileToLoad);
 							}
 							else
 							{
