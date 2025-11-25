@@ -999,7 +999,6 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 			auto& currentPage = track->getCurrentPage();
 			currentPage.prompt = generatedPrompt;
 			currentPage.generationPrompt = generatedPrompt;
-			currentPage.selectedPrompt = generatedPrompt;
 			currentPage.originalBpm = response.bpm;
 			currentPage.generationBpm = response.bpm;
 			currentPage.generationKey = response.key;
@@ -1009,7 +1008,6 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 		{
 			track->prompt = generatedPrompt;
 			track->generationPrompt = generatedPrompt;
-			track->selectedPrompt = generatedPrompt;
 			track->originalBpm = response.bpm;
 			track->generationBpm = response.bpm;
 			track->generationKey = response.key;
@@ -1682,6 +1680,7 @@ void DjIaVstProcessor::generateLoop(const DjIaClient::LoopRequest& request, cons
 		correctMidiNoteReceived = false;
 		setIsGenerating(false);
 		setGeneratingTrackId("");
+		reEnableCanvasGenerate();
 		notifyGenerationComplete(trackId, "Error: " + juce::String(e.what()));
 	}
 }
@@ -1696,6 +1695,7 @@ void DjIaVstProcessor::generateLoopAPI(const DjIaClient::LoopRequest& request, c
 		{
 			setIsGenerating(false);
 			setGeneratingTrackId("");
+			reEnableCanvasGenerate();
 			notifyGenerationComplete(trackId, "ERROR: " + response.errorMessage);
 			return;
 		}
@@ -1706,6 +1706,7 @@ void DjIaVstProcessor::generateLoopAPI(const DjIaClient::LoopRequest& request, c
 		{
 			setIsGenerating(false);
 			setGeneratingTrackId("");
+			reEnableCanvasGenerate();
 			notifyGenerationComplete(trackId, "Invalid response from API");
 			return;
 		}
@@ -1714,6 +1715,7 @@ void DjIaVstProcessor::generateLoopAPI(const DjIaClient::LoopRequest& request, c
 	{
 		setIsGenerating(false);
 		setGeneratingTrackId("");
+		reEnableCanvasGenerate();
 		notifyGenerationComplete(trackId, "Response validation failed");
 		return;
 	}
@@ -1736,6 +1738,7 @@ void DjIaVstProcessor::generateLoopAPI(const DjIaClient::LoopRequest& request, c
 
 	setIsGenerating(false);
 	setGeneratingTrackId("");
+	reEnableCanvasGenerate();
 
 	juce::String successMessage = "Loop generated successfully! Press Play to listen.";
 	if (response.isUnlimitedKey)
@@ -1812,6 +1815,7 @@ void DjIaVstProcessor::generateLoopLocal(const DjIaClient::LoopRequest& request,
 	{
 		setIsGenerating(false);
 		setGeneratingTrackId("");
+		reEnableCanvasGenerate();
 		notifyGenerationComplete(trackId, "ERROR: Local models not found. Please check setup instructions.");
 		return;
 	}
@@ -1826,6 +1830,7 @@ void DjIaVstProcessor::generateLoopLocal(const DjIaClient::LoopRequest& request,
 	{
 		setIsGenerating(false);
 		setGeneratingTrackId("");
+		reEnableCanvasGenerate();
 		notifyGenerationComplete(trackId, "ERROR: Local generation failed - " + result.errorMessage);
 		return;
 	}
@@ -1835,6 +1840,7 @@ void DjIaVstProcessor::generateLoopLocal(const DjIaClient::LoopRequest& request,
 	{
 		setIsGenerating(false);
 		setGeneratingTrackId("");
+		reEnableCanvasGenerate();
 		notifyGenerationComplete(trackId, "ERROR: Failed to create audio file");
 		return;
 	}
@@ -1857,6 +1863,7 @@ void DjIaVstProcessor::generateLoopLocal(const DjIaClient::LoopRequest& request,
 
 	setIsGenerating(false);
 	setGeneratingTrackId("");
+	reEnableCanvasGenerate();
 
 	juce::String successMessage = juce::String::formatted(
 		"Loop generated locally! (%.1fs) Press Play to listen.",

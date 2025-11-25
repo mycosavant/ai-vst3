@@ -34,7 +34,18 @@ public:
 		{
 			stopTimer();
 			blinkState = false;
-			this->repaint();
+
+			if (juce::MessageManager::getInstance()->isThisTheMessageThread())
+			{
+				this->repaint();
+			}
+			else
+			{
+				juce::MessageManager::callAsync([this]()
+					{
+						this->repaint();
+					});
+			}
 		}
 	}
 
