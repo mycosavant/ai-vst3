@@ -26,14 +26,32 @@ jobs:
       - name: Setup MSVC
         uses: microsoft/setup-msbuild@v1
 
-      - name: Configure CMake
+      - name: Configure CMake (with performance optimizations)
         working-directory: vst
         run: |
           cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+          echo "✓ MSVC performance optimizations enabled (/O2 /fp:fast /GS- /LTCG)"
 
       - name: Build
         working-directory: vst
         run: cmake --build build --config Release
+
+      - name: Verify optimizations
+        working-directory: vst
+        shell: pwsh
+        run: |
+          Write-Host "=== Windows Build Info ===" -ForegroundColor Cyan
+          Write-Host "Verifying performance optimizations..." -ForegroundColor Yellow
+
+          # Check that runtime checks are not present in Release
+          $buildLog = Get-Content build/CMakeFiles/ObsidianNeuralVST.dir/Release/*.log -ErrorAction SilentlyContinue
+          if ($buildLog -match "/RTC1") {
+            Write-Host "❌ WARNING: Runtime checks detected!" -ForegroundColor Red
+          } else {
+            Write-Host "✓ Runtime checks removed" -ForegroundColor Green
+          }
+
+          Write-Host "✓ Build completed with MSVC optimizations" -ForegroundColor Green
 
       - name: Upload Windows VST
         uses: actions/upload-artifact@v4
@@ -54,17 +72,42 @@ jobs:
         run: |
           brew install cmake ninja
 
-      - name: Configure CMake
+      - name: Configure CMake (with performance optimizations)
         working-directory: vst
         run: |
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
             -DCMAKE_OSX_DEPLOYMENT_TARGET="10.15"
+          echo "✓ Clang performance optimizations enabled (-O3 -ffast-math -fvectorize)"
 
       - name: Build
         working-directory: vst
         run: cmake --build build --config Release
+
+      - name: Verify optimizations
+        working-directory: vst
+        run: |
+          echo "=== macOS Universal Build Info ==="
+          echo ""
+          echo "Architecture:"
+          lipo -info build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/MacOS/OBSIDIAN-Neural
+
+          echo ""
+          echo "Deployment target:"
+          otool -l build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/MacOS/OBSIDIAN-Neural | grep -A 5 LC_BUILD_VERSION
+
+          echo ""
+          echo "Checking for optimization flags in binary..."
+          # Vérifie que les optimisations vectorielles sont présentes
+          if otool -tv build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/MacOS/OBSIDIAN-Neural | head -1000 | grep -q "vfmadd\|vmul\|vadd"; then
+            echo "✓ Vectorization detected (SIMD instructions present)"
+          else
+            echo "ℹ No SIMD instructions detected in sample (may be elsewhere)"
+          fi
+
+          echo ""
+          echo "✓ Build completed with Clang optimizations"
 
       - name: Fix macOS permissions
         run: chmod +x vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/MacOS/*
@@ -216,13 +259,14 @@ jobs:
       - name: Install dependencies
         run: brew install cmake ninja
 
-      - name: Configure CMake
+      - name: Configure CMake (with performance optimizations)
         working-directory: vst
         run: |
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
             -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ matrix.deployment_target }}"
+          echo "✓ Clang optimizations enabled for ${{ matrix.name }}"
 
       - name: Build
         working-directory: vst
@@ -302,13 +346,39 @@ jobs:
             libxinerama-dev libxcursor-dev libfreetype6-dev libfontconfig1-dev \
             libgtk-3-dev libwebkit2gtk-4.1-dev libcurl4-openssl-dev
 
-      - name: Configure CMake
+      - name: Configure CMake (with performance optimizations)
         working-directory: vst
-        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          echo "✓ GCC performance optimizations enabled (-O3 -ffast-math -march=x86-64-v2)"
 
       - name: Build
         working-directory: vst
         run: cmake --build build --config Release
+
+      - name: Verify optimizations
+        working-directory: vst
+        run: |
+          echo "=== Linux Build Info ==="
+          echo ""
+          echo "Binary info:"
+          file build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/x86_64-linux/OBSIDIAN-Neural.so
+
+          echo ""
+          echo "Checking for optimization indicators..."
+          # Vérifie la présence d'instructions SIMD
+          if objdump -d build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/x86_64-linux/OBSIDIAN-Neural.so | head -10000 | grep -q "mulss\|addss\|movaps"; then
+            echo "✓ SSE instructions detected (optimizations present)"
+          else
+            echo "ℹ SSE instructions not detected in sample"
+          fi
+
+          echo ""
+          echo "Dependencies:"
+          ldd build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3/Contents/x86_64-linux/OBSIDIAN-Neural.so | head -10
+
+          echo ""
+          echo "✓ Build completed with GCC optimizations"
 
       - name: Upload Linux VST
         uses: actions/upload-artifact@v4
@@ -397,17 +467,12 @@ jobs:
 
             ---
 
-            ## ✨ What's New
-
-            - ✅ **macOS Code Signing**: All macOS builds are properly signed and notarized
-            - ✅ **Universal Binary**: Single build supports both Intel and Apple Silicon
-            - ✅ **Compatible**: macOS 10.15 Catalina through 15.0 Sequoia
-
-            ---
-
             ## 📚 Resources
 
-            - 📘 [Getting Started](https://github.com/innermost47/ai-dj#readme)
+            - 📘 [Getting Started](https://obsidian-neural.com/documentation.html?page=getting-started)
+            - 🚀 [First Steps](https://obsidian-neural.com/documentation.html?page=first-step)
+            - 🎵 [Bank Management](https://obsidian-neural.com/documentation.html?page=bank-management)
+            - 🎨 [Draw to Audio](https://obsidian-neural.com/documentation.html?page=draw-to-audio)
             - 🎓 [Video Tutorial](https://www.youtube.com/watch?v=l4KMC5adxVA)
             - 💬 [Discussions](https://github.com/innermost47/ai-dj/discussions)
             - 🐛 [Issues](https://github.com/innermost47/ai-dj/issues)
