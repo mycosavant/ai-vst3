@@ -99,6 +99,11 @@ target_compile_definitions(ObsidianNeuralVST
         JucePlugin_IsMidiEffect=0
         JucePlugin_VSTNumMidiInputs=16
         OBSIDIAN_HAS_STABLE_AUDIO=1
+
+        JUCE_ENABLE_DPI_AWARENESS=1     
+        JUCE_DIRECTWRITE=1             
+        JUCE_SUPPORT_RETINA=1           
+        JUCE_USE_DIRECTWRITE=1        
         
     PUBLIC
         JUCE_WEB_BROWSER=0
@@ -121,6 +126,9 @@ target_link_libraries(ObsidianNeuralVST PRIVATE
 
 if(WIN32)
     target_link_libraries(ObsidianNeuralVST PRIVATE ws2_32 winmm)
+    target_compile_definitions(ObsidianNeuralVST PRIVATE
+        JUCE_DPI_AWARENESS_CONTEXT=DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+    )
 elseif(APPLE)
     find_library(ACCELERATE_FRAMEWORK Accelerate)
     find_library(COREAUDIO_FRAMEWORK CoreAudio)

@@ -12,7 +12,9 @@
 DjIaVstEditor::DjIaVstEditor(DjIaVstProcessor& p)
 	: AudioProcessorEditor(&p), audioProcessor(p)
 {
+	setResizable(false, false);
 	setSize(1300, 800);
+	setScaleFactor(1.0f);
 	setLookAndFeel(&customLookAndFeel);
 	setWantsKeyboardFocus(true);
 	setMouseClickGrabsKeyboardFocus(false);
