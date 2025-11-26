@@ -91,6 +91,7 @@ This feature bridges the gap between visual creativity and sonic experimentation
 👉 **Detailed setup guide:**  
 📘 [Getting Started](https://obsidian-neural.com/documentation.html?page=getting-started)  
 🎚️ [First Step - Using the Plugin in Your DAW](https://obsidian-neural.com/documentation.html?page=first-step)  
+🎨 [Draw-to-Audio - Express Your Musical Ideas Visually](https://obsidian-neural.com/documentation.html?page=draw-to-audio)  
 🎛️ [Bank Management - Organize and Manage Your Generated Sounds](https://obsidian-neural.com/documentation.html?page=bank-management)
 
 **Pricing:**
