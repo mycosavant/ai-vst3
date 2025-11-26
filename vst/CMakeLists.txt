@@ -10,6 +10,23 @@ endif()
 
 project(OBSIDIAN-Neural VERSION 1.0.2)
 
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /Oi /Ot /GL /GS-")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG")
+    
+    string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    string(REPLACE "/RTCu" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+    
+    add_compile_options(
+        /fp:fast     
+        /Qpar           
+    )
+    
+    message(STATUS "MSVC optimizations enabled for Release builds")
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -56,7 +73,7 @@ juce_add_plugin(ObsidianNeuralVST
     PLUGIN_CODE "Obsi"
     COMPANY_NAME "InnerMost47"
     BUNDLE_ID "com.innermost47.obsidian-neural-vst" 
-    FORMATS VST3 Standalone
+    FORMATS VST3
     PRODUCT_NAME "OBSIDIAN-Neural"
     IS_SYNTH TRUE
     WANTS_MIDI_INPUT TRUE

@@ -765,8 +765,21 @@ private:
 		if (numSamplesToUse == 0 || !track.isPlaying.load() || !bufferToUse)
 			return;
 
+
 		const float volume = juce::jlimit(0.0f, 1.0f, track.volume.load());
 		const float pan = juce::jlimit(-1.0f, 1.0f, track.pan.load());
+
+		float leftGain = 1.0f;
+		float rightGain = 1.0f;
+		if (pan < 0.0f)
+		{
+			rightGain = 1.0f + pan;
+		}
+		else if (pan > 0.0f)
+		{
+			leftGain = 1.0f - pan;
+		}
+
 		double currentPosition = track.readPosition.load();
 		double playbackRatio = 1.0;
 
@@ -816,34 +829,37 @@ private:
 			sectionLength = numSamplesToUse;
 		}
 
+		const float* leftChannel = bufferToUse->getReadPointer(0);
+		const float* rightChannel = bufferToUse->getNumChannels() > 1
+			? bufferToUse->getReadPointer(1)
+			: leftChannel;
+
+		const int bufferSize = bufferToUse->getNumSamples();
+
+		const double fadeStartPosition = endSample - 64.0;
+		const float fadeRcpLength = 1.0f / 64.0f;
+
+		const bool beatRepeatActive = track.beatRepeatActive.load();
+		const double beatRepeatStart = beatRepeatActive ? track.beatRepeatStartPosition.load() : 0.0;
+		const double beatRepeatEnd = beatRepeatActive ? track.beatRepeatEndPosition.load() : 0.0;
+
 		for (int i = 0; i < numSamples; ++i)
 		{
-			if (track.beatRepeatActive.load())
+			if (beatRepeatActive)
 			{
-				double beatRepeatStart = track.beatRepeatStartPosition.load();
-				double beatRepeatEnd = track.beatRepeatEndPosition.load();
-				if (track.readPosition.load() >= beatRepeatEnd)
+				double absolutePos = startSample + currentPosition;
+				if (absolutePos >= beatRepeatEnd)
 				{
 					currentPosition = beatRepeatStart - startSample;
 					track.readPosition.store(beatRepeatStart);
 				}
 			}
-			double absolutePosition = startSample + currentPosition;
-			float leftGain = 1.0f;
-			float rightGain = 1.0f;
 
-			if (pan < 0.0f)
-			{
-				rightGain = 1.0f + pan;
-			}
-			else if (pan > 0.0f)
-			{
-				leftGain = 1.0f - pan;
-			}
+			double absolutePosition = startSample + currentPosition;
+
 			if (absolutePosition >= endSample)
 			{
-				currentPosition = 0.0;
-				absolutePosition = startSample;
+				track.readPosition = 0.0;
 				track.isPlaying = false;
 				return;
 			}
@@ -854,39 +870,34 @@ private:
 				absolutePosition = startSample;
 			}
 
-			for (int ch = 0; ch < std::min(2, bufferToUse->getNumChannels()); ++ch)
+			int sampleIndex = static_cast<int>(absolutePosition);
+			if (sampleIndex >= bufferSize)
 			{
-				int sampleIndex = static_cast<int>(absolutePosition);
-				if (sampleIndex >= bufferToUse->getNumSamples())
-				{
-					track.isPlaying = false;
-					break;
-				}
-
-				float sample = interpolateLinear(
-					bufferToUse->getReadPointer(ch),
-					absolutePosition,
-					bufferToUse->getNumSamples());
-				sample *= volume;
-				if (ch == 0)
-				{
-					sample *= leftGain;
-				}
-				else
-				{
-					sample *= rightGain;
-				}
-				if (absolutePosition > (endSample - 64))
-				{
-					float fadeGain = (static_cast<float>(endSample) - static_cast<float>(absolutePosition)) / 64.0f;
-					fadeGain = juce::jlimit(0.0f, 1.0f, fadeGain);
-					sample *= fadeGain;
-				}
-				mixOutput.addSample(ch, i, sample);
-				individualOutput.setSample(ch, i, sample);
+				track.isPlaying = false;
+				break;
 			}
+
+			float fadeGain = 1.0f;
+			if (absolutePosition > fadeStartPosition)
+			{
+				fadeGain = static_cast<float>(endSample - absolutePosition) * fadeRcpLength;
+				fadeGain = juce::jlimit(0.0f, 1.0f, fadeGain);
+			}
+
+			float leftSample = interpolateLinear(leftChannel, absolutePosition, bufferSize);
+			float rightSample = interpolateLinear(rightChannel, absolutePosition, bufferSize);
+
+			leftSample *= volume * leftGain * fadeGain;
+			rightSample *= volume * rightGain * fadeGain;
+
+			mixOutput.addSample(0, i, leftSample);
+			mixOutput.addSample(1, i, rightSample);
+			individualOutput.setSample(0, i, leftSample);
+			individualOutput.setSample(1, i, rightSample);
+
 			currentPosition += playbackRatio;
 		}
+
 		track.readPosition = currentPosition;
 	}
 
