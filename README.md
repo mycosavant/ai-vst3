@@ -9,7 +9,17 @@
 
 ---
 
-## What it does
+## Draw-to-Audio Live Demo
+
+**Watch the draw-to-audio feature in action** - Live improvisation session showing real-time sketch-to-sound generation:
+
+[![Draw-to-Audio Demo](https://img.youtube.com/vi/zhJ865KoPCU/maxresdefault.jpg)](https://youtu.be/zhJ865KoPCU)
+
+_Raw improvisation showcasing the experimental draw-to-audio workflow: sketch patterns → AI interprets visuals → generates matching loops on the fly._
+
+---
+
+## What Obsidian Neural does
 
 Type words → Get musical loops instantly. No stopping your creative flow.
 
