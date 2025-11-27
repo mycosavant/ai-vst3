@@ -1,6 +1,28 @@
 ﻿#pragma once
 #include "JuceHeader.h"
 #include "ColourPalette.h"
+#include "PluginProcessor.h"
+#include "CustomLookAndFeel.h"
+
+class KeywordBadge : public juce::TextButton
+{
+public:
+	KeywordBadge(const juce::String& text) : juce::TextButton(text) {}
+
+	std::function<void(const juce::MouseEvent&)> onRightClick;
+
+	void mouseDown(const juce::MouseEvent& e) override
+	{
+		if (e.mods.isRightButtonDown() && onRightClick)
+		{
+			onRightClick(e);
+		}
+		else
+		{
+			juce::TextButton::mouseDown(e);
+		}
+	}
+};
 
 class ColorSwatch : public juce::TextButton
 {
@@ -42,6 +64,7 @@ public:
 		int brushType = 0;
 		float brushSize = 5.0f;
 		juce::Colour brushColor = juce::Colours::black;
+		juce::StringArray selectedKeywords;
 
 		juce::String toXml() const
 		{
@@ -52,6 +75,9 @@ public:
 
 			auto* imageElement = xml.createNewChildElement("Image");
 			imageElement->setAttribute("data", imageBase64);
+
+			auto* keywordsElement = xml.createNewChildElement("Keywords");
+			keywordsElement->setAttribute("data", selectedKeywords.joinIntoString("|"));
 
 			return xml.toString();
 		}
@@ -69,6 +95,15 @@ public:
 				if (auto* imageElement = xml->getChildByName("Image"))
 				{
 					state.imageBase64 = imageElement->getStringAttribute("data");
+				}
+
+				if (auto* keywordsElement = xml->getChildByName("Keywords"))
+				{
+					juce::String keywordsData = keywordsElement->getStringAttribute("data");
+					if (keywordsData.isNotEmpty())
+					{
+						state.selectedKeywords.addTokens(keywordsData, "|", "");
+					}
 				}
 			}
 
@@ -91,6 +126,7 @@ public:
 
 		state.brushSize = currentBrushSize;
 		state.brushColor = currentColor;
+		state.selectedKeywords = selectedKeywords;
 
 		return state;
 	}
@@ -103,14 +139,21 @@ public:
 		Eraser
 	};
 
-	DrawingCanvas()
+	DrawingCanvas(DjIaVstProcessor& proc)
+		: audioProcessor(proc)
 	{
 		canvas = juce::Image(juce::Image::RGB, 512, 512, true);
 		clearCanvas();
-
+		setLookAndFeel(&CustomLookAndFeel::getInstance());
 		setupUI();
-		setSize(600, 750);
+		setupKeywordsUI();
+		setSize(900, 750);
 		startTimerHz(60);
+	}
+
+	~DrawingCanvas()
+	{
+		setLookAndFeel(nullptr);
 	}
 
 	void setGenerating(bool generating)
@@ -136,15 +179,66 @@ public:
 	void resized() override
 	{
 		auto bounds = getLocalBounds().reduced(10);
-
 		bounds.removeFromTop(10);
 
-		auto canvasContainer = bounds.removeFromTop(512);
-		int canvasX = (canvasContainer.getWidth() - 512) / 2;
-		canvasAreaBounds = juce::Rectangle<int>(canvasX + 10, canvasContainer.getY(), 512, 512);
+		auto mainArea = bounds.removeFromTop(512);
+
+		auto canvasArea = mainArea.removeFromLeft(512);
+		canvasAreaBounds = juce::Rectangle<int>(canvasArea.getX(), canvasArea.getY(), 512, 512);
+
+		mainArea.removeFromLeft(15);
+
+		auto keywordsArea = mainArea;
+
+		auto keywordsHeaderRow = keywordsArea.removeFromTop(35);
+		keywordsLabel.setBounds(keywordsHeaderRow);
+
+		keywordsArea.removeFromTop(5);
+
+		auto inputRow = keywordsArea.removeFromTop(35);
+		addKeywordButton.setBounds(inputRow.removeFromRight(40));
+		inputRow.removeFromRight(5);
+		keywordInput.setBounds(inputRow);
+
+		keywordsArea.removeFromTop(10);
+
+		auto viewportArea = keywordsArea.removeFromTop(425);
+		keywordsViewport.setBounds(viewportArea);
+
+		int badgeWidth = 105;
+		int badgeHeight = 28;
+		int spacingX = 5;
+		int spacingY = 5;
+
+		int totalBadges = keywordBadges.size();
+		if (totalBadges > 0)
+		{
+			int availableHeight = viewportArea.getHeight() - keywordsViewport.getScrollBarThickness();
+			int maxRows = juce::jmax(1, availableHeight / (badgeHeight + spacingY));
+
+			int numColumns = (totalBadges + maxRows - 1) / maxRows;
+
+			int totalWidth = numColumns * (badgeWidth + spacingX) + spacingX;
+
+			keywordsBadgesContainer.setSize(juce::jmax(totalWidth, viewportArea.getWidth()),
+				availableHeight);
+
+			int badgeIndex = 0;
+			for (auto* badge : keywordBadges)
+			{
+				int col = badgeIndex / maxRows;
+				int row = badgeIndex % maxRows;
+
+				int x = col * (badgeWidth + spacingX) + spacingX;
+				int y = row * (badgeHeight + spacingY) + spacingY;
+
+				badge->setBounds(x, y, badgeWidth, badgeHeight);
+
+				badgeIndex++;
+			}
+		}
 
 		bounds.removeFromTop(15);
-
 		auto toolsArea = bounds;
 
 		auto brushRow = toolsArea.removeFromTop(45);
@@ -171,14 +265,19 @@ public:
 		colorLabel.setBounds(colorRow.removeFromLeft(60));
 		colorRow.removeFromLeft(5);
 
-		int swatchSize = 28;
-		int spacing = 5;
-		for (auto* swatch : colorSwatches)
+		int numSwatches = colorSwatches.size();
+		if (numSwatches > 0)
 		{
-			if (colorRow.getWidth() >= swatchSize)
+			int totalSpacing = (numSwatches - 1) * 5;
+			int availableWidth = colorRow.getWidth() - totalSpacing;
+			int swatchWidth = availableWidth / numSwatches;
+
+			for (int i = 0; i < numSwatches; ++i)
 			{
-				swatch->setBounds(colorRow.removeFromLeft(swatchSize));
-				colorRow.removeFromLeft(spacing);
+				auto* swatch = colorSwatches[i];
+				swatch->setBounds(colorRow.removeFromLeft(swatchWidth));
+				if (i < numSwatches - 1)
+					colorRow.removeFromLeft(5);
 			}
 		}
 
@@ -191,10 +290,23 @@ public:
 		generateButton.setBounds(actionRow);
 	}
 
+	void mouseMove(const juce::MouseEvent& e) override
+	{
+		if (isPointInCanvas(e.getPosition()))
+		{
+			updateMouseCursor();
+		}
+		else
+		{
+			setMouseCursor(juce::MouseCursor::NormalCursor);
+		}
+	}
+
 	void mouseDown(const juce::MouseEvent& e) override
 	{
 		if (isPointInCanvas(e.getPosition()))
 		{
+			updateMouseCursor();
 			isDrawing = true;
 			lastPoint = getCanvasPoint(e.getPosition());
 
@@ -208,6 +320,7 @@ public:
 	{
 		if (isDrawing && isPointInCanvas(e.getPosition()))
 		{
+			updateMouseCursor();
 			auto currentPoint = getCanvasPoint(e.getPosition());
 			if (lastPoint != currentPoint)
 			{
@@ -412,20 +525,358 @@ public:
 		brushSizeSlider.setValue(state.brushSize, juce::dontSendNotification);
 
 		currentColor = state.brushColor;
-
 		updateColorSwatchSelection();
+
+		selectedKeywords = state.selectedKeywords;
+
+		for (auto* badge : keywordBadges)
+		{
+			juce::String keyword = badge->getButtonText();
+			badge->setToggleState(selectedKeywords.contains(keyword), juce::dontSendNotification);
+		}
 
 		repaint();
 
 		DBG("State restored - brush type: " << state.brushType
 			<< ", size: " << state.brushSize
-			<< ", color: " << state.brushColor.toString());
+			<< ", color: " << state.brushColor.toString()
+			<< ", keywords: " << selectedKeywords.joinIntoString(", "));
 	}
 
 	std::function<void(const juce::String&)> onGenerate;
 	std::function<void()> onClose;
 
 private:
+	DjIaVstProcessor& audioProcessor;
+
+	juce::StringArray selectedKeywords;
+	juce::StringArray availableKeywords;
+
+	juce::TextEditor keywordInput;
+	juce::TextButton addKeywordButton;
+	juce::Label keywordsLabel;
+
+	juce::OwnedArray<KeywordBadge> keywordBadges;
+
+	juce::Viewport keywordsViewport;
+	juce::Component keywordsBadgesContainer;
+
+	static juce::StringArray getDefaultKeywords()
+	{
+		return {
+			"drums", "bass", "techno", "ambient", "glitch",
+			"synth", "melody", "percussion", "kick", "snare",
+			"hihat", "808", "acid", "reverb", "delay",
+			"distortion", "filter", "groove", "rhythm", "texture"
+		};
+	}
+
+	void updateMouseCursor()
+	{
+		switch (currentBrushType)
+		{
+		case BrushType::Pencil:
+			setMouseCursor(juce::MouseCursor::CrosshairCursor);
+			break;
+
+		case BrushType::Brush:
+		case BrushType::Airbrush:
+			setMouseCursor(juce::MouseCursor::CrosshairCursor);
+			break;
+
+		case BrushType::Eraser:
+			setMouseCursor(juce::MouseCursor::PointingHandCursor);
+			break;
+		}
+	}
+
+	void setupKeywordsUI()
+	{
+		availableKeywords = getDefaultKeywords();
+
+		auto customKeywords = audioProcessor.getCustomKeywords();
+		for (const auto& keyword : customKeywords)
+		{
+			if (!availableKeywords.contains(keyword))
+			{
+				availableKeywords.add(keyword);
+			}
+		}
+
+		addAndMakeVisible(keywordsLabel);
+		keywordsLabel.setText("Keywords:", juce::dontSendNotification);
+		keywordsLabel.setColour(juce::Label::textColourId, ColourPalette::textPrimary);
+		keywordsLabel.setFont(juce::FontOptions(14.0f, juce::Font::bold));
+
+		addAndMakeVisible(keywordInput);
+		keywordInput.setFont(juce::FontOptions(13.0f));
+		keywordInput.setColour(juce::TextEditor::backgroundColourId, ColourPalette::backgroundLight);
+		keywordInput.setColour(juce::TextEditor::textColourId, ColourPalette::textPrimary);
+		keywordInput.setColour(juce::TextEditor::outlineColourId, ColourPalette::backgroundDeep);
+		keywordInput.setTextToShowWhenEmpty("Add keyword...", ColourPalette::textSecondary);
+		keywordInput.onReturnKey = [this]() { addCustomKeyword(); };
+
+		addAndMakeVisible(addKeywordButton);
+		addKeywordButton.setButtonText("+");
+		addKeywordButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonSuccess);
+		addKeywordButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
+		addKeywordButton.onClick = [this]() { addCustomKeyword(); };
+
+		addAndMakeVisible(keywordsViewport);
+		keywordsViewport.setViewedComponent(&keywordsBadgesContainer, false);
+		keywordsViewport.setScrollBarsShown(false, true);
+
+		updateKeywordBadges();
+	}
+
+	void updateKeywordBadges()
+	{
+		keywordBadges.clear();
+
+		juce::StringArray sortedKeywords = availableKeywords;
+		sortedKeywords.sort(true);
+
+		for (const auto& keyword : sortedKeywords)
+		{
+			auto* badge = new KeywordBadge(keyword);
+			badge->setClickingTogglesState(true);
+			badge->setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
+			badge->setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonPrimary);
+			badge->setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
+			badge->setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+
+			if (selectedKeywords.contains(keyword))
+			{
+				badge->setToggleState(true, juce::dontSendNotification);
+			}
+
+			badge->onClick = [this, keyword]()
+				{
+					toggleKeyword(keyword);
+				};
+
+			badge->onRightClick = [this, badge, keyword](const juce::MouseEvent&)
+				{
+					showKeywordContextMenu(badge, keyword);
+				};
+
+			keywordsBadgesContainer.addAndMakeVisible(badge);
+			keywordBadges.add(badge);
+		}
+
+		resized();
+	}
+
+	void showKeywordContextMenu(KeywordBadge* badge, const juce::String& keyword)
+	{
+		juce::PopupMenu menu;
+
+		bool isDefaultKeyword = getDefaultKeywords().contains(keyword);
+
+		if (!isDefaultKeyword)
+		{
+			menu.addItem(1, "Edit");
+			menu.addItem(2, "Delete");
+		}
+		else
+		{
+			menu.addItem(1, "Edit", false);
+			menu.addItem(2, "Delete", false);
+			menu.addSeparator();
+			menu.addItem(3, "Cannot edit default keywords", false);
+		}
+
+		menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(badge),
+			[this, keyword, isDefaultKeyword](int result)
+			{
+				if (result == 1 && !isDefaultKeyword)
+				{
+					editKeyword(keyword);
+				}
+				else if (result == 2 && !isDefaultKeyword)
+				{
+					deleteKeyword(keyword);
+				}
+			});
+	}
+
+	void editKeyword(const juce::String& oldKeyword)
+	{
+		auto* alertWindow = new juce::AlertWindow(
+			"Edit Keyword",
+			"Enter new keyword name:",
+			juce::MessageBoxIconType::NoIcon
+		);
+
+		alertWindow->addTextEditor("keyword", oldKeyword, "Keyword:");
+		alertWindow->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+		alertWindow->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+		alertWindow->enterModalState(true, juce::ModalCallbackFunction::create(
+			[this, oldKeyword, alertWindow](int result)
+			{
+				if (result == 1)
+				{
+					juce::String newKeyword = alertWindow->getTextEditorContents("keyword").trim().toLowerCase();
+
+					if (!isKeywordValid(newKeyword))
+					{
+						juce::AlertWindow::showMessageBoxAsync(
+							juce::MessageBoxIconType::WarningIcon,
+							"Invalid Keyword",
+							"Keyword must be 1-15 characters and contain only letters, numbers, spaces or hyphens.");
+						return;
+					}
+
+					if (newKeyword != oldKeyword && availableKeywords.contains(newKeyword))
+					{
+						juce::AlertWindow::showMessageBoxAsync(
+							juce::MessageBoxIconType::WarningIcon,
+							"Duplicate Keyword",
+							"This keyword already exists.");
+						return;
+					}
+
+					int index = availableKeywords.indexOf(oldKeyword);
+					if (index >= 0)
+					{
+						availableKeywords.set(index, newKeyword);
+					}
+
+					if (selectedKeywords.contains(oldKeyword))
+					{
+						selectedKeywords.removeString(oldKeyword);
+						selectedKeywords.add(newKeyword);
+					}
+
+					auto customKeywords = audioProcessor.getCustomKeywords();
+					if (customKeywords.contains(oldKeyword))
+					{
+						juce::StringArray newCustomKeywords;
+						for (const auto& kw : customKeywords)
+						{
+							if (kw == oldKeyword)
+								newCustomKeywords.add(newKeyword);
+							else
+								newCustomKeywords.add(kw);
+						}
+						audioProcessor.setCustomKeywords(newCustomKeywords);
+					}
+
+					updateKeywordBadges();
+
+					DBG("Keyword renamed: " << oldKeyword << " -> " << newKeyword);
+				}
+
+				delete alertWindow;
+			}), true);
+	}
+
+	void deleteKeyword(const juce::String& keyword)
+	{
+		juce::AlertWindow::showOkCancelBox(
+			juce::MessageBoxIconType::QuestionIcon,
+			"Delete Keyword",
+			"Are you sure you want to delete \"" + keyword + "\"?",
+			"Delete",
+			"Cancel",
+			nullptr,
+			juce::ModalCallbackFunction::create([this, keyword](int result)
+				{
+					if (result == 1)
+					{
+						availableKeywords.removeString(keyword);
+
+						selectedKeywords.removeString(keyword);
+
+						auto customKeywords = audioProcessor.getCustomKeywords();
+						customKeywords.removeString(keyword);
+						audioProcessor.setCustomKeywords(customKeywords);
+
+						updateKeywordBadges();
+
+						DBG("Keyword deleted: " << keyword);
+					}
+				})
+		);
+	}
+
+	void toggleKeyword(const juce::String& keyword)
+	{
+		if (selectedKeywords.contains(keyword))
+		{
+			selectedKeywords.removeString(keyword);
+			DBG("Keyword deselected: " + keyword);
+		}
+		else
+		{
+			selectedKeywords.add(keyword);
+			DBG("Keyword selected: " + keyword);
+		}
+
+		DBG("Selected keywords: " + selectedKeywords.joinIntoString(", "));
+	}
+
+	bool isKeywordValid(const juce::String& keyword) const
+	{
+		if (keyword.trim().isEmpty())
+			return false;
+
+		if (keyword.trim().length() > 15)
+			return false;
+
+		juce::String trimmed = keyword.trim();
+		for (int i = 0; i < trimmed.length(); ++i)
+		{
+			juce::juce_wchar c = trimmed[i];
+			if (!juce::CharacterFunctions::isLetterOrDigit(c) && c != ' ' && c != '-')
+				return false;
+		}
+
+		return true;
+	}
+
+	void addCustomKeyword()
+	{
+		juce::String newKeyword = keywordInput.getText().trim().toLowerCase();
+
+		if (!isKeywordValid(newKeyword))
+		{
+			keywordInput.setColour(juce::TextEditor::outlineColourId, ColourPalette::buttonDanger);
+			juce::Timer::callAfterDelay(500, [this]()
+				{
+					keywordInput.setColour(juce::TextEditor::outlineColourId, ColourPalette::backgroundDeep);
+				});
+			return;
+		}
+
+		if (availableKeywords.contains(newKeyword))
+		{
+			keywordInput.setColour(juce::TextEditor::outlineColourId, ColourPalette::buttonWarning);
+			juce::Timer::callAfterDelay(500, [this]()
+				{
+					keywordInput.setColour(juce::TextEditor::outlineColourId, ColourPalette::backgroundDeep);
+				});
+			keywordInput.clear();
+			return;
+		}
+
+		availableKeywords.add(newKeyword);
+		audioProcessor.addCustomKeyword(newKeyword);
+
+		updateKeywordBadges();
+
+		keywordInput.clear();
+
+		keywordInput.setColour(juce::TextEditor::outlineColourId, ColourPalette::buttonSuccess);
+		juce::Timer::callAfterDelay(500, [this]()
+			{
+				keywordInput.setColour(juce::TextEditor::outlineColourId, ColourPalette::backgroundDeep);
+			});
+
+		DBG("Custom keyword added: " + newKeyword);
+	}
+
 	bool isGenerating = false;
 
 	juce::TextButton* selectedColorSwatch = nullptr;
@@ -492,8 +943,12 @@ private:
 		pencilButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
 		pencilButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonPrimary);
 		pencilButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
-		pencilButton.setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
-		pencilButton.onClick = [this] { currentBrushType = BrushType::Pencil; };
+		pencilButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+		pencilButton.onClick = [this]
+			{
+				currentBrushType = BrushType::Pencil;
+			};
+
 
 		addAndMakeVisible(brushButton);
 		brushButton.setButtonText("Brush");
@@ -502,8 +957,11 @@ private:
 		brushButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
 		brushButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonPrimary);
 		brushButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
-		brushButton.setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
-		brushButton.onClick = [this] { currentBrushType = BrushType::Brush; };
+		brushButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+		brushButton.onClick = [this]
+			{
+				currentBrushType = BrushType::Brush;
+			};
 
 		addAndMakeVisible(airbrushButton);
 		airbrushButton.setButtonText("Spray");
@@ -512,8 +970,11 @@ private:
 		airbrushButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
 		airbrushButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonPrimary);
 		airbrushButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
-		airbrushButton.setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
-		airbrushButton.onClick = [this] { currentBrushType = BrushType::Airbrush; };
+		airbrushButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+		airbrushButton.onClick = [this]
+			{
+				currentBrushType = BrushType::Airbrush;
+			};
 
 		addAndMakeVisible(eraserButton);
 		eraserButton.setButtonText("Eraser");
@@ -522,8 +983,11 @@ private:
 		eraserButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
 		eraserButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonPrimary);
 		eraserButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
-		eraserButton.setColour(juce::TextButton::textColourOnId, ColourPalette::textPrimary);
-		eraserButton.onClick = [this] { currentBrushType = BrushType::Eraser; };
+		eraserButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+		eraserButton.onClick = [this]
+			{
+				currentBrushType = BrushType::Eraser;
+			};
 
 		addAndMakeVisible(brushSizeLabel);
 		brushSizeLabel.setText("Size:", juce::dontSendNotification);
@@ -585,7 +1049,7 @@ private:
 		addAndMakeVisible(clearButton);
 		clearButton.setButtonText("Clear");
 		clearButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonDanger);
-		clearButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
+		clearButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
 		clearButton.onClick = [this] { clearCanvas(); };
 
 		addAndMakeVisible(generateButton);

@@ -155,7 +155,7 @@ public:
 	std::function<void(double)> onHostBpmChanged = nullptr;
 	void setGlobalPrompt(const juce::String& prompt) { globalPrompt = prompt; }
 	juce::String getGlobalPrompt() const { return globalPrompt; }
-	void generateSampleWithImage(const juce::String& trackId, const juce::String& base64Image);
+	void generateSampleWithImage(const juce::String& trackId, const juce::String& base64Image, const juce::StringArray& keywords);
 	void generateLoopWithImage(const DjIaClient::LoopRequest& request, const juce::String& trackId, int timeoutMS);
 	void setGlobalBpm(float bpm) { globalBpm = bpm; }
 	void setCanLoad(bool load) { canLoad = load; }
@@ -218,7 +218,21 @@ public:
 	bool canGenerateStandard = true;
 	DjIaClient& getApiClient() { return apiClient; }
 	const DjIaClient& getApiClient() const { return apiClient; }
+	juce::StringArray getCustomKeywords() const { return customKeywords; }
 
+	void addCustomKeyword(const juce::String& keyword)
+	{
+		if (!customKeywords.contains(keyword))
+		{
+			customKeywords.add(keyword);
+			saveGlobalConfig();
+		}
+	}
+	void setCustomKeywords(const juce::StringArray& keywords)
+	{
+		customKeywords = keywords;
+		saveGlobalConfig();
+	}
 
 private:
 	DjIaVstEditor* currentEditor = nullptr;
@@ -229,6 +243,7 @@ private:
 	juce::String projectId;
 	bool migrationCompleted = false;
 	std::unique_ptr<SampleBank> sampleBank;
+	juce::StringArray customKeywords;
 
 	std::atomic<float>* nextTrackParam = nullptr;
 	std::atomic<float>* prevTrackParam = nullptr;

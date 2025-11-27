@@ -13,6 +13,7 @@ public:
 		juce::String key;
 		bool useImage = false;
 		juce::String imageBase64 = "";
+		juce::StringArray keywords;
 
 		LoopRequest()
 			: prompt(""),
@@ -187,6 +188,16 @@ public:
 			{
 				jsonRequest.getDynamicObject()->setProperty("use_image", true);
 				jsonRequest.getDynamicObject()->setProperty("image_base64", request.imageBase64);
+			}
+
+			if (request.keywords.size() > 0)
+			{
+				juce::Array<juce::var> keywordsArray;
+				for (const auto& keyword : request.keywords)
+				{
+					keywordsArray.add(juce::var(keyword));
+				}
+				jsonRequest.getDynamicObject()->setProperty("keywords", juce::var(keywordsArray));
 			}
 
 			auto jsonString = juce::JSON::toString(jsonRequest);

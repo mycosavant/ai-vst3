@@ -222,6 +222,7 @@ public:
 			trackState.setProperty("currentPageIndex", track->currentPageIndex, nullptr);
 			trackState.setProperty("canvasData", track->canvasData, nullptr);
 			trackState.setProperty("canvasState", track->canvasState, nullptr);
+			trackState.setProperty("selectedKeywords", track->selectedKeywords.joinIntoString("|"), nullptr);
 
 			for (int pageIndex = 0; pageIndex < 4; ++pageIndex)
 			{
@@ -246,6 +247,7 @@ public:
 				pageState.setProperty("isLoaded", page.isLoaded.load(), nullptr);
 				pageState.setProperty("canvasData", page.canvasData, nullptr);
 				pageState.setProperty("canvasState", page.canvasState, nullptr);
+				pageState.setProperty("selectedKeywords", page.selectedKeywords.joinIntoString("|"), nullptr);
 
 				trackState.appendChild(pageState, nullptr);
 			}
@@ -346,6 +348,12 @@ public:
 			track->usePages = trackState.getProperty("usePages", false);
 			track->currentPageIndex = trackState.getProperty("currentPageIndex", 0);
 
+			juce::String keywordsStr = trackState.getProperty("selectedKeywords", "");
+			if (keywordsStr.isNotEmpty())
+			{
+				track->selectedKeywords.addTokens(keywordsStr, "|", "");
+			}
+
 			if (track->usePages.load())
 			{
 				DBG("Loading track " << track->trackName << " with pages system");
@@ -387,6 +395,13 @@ public:
 						page.hasOriginalVersion = pageState.getProperty("hasOriginalVersion", false);
 						page.canvasData = pageState.getProperty("canvasData", "").toString();
 						page.canvasState = pageState.getProperty("canvasState", "").toString();
+
+						juce::String pageKeywordsStr = pageState.getProperty("selectedKeywords", "");
+						if (pageKeywordsStr.isNotEmpty())
+						{
+							page.selectedKeywords.addTokens(pageKeywordsStr, "|", "");
+						}
+
 						page.isLoaded = false;
 
 						if (!page.audioFilePath.isEmpty())
