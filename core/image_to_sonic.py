@@ -132,7 +132,9 @@ Example musicgen_prompt (WITHOUT tempo/key):
 """
 
 
-def generate_img_description(img_path, bpm=127, scale="C Minor", temperature=0.7):
+def generate_img_description(
+    img_path, bpm=127, scale="C Minor", keywords=None, temperature=0.7
+):
 
     chat_handler = MiniCPMv26ChatHandler(clip_model_path="models/mmproj-model-f16.gguf")
     llm = Llama(
@@ -142,11 +144,20 @@ def generate_img_description(img_path, bpm=127, scale="C Minor", temperature=0.7
         verbose=False,
     )
 
-    user_message = f""" Translate this image into a sonic/musical description.
+    user_message = f"""Translate this image into a sonic/musical description.
 
 CONTEXT:
 - Tempo: {bpm} BPM
-- Key: {scale}
+- Key: {scale}"""
+
+    if keywords and len(keywords) > 0:
+        keywords_str = ", ".join(keywords)
+        user_message += f"""
+- Additional keywords: {keywords_str}
+
+IMPORTANT: These user-selected keywords MUST be incorporated and emphasized in your musicgen_prompt. They represent the desired sonic direction alongside the visual interpretation."""
+
+    user_message += """
 
 Your description must work within these constraints."""
 
