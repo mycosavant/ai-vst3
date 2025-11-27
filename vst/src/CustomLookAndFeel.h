@@ -5,6 +5,11 @@
 class CustomLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
+	static CustomLookAndFeel& getInstance()
+	{
+		static CustomLookAndFeel instance;
+		return instance;
+	}
 	CustomLookAndFeel()
 	{
 		setColour(juce::TextButton::buttonColourId, soften(ColourPalette::backgroundLight));

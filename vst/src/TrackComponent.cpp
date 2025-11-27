@@ -590,7 +590,7 @@ void TrackComponent::openDrawingCanvas()
 		return;
 	}
 
-	auto* canvas = new DrawingCanvas();
+	auto* canvas = new DrawingCanvas(audioProcessor);
 
 	auto* window = new DrawingWindow("Draw Image - " + trackNameLabel.getText(), canvas);
 	drawingWindowPtr = window;
@@ -632,17 +632,20 @@ void TrackComponent::openDrawingCanvas()
 					auto& currentPage = track->getCurrentPage();
 					currentPage.canvasState = stateXml;
 					currentPage.canvasData = base64Image;
+					currentPage.selectedKeywords = canvasState.selectedKeywords;
 					track->syncLegacyProperties();
 				}
 				else
 				{
 					track->canvasState = stateXml;
 					track->canvasData = base64Image;
+					track->selectedKeywords = canvasState.selectedKeywords;
 				}
 			}
 			if (onGenerateWithImage)
 			{
-				onGenerateWithImage(trackId, base64Image);
+				auto keywords = canvas->getState().selectedKeywords;
+				onGenerateWithImage(trackId, base64Image, keywords);
 			}
 		};
 
@@ -657,12 +660,14 @@ void TrackComponent::openDrawingCanvas()
 					auto& currentPage = track->getCurrentPage();
 					currentPage.canvasState = stateXml;
 					currentPage.canvasData = canvasState.imageBase64;
+					currentPage.selectedKeywords = canvasState.selectedKeywords;
 					track->syncLegacyProperties();
 				}
 				else
 				{
 					track->canvasState = stateXml;
 					track->canvasData = canvasState.imageBase64;
+					track->selectedKeywords = canvasState.selectedKeywords;
 				}
 			}
 			drawingWindowPtr = nullptr;

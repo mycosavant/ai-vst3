@@ -16,6 +16,8 @@ struct TrackPage
 	juce::String canvasData;
 	juce::String canvasState;
 
+	juce::StringArray selectedKeywords;
+
 	int numSamples = 0;
 	int generationDuration = 6;
 
@@ -98,6 +100,8 @@ struct TrackData
 	juce::String currentSampleId;
 	juce::String canvasData;
 	juce::String canvasState;
+
+	juce::StringArray selectedKeywords;
 
 	bool showWaveform = true;
 	bool showSequencer = true;
@@ -259,6 +263,8 @@ struct TrackData
 		useOriginalFile = currentPage.useOriginalFile.load();
 		hasOriginalVersion = currentPage.hasOriginalVersion.load();
 		originalStagingBuffer = currentPage.originalStagingBuffer;
+
+		selectedKeywords = currentPage.selectedKeywords;
 	}
 
 	void migrateToPages()

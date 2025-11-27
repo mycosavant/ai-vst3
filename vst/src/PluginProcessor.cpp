@@ -194,6 +194,17 @@ void DjIaVstProcessor::loadGlobalConfig()
 					customPrompts.add(prompt);
 				}
 			}
+			auto keywordsVar = object->getProperty("customKeywords");
+			if (keywordsVar.isArray())
+			{
+				customKeywords.clear();
+				auto* keywordsArray = keywordsVar.getArray();
+				for (int i = 0; i < keywordsArray->size(); ++i)
+				{
+					juce::String keyword = keywordsArray->getUnchecked(i).toString();
+					customKeywords.add(keyword);
+				}
+			}
 			setApiKey(apiKey);
 			setServerUrl(serverUrl);
 		}
@@ -219,6 +230,13 @@ void DjIaVstProcessor::saveGlobalConfig()
 		promptsArray.add(juce::var(prompt));
 	}
 	config->setProperty("customPrompts", juce::var(promptsArray));
+
+	juce::Array<juce::var> keywordsArray;
+	for (const auto& keyword : customKeywords)
+	{
+		keywordsArray.add(juce::var(keyword));
+	}
+	config->setProperty("customKeywords", juce::var(keywordsArray));
 
 	juce::String jsonString = juce::JSON::toString(juce::var(config.get()));
 	configFile.replaceWithText(jsonString);
@@ -866,7 +884,7 @@ void DjIaVstProcessor::handleGenerate()
 	}
 }
 
-void DjIaVstProcessor::generateSampleWithImage(const juce::String& trackId, const juce::String& base64Image)
+void DjIaVstProcessor::generateSampleWithImage(const juce::String& trackId, const juce::String& base64Image, const juce::StringArray& keywords)
 {
 	if (isGenerating)
 	{
@@ -891,7 +909,7 @@ void DjIaVstProcessor::generateSampleWithImage(const juce::String& trackId, cons
 			}
 		});
 
-	juce::Thread::launch([this, trackId, base64Image]()
+	juce::Thread::launch([this, trackId, base64Image, keywords]()
 		{
 			try
 			{
@@ -925,6 +943,7 @@ void DjIaVstProcessor::generateSampleWithImage(const juce::String& trackId, cons
 				request.prompt = "";
 				request.useImage = true;
 				request.imageBase64 = base64Image;
+				request.keywords = keywords;
 
 				generateLoopWithImage(request, trackId, 300000);
 			}

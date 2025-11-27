@@ -12,3 +12,4 @@ class GenerateRequest(BaseModel):
     use_image: Optional[bool] = False
     image_base64: Optional[str] = None
     image_temperature: Optional[float] = 0.7
+    keywords: Optional[List[str]] = []

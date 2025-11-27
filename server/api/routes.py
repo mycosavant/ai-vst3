@@ -130,11 +130,14 @@ async def generate_loop(
             print(
                 f"🎨 Analyzing image with BPM={request.bpm}, Key={request.key or 'C Major'}"
             )
+            if request.keywords and len(request.keywords) > 0:
+                print(f"🏷️  User keywords: {', '.join(request.keywords)}")
 
             sonic_data = generate_img_description(
                 img_path=temp_image_path,
                 bpm=request.bpm,
                 scale=request.key or "C Major",
+                keywords=request.keywords,
                 temperature=request.image_temperature,
             )
 

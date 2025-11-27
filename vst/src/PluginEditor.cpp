@@ -1914,10 +1914,9 @@ void DjIaVstEditor::refreshTrackComponents()
 						}
 					};
 
-				trackComp->onGenerateWithImage = [this](const juce::String& id, const juce::String& base64Image)
+				trackComp->onGenerateWithImage = [this](const juce::String& trackId, const juce::String& image, const juce::StringArray& keywords)
 					{
-						setAllGenerateButtonsEnabled(false);
-						audioProcessor.generateSampleWithImage(id, base64Image);
+						audioProcessor.generateSampleWithImage(trackId, image, keywords);
 					};
 
 				trackComp->onTrackRenamed = [this](const juce::String& id, const juce::String& newName)

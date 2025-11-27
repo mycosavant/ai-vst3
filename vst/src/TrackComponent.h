@@ -42,7 +42,7 @@ public:
 	std::function<void(const juce::String&, const juce::String&)> onTrackRenamed;
 	std::function<void(const juce::String&, const juce::String&)> onTrackPromptChanged;
 	std::function<void(const juce::String&)> onStatusMessage;
-	std::function<void(const juce::String& trackId, const juce::String& base64Image)> onGenerateWithImage;
+	std::function<void(const juce::String&, const juce::String&, const juce::StringArray&)> onGenerateWithImage;
 
 	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
 	void itemDragEnter(const SourceDetails& dragSourceDetails) override;
@@ -123,7 +123,7 @@ private:
 				juce::DocumentWindow::closeButton)
 		{
 			setContentOwned(canvas, true);
-			centreWithSize(620, 770);
+			centreWithSize(920, 770);
 			setResizable(false, false);
 			setUsingNativeTitleBar(true);
 		}
