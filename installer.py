@@ -90,10 +90,9 @@ def check_and_install_dependencies():
                 return False
 
     print("\n✓ All dependencies installed successfully!")
-    print("Restarting installer...\n")
-
-    os.execv(sys.executable, [sys.executable] + sys.argv)
-    return True
+    print("Please restart the installer manually.\n")
+    input("Press Enter to exit...")
+    return False
 
 
 if __name__ == "__main__":
