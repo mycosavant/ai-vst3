@@ -1018,8 +1018,6 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 			auto& currentPage = track->getCurrentPage();
 			currentPage.prompt = generatedPrompt;
 			currentPage.generationPrompt = generatedPrompt;
-			currentPage.originalBpm = response.bpm;
-			currentPage.generationBpm = response.bpm;
 			currentPage.generationKey = response.key;
 			track->syncLegacyProperties();
 		}
@@ -1027,8 +1025,6 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 		{
 			track->prompt = generatedPrompt;
 			track->generationPrompt = generatedPrompt;
-			track->originalBpm = response.bpm;
-			track->generationBpm = response.bpm;
 			track->generationKey = response.key;
 		}
 	}
