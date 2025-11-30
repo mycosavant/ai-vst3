@@ -20,11 +20,6 @@ class DjIaVstProcessor : public juce::AudioProcessor,
 	public juce::AsyncUpdater
 {
 public:
-	void timerCallback() override;
-	std::function<void()> onUIUpdateNeeded;
-
-	DjIaVstProcessor();
-	~DjIaVstProcessor() override;
 
 	struct GenerationListener
 	{
@@ -32,11 +27,76 @@ public:
 		virtual void onGenerationComplete(const juce::String& trackId, const juce::String& message) = 0;
 	};
 
-	void setGenerationListener(GenerationListener* listener) { generationListener = listener; }
+	DjIaVstProcessor();
+	~DjIaVstProcessor() override;
+
+	std::function<void()> onUIUpdateNeeded;
+	std::function<void(double)> onHostBpmChanged = nullptr;
+
+	juce::AudioProcessorEditor* createEditor() override;
+	juce::AudioFormatManager sharedFormatManager;
+
 	TrackManager trackManager;
+
+	MidiLearnManager& getMidiLearnManager() { return midiLearnManager; }
+
+	DjIaClient& getApiClient() { return apiClient; }
+
+	SampleBank* getSampleBank() { return sampleBank.get(); }
+
+	TrackData* getCurrentTrack() { return trackManager.getTrack(selectedTrackId); }
+	TrackData* getTrack(const juce::String& trackId) { return trackManager.getTrack(trackId); }
+
+	const DjIaClient& getApiClient() const { return apiClient; }
+
+	DjIaClient::LoopRequest createGlobalLoopRequest() const
+	{
+		DjIaClient::LoopRequest request;
+		request.prompt = globalPrompt;
+		request.bpm = globalBpm;
+		request.key = globalKey;
+		request.generationDuration = static_cast<float>(globalDuration);
+		return request;
+	}
+
 	juce::ValueTree pendingMidiMappings;
+
 	juce::AudioProcessorValueTreeState& getParameterTreeState() { return parameters; }
+	juce::AudioProcessorValueTreeState& getParameters() { return parameters; }
+
 	std::atomic<bool> needsUIUpdate{ false };
+
+	juce::String getGlobalKey() const { return globalKey; }
+	juce::String getGlobalPrompt() const { return globalPrompt; }
+	juce::String getLocalModelsPath() const { return localModelsPath; }
+	juce::String getSelectedTrackId() const { return selectedTrackId; }
+	juce::String createNewTrack(const juce::String& name = "Track");
+	juce::String getGeneratingTrackId() const { return generatingTrackId; }
+	juce::String getServerUrl() const { return serverUrl; }
+	juce::String getApiKey() const { return apiKey; }
+	juce::String getLastPrompt() const { return lastPrompt; }
+	juce::String getLastKey() const { return lastKey; }
+
+	static juce::String getModelsDirectory()
+	{
+		return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+			.getChildFile("OBSIDIAN-Neural")
+			.getChildFile("stable-audio")
+			.getFullPathName();
+	}
+
+	juce::StringArray getBuiltInPrompts() const;
+	juce::StringArray getCustomKeywords() const { return customKeywords; }
+	juce::StringArray getCustomPrompts() const;
+
+	const juce::String getName() const override { return "OBSIDIAN-Neural"; }
+	const juce::String getProgramName(int) override { return {}; }
+
+	std::vector<juce::String> getGlobalStems() const { return globalStems; }
+	std::vector<juce::String> getAllTrackIds() const { return trackManager.getAllTrackIds(); }
+
+	void timerCallback() override;
+	void setGenerationListener(GenerationListener* listener) { generationListener = listener; }
 	void initDummySynth();
 	void initTracks();
 	void loadParameters();
@@ -51,36 +111,16 @@ public:
 	void clearOutputBuffers(juce::AudioSampleBuffer& buffer);
 	void resizeIndividualsBuffers(juce::AudioSampleBuffer& buffer);
 	void getDawInformations(juce::AudioPlayHead* currentPlayHead, bool& hostIsPlaying, double& hostBpm, double& hostPpqPosition);
-	bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
-	bool getDrumsEnabled() const { return drumsEnabled; }
 	void setDrumsEnabled(bool enabled) { drumsEnabled = enabled; }
-	bool getBassEnabled() const { return bassEnabled; }
 	void setBassEnabled(bool enabled) { bassEnabled = enabled; }
-	bool getOtherEnabled() const { return otherEnabled; }
 	void setOtherEnabled(bool enabled) { otherEnabled = enabled; }
-	bool getVocalsEnabled() const { return vocalsEnabled; }
 	void setVocalsEnabled(bool enabled) { vocalsEnabled = enabled; }
-	bool getGuitarEnabled() const { return guitarEnabled; }
 	void setGuitarEnabled(bool enabled) { guitarEnabled = enabled; }
-	bool getPianoEnabled() const { return pianoEnabled; }
 	void setPianoEnabled(bool enabled) { pianoEnabled = enabled; }
-	double getLastBpm() const { return lastBpm; }
 	void setLastBpm(double bpm) { lastBpm = bpm; }
-	double getLastDuration() const { return lastDuration; }
 	void setLastDuration(double duration) { lastDuration = duration; }
-	int getLastKeyIndex() const { return lastKeyIndex; }
 	void setLastKeyIndex(int index) { lastKeyIndex = index; }
-	juce::AudioProcessorEditor* createEditor() override;
-	bool hasEditor() const override { return true; }
-	const juce::String getName() const override { return "OBSIDIAN-Neural"; }
-	bool acceptsMidi() const override { return true; }
-	bool producesMidi() const override { return false; }
-	bool isMidiEffect() const override { return false; }
-	double getTailLengthSeconds() const override { return 0.0; }
-	int getNumPrograms() override { return 1; }
-	int getCurrentProgram() override { return 0; }
 	void setCurrentProgram(int) override {}
-	const juce::String getProgramName(int) override { return {}; }
 	void changeProgramName(int, const juce::String&) override {}
 	void getStateInformation(juce::MemoryBlock& destData) override;
 	void setStateInformation(const void* data, int sizeInBytes) override;
@@ -95,131 +135,53 @@ public:
 		masterMidEQ = mid;
 		masterLowEQ = low;
 	}
-	float getMasterVolume() const { return masterVolume.load(); }
-	int getTimeSignatureNumerator() const { return timeSignatureNumerator.load(); }
-	int getTimeSignatureDenominator() const { return timeSignatureDenominator.load(); }
-	float getMasterPan() const { return masterPan.load(); }
-	juce::String createNewTrack(const juce::String& name = "Track");
 	void deleteTrack(const juce::String& trackId);
 	void selectTrack(const juce::String& trackId);
-	juce::String getSelectedTrackId() const { return selectedTrackId; }
 	void reorderTracks(const juce::String& fromTrackId, const juce::String& toTrackId);
-	std::vector<juce::String> getAllTrackIds() const { return trackManager.getAllTrackIds(); }
-	TrackData* getCurrentTrack() { return trackManager.getTrack(selectedTrackId); }
-	TrackData* getTrack(const juce::String& trackId) { return trackManager.getTrack(trackId); }
 	void generateLoop(const DjIaClient::LoopRequest& request, const juce::String& targetTrackId = "");
 	void startNotePlaybackForTrack(const juce::String& trackId, int noteNumber, double hostBpm = 126.0);
 	void setApiKey(const juce::String& key);
 	void setServerUrl(const juce::String& url);
-	double getHostBpm() const;
-	juce::String getServerUrl() const { return serverUrl; }
-	juce::String getApiKey() const { return apiKey; }
-	juce::String getLastPrompt() const { return lastPrompt; }
-	juce::String getLastKey() const { return lastKey; }
-	int getLastPresetIndex() const { return lastPresetIndex; }
-	bool getHostBpmEnabled() const { return hostBpmEnabled; }
 	void setLastPrompt(const juce::String& prompt) { lastPrompt = prompt; }
 	void setLastPresetIndex(int index) { lastPresetIndex = index; }
 	void setHostBpmEnabled(bool enabled) { hostBpmEnabled = enabled; }
 	void updateAllWaveformsAfterLoad();
 	void setAutoLoadEnabled(bool enabled);
-	bool getAutoLoadEnabled() const { return autoLoadEnabled.load(); }
-	void loadPendingSample();
-	bool hasSampleWaiting() const { return hasUnloadedSample.load(); }
-	void setMidiIndicatorCallback(std::function<void(const juce::String&)> callback)
-	{
-		midiIndicatorCallback = callback;
-	}
-	void reloadTrackWithVersion(const juce::String& trackId, bool useOriginal);
-	juce::AudioProcessorValueTreeState& getParameters() { return parameters; }
-	void addCustomPrompt(const juce::String& prompt);
-	juce::StringArray getCustomPrompts() const;
-	void clearCustomPrompts();
-	bool getIsGenerating() const { return isGenerating; }
-	void setIsGenerating(bool generating) { isGenerating = generating; }
-	juce::String getGeneratingTrackId() const { return generatingTrackId; }
 	void setGeneratingTrackId(const juce::String& trackId) { generatingTrackId = trackId; }
-	bool isStateReady() const { return stateLoaded; }
-	MidiLearnManager& getMidiLearnManager() { return midiLearnManager; }
 	void handleSampleParams(int slot, TrackData* track);
 	void loadGlobalConfig();
 	void saveGlobalConfig();
 	void removeCustomPrompt(const juce::String& prompt);
 	void editCustomPrompt(const juce::String& oldPrompt, const juce::String& newPrompt);
-	int getSamplesPerBlock() const { return currentBlockSize; };
-	int getRequestTimeout() const { return requestTimeoutMS; };
 	void handleSequencerPlayState(bool hostIsPlaying);
 	void addSequencerMidiMessage(const juce::MidiMessage& message);
 	void setRequestTimeout(int requestTimeoutMS);
 	void prepareToPlay(double newSampleRate, int samplesPerBlock);
-	std::function<void(double)> onHostBpmChanged = nullptr;
+	void setGlobalKey(const juce::String& key) { globalKey = key; }
 	void setGlobalPrompt(const juce::String& prompt) { globalPrompt = prompt; }
-	juce::String getGlobalPrompt() const { return globalPrompt; }
+	void setGlobalDuration(int duration) { globalDuration = duration; }
+	void previewTrack(const juce::String& trackId);
+	void setGlobalStems(const std::vector<juce::String>& stems) { globalStems = stems; }
+	void setUseLocalModel(bool useLocal) { useLocalModel = useLocal; }
+	void loadSampleFromBank(const juce::String& sampleId, const juce::String& trackId);
+	void loadAudioFileAsync(const juce::String& trackId, const juce::File& audioData);
+	void stopSamplePreview();
+	void setLocalModelsPath(const juce::String& path) { localModelsPath = path; }
 	void generateSampleWithImage(const juce::String& trackId, const juce::String& base64Image, const juce::StringArray& keywords);
 	void generateLoopWithImage(const DjIaClient::LoopRequest& request, const juce::String& trackId, int timeoutMS);
 	void setGlobalBpm(float bpm) { globalBpm = bpm; }
 	void setCanLoad(bool load) { canLoad = load; }
-	float getGlobalBpm() const
-	{
-		float hostBpm = static_cast<float>(getHostBpm());
-		return hostBpm > 0 ? hostBpm : globalBpm;
-	}
-
-	void setGlobalKey(const juce::String& key) { globalKey = key; }
-	juce::String getGlobalKey() const { return globalKey; }
-
-	void setGlobalDuration(int duration) { globalDuration = duration; }
-	int getGlobalDuration() const { return globalDuration; }
-	void previewTrack(const juce::String& trackId);
-	void setGlobalStems(const std::vector<juce::String>& stems) { globalStems = stems; }
-	std::vector<juce::String> getGlobalStems() const { return globalStems; }
-
-	DjIaClient::LoopRequest createGlobalLoopRequest() const
-	{
-		DjIaClient::LoopRequest request;
-		request.prompt = globalPrompt;
-		request.bpm = globalBpm;
-		request.key = globalKey;
-		request.generationDuration = static_cast<float>(globalDuration);
-		return request;
-	}
-
-	bool getUseLocalModel() const { return useLocalModel; }
-	void setUseLocalModel(bool useLocal) { useLocalModel = useLocal; }
-
-	juce::String getLocalModelsPath() const { return localModelsPath; }
-	void setLocalModelsPath(const juce::String& path) { localModelsPath = path; }
-
-	static juce::String getModelsDirectory()
-	{
-		return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-			.getChildFile("OBSIDIAN-Neural")
-			.getChildFile("stable-audio")
-			.getFullPathName();
-	}
-
-	juce::StringArray getBuiltInPrompts() const;
-	bool getBypassSequencer() const { return bypassSequencer.load(); }
 	void setBypassSequencer(bool bypass) { bypassSequencer.store(bypass); }
-	double calculateRetriggerInterval(int intervalValue, double hostBpm) const;
 	void selectNextTrack();
 	void selectPreviousTrack();
 	void triggerGlobalGeneration();
 	void syncSelectedTrackWithGlobalPrompt();
-	SampleBank* getSampleBank() { return sampleBank.get(); }
-	void loadSampleFromBank(const juce::String& sampleId, const juce::String& trackId);
-	void loadAudioFileAsync(const juce::String& trackId, const juce::File& audioData);
-	bool previewSampleFromBank(const juce::String& sampleId);
-	void stopSamplePreview();
-	bool isSamplePreviewing() const { return isPreviewPlaying.load(); }
-	int getCreditsRemaining() const { return creditsRemaining; }
 	void setCreditsRemaining(int credits) { creditsRemaining = credits; }
-	int creditsRemaining = 0;
-	bool canGenerateStandard = true;
-	DjIaClient& getApiClient() { return apiClient; }
-	const DjIaClient& getApiClient() const { return apiClient; }
-	juce::StringArray getCustomKeywords() const { return customKeywords; }
-
+	void clearCustomPrompts();
+	void reloadTrackWithVersion(const juce::String& trackId, bool useOriginal);
+	void setIsGenerating(bool generating) { isGenerating = generating; }
+	void addCustomPrompt(const juce::String& prompt);
+	void loadPendingSample();
 	void addCustomKeyword(const juce::String& keyword)
 	{
 		if (!customKeywords.contains(keyword))
@@ -233,6 +195,61 @@ public:
 		customKeywords = keywords;
 		saveGlobalConfig();
 	}
+	void setMidiIndicatorCallback(std::function<void(const juce::String&)> callback)
+	{
+		midiIndicatorCallback = callback;
+	}
+
+
+	float getGlobalBpm() const
+	{
+		float hostBpm = static_cast<float>(getHostBpm());
+		return hostBpm > 0 ? hostBpm : globalBpm;
+	}
+	float getMasterVolume() const { return masterVolume.load(); }
+	float getMasterPan() const { return masterPan.load(); }
+
+	double getTailLengthSeconds() const override { return 0.0; }
+	double getLastDuration() const { return lastDuration; }
+	double getLastBpm() const { return lastBpm; }
+	double getHostBpm() const;
+	double calculateRetriggerInterval(int intervalValue, double hostBpm) const;
+
+	bool getUseLocalModel() const { return useLocalModel; }
+	bool getIsGenerating() const { return isGenerating; }
+	bool hasSampleWaiting() const { return hasUnloadedSample.load(); }
+	bool getHostBpmEnabled() const { return hostBpmEnabled; }
+	bool acceptsMidi() const override { return true; }
+	bool producesMidi() const override { return false; }
+	bool isMidiEffect() const override { return false; }
+	bool hasEditor() const override { return true; }
+	bool getPianoEnabled() const { return pianoEnabled; }
+	bool getGuitarEnabled() const { return guitarEnabled; }
+	bool getVocalsEnabled() const { return vocalsEnabled; }
+	bool getOtherEnabled() const { return otherEnabled; }
+	bool getBassEnabled() const { return bassEnabled; }
+	bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
+	bool getDrumsEnabled() const { return drumsEnabled; }
+	bool getBypassSequencer() const { return bypassSequencer.load(); }
+	bool isSamplePreviewing() const { return isPreviewPlaying.load(); }
+	bool previewSampleFromBank(const juce::String& sampleId);
+	bool isStateReady() const { return stateLoaded; }
+	bool getAutoLoadEnabled() const { return autoLoadEnabled.load(); }
+
+	bool canGenerateStandard = true;
+
+	int getSamplesPerBlock() const { return currentBlockSize; };
+	int getRequestTimeout() const { return requestTimeoutMS; };
+	int getGlobalDuration() const { return globalDuration; }
+	int getLastKeyIndex() const { return lastKeyIndex; }
+	int getNumPrograms() override { return 1; }
+	int getCurrentProgram() override { return 0; }
+	int getCreditsRemaining() const { return creditsRemaining; }
+	int getTimeSignatureNumerator() const { return timeSignatureNumerator.load(); }
+	int getTimeSignatureDenominator() const { return timeSignatureDenominator.load(); }
+	int getLastPresetIndex() const { return lastPresetIndex; }
+
+	int creditsRemaining = 0;
 
 private:
 	DjIaVstEditor* currentEditor = nullptr;
@@ -295,7 +312,7 @@ private:
 	std::atomic<int> timeSignatureNumerator{ 4 };
 	std::atomic<int> timeSignatureDenominator{ 4 };
 
-	juce::String globalPrompt = "Techno kick rhythm";
+	juce::String globalPrompt;
 	float globalBpm = 110.0f;
 	juce::String globalKey = "C Minor";
 	int globalDuration = 6;
@@ -337,25 +354,24 @@ private:
 	juce::String generatingTrackId = "";
 
 	juce::StringArray booleanParamIds = {
-	"generate", "play",
-	"slot1Mute", "slot1Solo", "slot1Play", "slot1Stop", "slot1Generate", "slot1RandomRetrigger",
-	"slot2Mute", "slot2Solo", "slot2Play", "slot2Stop", "slot2Generate", "slot2RandomRetrigger",
-	"slot3Mute", "slot3Solo", "slot3Play", "slot3Stop", "slot3Generate", "slot3RandomRetrigger",
-	"slot4Mute", "slot4Solo", "slot4Play", "slot4Stop", "slot4Generate", "slot4RandomRetrigger",
-	"slot5Mute", "slot5Solo", "slot5Play", "slot5Stop", "slot5Generate", "slot5RandomRetrigger",
-	"slot6Mute", "slot6Solo", "slot6Play", "slot6Stop", "slot6Generate", "slot6RandomRetrigger",
-	"slot7Mute", "slot7Solo", "slot7Play", "slot7Stop", "slot7Generate", "slot7RandomRetrigger",
-	"slot8Mute", "slot8Solo", "slot8Play", "slot8Stop", "slot8Generate", "slot8RandomRetrigger",
-	"nextTrack", "prevTrack",
-	"slot1PageA", "slot1PageB", "slot1PageC", "slot1PageD",
-	"slot2PageA", "slot2PageB", "slot2PageC", "slot2PageD",
-	"slot3PageA", "slot3PageB", "slot3PageC", "slot3PageD",
-	"slot4PageA", "slot4PageB", "slot4PageC", "slot4PageD",
-	"slot5PageA", "slot5PageB", "slot5PageC", "slot5PageD",
-	"slot6PageA", "slot6PageB", "slot6PageC", "slot6PageD",
-	"slot7PageA", "slot7PageB", "slot7PageC", "slot7PageD",
-	"slot8PageA", "slot8PageB", "slot8PageC", "slot8PageD"
-	};
+		"generate", "play",
+		"slot1Mute", "slot1Solo", "slot1Play", "slot1Stop", "slot1Generate", "slot1RandomRetrigger",
+		"slot2Mute", "slot2Solo", "slot2Play", "slot2Stop", "slot2Generate", "slot2RandomRetrigger",
+		"slot3Mute", "slot3Solo", "slot3Play", "slot3Stop", "slot3Generate", "slot3RandomRetrigger",
+		"slot4Mute", "slot4Solo", "slot4Play", "slot4Stop", "slot4Generate", "slot4RandomRetrigger",
+		"slot5Mute", "slot5Solo", "slot5Play", "slot5Stop", "slot5Generate", "slot5RandomRetrigger",
+		"slot6Mute", "slot6Solo", "slot6Play", "slot6Stop", "slot6Generate", "slot6RandomRetrigger",
+		"slot7Mute", "slot7Solo", "slot7Play", "slot7Stop", "slot7Generate", "slot7RandomRetrigger",
+		"slot8Mute", "slot8Solo", "slot8Play", "slot8Stop", "slot8Generate", "slot8RandomRetrigger",
+		"nextTrack", "prevTrack",
+		"slot1PageA", "slot1PageB", "slot1PageC", "slot1PageD",
+		"slot2PageA", "slot2PageB", "slot2PageC", "slot2PageD",
+		"slot3PageA", "slot3PageB", "slot3PageC", "slot3PageD",
+		"slot4PageA", "slot4PageB", "slot4PageC", "slot4PageD",
+		"slot5PageA", "slot5PageB", "slot5PageC", "slot5PageD",
+		"slot6PageA", "slot6PageB", "slot6PageC", "slot6PageD",
+		"slot7PageA", "slot7PageB", "slot7PageC", "slot7PageD",
+		"slot8PageA", "slot8PageB", "slot8PageC", "slot8PageD" };
 
 	juce::StringArray floatParamIds = {
 		"bpm", "masterVolume", "masterPan", "masterHigh", "masterMid", "masterLow",

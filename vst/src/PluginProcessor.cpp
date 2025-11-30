@@ -57,6 +57,7 @@ std::make_unique<juce::AudioParameterBool>("slot8PageD", "Slot 8 Page D", false)
 	projectId = "legacy";
 	loadGlobalConfig();
 	obsidianEngine = std::make_unique<ObsidianEngine>();
+	sharedFormatManager.registerBasicFormats();
 	if (!obsidianEngine->initialize())
 	{
 		DBG("Failed to initialize OBSIDIAN Engine");
@@ -1018,8 +1019,6 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 			auto& currentPage = track->getCurrentPage();
 			currentPage.prompt = generatedPrompt;
 			currentPage.generationPrompt = generatedPrompt;
-			currentPage.originalBpm = response.bpm;
-			currentPage.generationBpm = response.bpm;
 			currentPage.generationKey = response.key;
 			track->syncLegacyProperties();
 		}
@@ -1027,8 +1026,6 @@ void DjIaVstProcessor::generateLoopWithImage(const DjIaClient::LoopRequest& requ
 		{
 			track->prompt = generatedPrompt;
 			track->generationPrompt = generatedPrompt;
-			track->originalBpm = response.bpm;
-			track->generationBpm = response.bpm;
 			track->generationKey = response.key;
 		}
 	}
@@ -2235,11 +2232,8 @@ void DjIaVstProcessor::loadAudioFileAsync(const juce::String& trackId, const juc
 
 	try
 	{
-		juce::AudioFormatManager formatManager;
-		formatManager.registerBasicFormats();
-
 		std::unique_ptr<juce::AudioFormatReader> reader(
-			formatManager.createReaderFor(audioFile));
+			sharedFormatManager.createReaderFor(audioFile));
 
 		if (!reader)
 		{
@@ -2743,7 +2737,7 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 	{
 		track->originalStagingBuffer.makeCopyOf(track->stagingBuffer);
 		double stretchRatio = hostBpm / static_cast<double>(track->stagingOriginalBpm);
-		AudioAnalyzer::timeStretchBuffer(track->stagingBuffer, stretchRatio, track->stagingSampleRate);
+		AudioAnalyzer::timeStretchBufferFast(track->stagingBuffer, stretchRatio, track->stagingSampleRate);
 		track->stagingNumSamples.store(track->stagingBuffer.getNumSamples());
 		track->stagingOriginalBpm = static_cast<float>(hostBpm);
 		track->nextHasOriginalVersion.store(true);
