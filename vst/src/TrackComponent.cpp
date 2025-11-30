@@ -309,6 +309,7 @@ void TrackComponent::updateFromTrackData()
 	showWaveformButton.setToggleState(track->showWaveform, juce::dontSendNotification);
 	sequencerToggleButton.setToggleState(track->showSequencer, juce::dontSendNotification);
 	randomDurationToggle.setToggleState(track->randomRetriggerDurationEnabled.load(), juce::dontSendNotification);
+	drawButton.setEnabled(!audioProcessor.getUseLocalModel());
 
 	if (track->usePages.load())
 	{
@@ -1214,7 +1215,7 @@ void TrackComponent::setupUI()
 	addAndMakeVisible(drawButton);
 	drawButton.setButtonText(juce::String::fromUTF8("\xE2\x9C\x8E"));
 	drawButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonPrimary);
-	drawButton.setTooltip("Draw image for AI generation");
+	drawButton.setTooltip("Draw an image for AI generation (unavailable with local TFLite models)");
 	drawButton.onClick = [this]() { openDrawingCanvas(); };
 
 	addAndMakeVisible(generateButton);
