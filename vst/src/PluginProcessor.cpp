@@ -2319,10 +2319,24 @@ void DjIaVstProcessor::reloadTrackWithVersion(const juce::String& trackId, bool 
 				audioDir = audioDir.getChildFile(projectId);
 			}
 			fileToLoad = audioDir.getChildFile(trackId + "_original_" + juce::String(pageName) + ".wav");
+			juce::MessageManager::callAsync([this]()
+				{
+					if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+					{
+						editor->statusLabel.setText("Original file loaded...", juce::dontSendNotification);
+					}
+				});
 		}
 		else
 		{
 			fileToLoad = getTrackPageAudioFile(trackId, track->currentPageIndex);
+			juce::MessageManager::callAsync([this]()
+				{
+					if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+					{
+						editor->statusLabel.setText("Stretched file loaded...", juce::dontSendNotification);
+					}
+				});
 		}
 	}
 	else
@@ -2716,12 +2730,15 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 		}
 	}
 
-	bool isTempoBypass = isDoubleTempo || isHalfTempo;
-	bool bpmValid = (detectedBPM > 60.0f && detectedBPM < 200.0f) && !isTempoBypass;
+	bool bpmValid = (detectedBPM > 60.0f && detectedBPM < 200.0f);
 
-	if (isTempoBypass)
+	if (isDoubleTempo)
 	{
-		track->stagingOriginalBpm = track->bpm;
+		track->stagingOriginalBpm = detectedBPM / 2;
+	}
+	else if (isHalfTempo)
+	{
+		track->stagingOriginalBpm = detectedBPM * 2;
 	}
 	else
 	{
@@ -2731,13 +2748,13 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 	double bpmDifference = std::abs(hostBpm - track->stagingOriginalBpm);
 	bool hostBpmValid = (hostBpm > 0.0);
 	bool originalBpmValid = (track->stagingOriginalBpm > 0.0f);
-	bool bpmDifferenceSignificant = (bpmDifference > 1.0);
+	bool bpmDifferenceSignificant = (bpmDifference > 0.01 && bpmDifference < 5.0);
 
-	if (hostBpmValid && originalBpmValid && bpmDifferenceSignificant && !isTempoBypass)
+	if (hostBpmValid && originalBpmValid && bpmDifferenceSignificant)
 	{
 		track->originalStagingBuffer.makeCopyOf(track->stagingBuffer);
 		double stretchRatio = hostBpm / static_cast<double>(track->stagingOriginalBpm);
-		AudioAnalyzer::timeStretchBufferFast(track->stagingBuffer, stretchRatio, track->stagingSampleRate);
+		AudioAnalyzer::timeStretchBufferHQ(track->stagingBuffer, stretchRatio, track->stagingSampleRate);
 		track->stagingNumSamples.store(track->stagingBuffer.getNumSamples());
 		track->stagingOriginalBpm = static_cast<float>(hostBpm);
 		track->nextHasOriginalVersion.store(true);
@@ -2745,6 +2762,7 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 	else
 	{
 		track->stagingNumSamples.store(track->stagingBuffer.getNumSamples());
+		track->stagingOriginalBpm = hostBpm;
 		track->nextHasOriginalVersion.store(false);
 	}
 }
