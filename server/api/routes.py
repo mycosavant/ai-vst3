@@ -215,6 +215,16 @@ async def generate_loop(
             )
         audio_data, sr = librosa.load(processed_path, sr=None)
         duration = len(audio_data) / sr
+        try:
+            tempo, _ = librosa.beat.beat_track(y=audio_data, sr=sr)
+            detected_bpm = float(tempo)
+            print(
+                f"🎯 BPM detected by librosa: {detected_bpm:.2f} BPM (expected: {request.bpm} BPM)"
+            )
+        except Exception as e:
+            print(f"⚠️ BPM detection failure: {e}")
+            detected_bpm = None
+
         if duration < 0.1:
             raise create_error_response(
                 "SERVER_ERROR", "Generated audio is too short or empty", 500
@@ -232,6 +242,7 @@ async def generate_loop(
         headers = {
             "X-Duration": str(duration),
             "X-BPM": str(request.bpm),
+            "X-Detected-BPM": str(detected_bpm) if detected_bpm else "",
             "X-Key": str(request.key or ""),
             "X-Stems-Used": "",
             "X-Credits-Remaining": remaining_credits,
