@@ -2670,76 +2670,88 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData *track)
 
 	float serverDetectedBpm = pendingDetectedBpm.load();
 	float soundTouchDetectedBpm = AudioAnalyzer::detectBPM(track->stagingBuffer, track->stagingSampleRate);
-	float detectedBPM;
 
 	double hostBpm = cachedHostBpm.load();
 
+	float correctedServerBpm = serverDetectedBpm;
+	float correctedSoundTouchBpm = soundTouchDetectedBpm;
+
+	if (hostBpm > 0)
+	{
+		double tolerance = hostBpm * 0.2;
+
+		if (serverDetectedBpm > 0.0f)
+		{
+			if (serverDetectedBpm >= (hostBpm * 0.5 - tolerance) &&
+				serverDetectedBpm <= (hostBpm * 0.5 + tolerance))
+			{
+				correctedServerBpm = serverDetectedBpm * 2.0f;
+				DBG("📊 Server BPM corrected for half tempo: " + juce::String(serverDetectedBpm, 2) +
+					" → " + juce::String(correctedServerBpm, 2));
+			}
+			else if (serverDetectedBpm >= (hostBpm * 2.0 - tolerance) &&
+					 serverDetectedBpm <= (hostBpm * 2.0 + tolerance))
+			{
+				correctedServerBpm = serverDetectedBpm / 2.0f;
+				DBG("📊 Server BPM corrected for double tempo: " + juce::String(serverDetectedBpm, 2) +
+					" → " + juce::String(correctedServerBpm, 2));
+			}
+		}
+
+		if (soundTouchDetectedBpm > 0.0f)
+		{
+			if (soundTouchDetectedBpm >= (hostBpm * 0.5 - tolerance) &&
+				soundTouchDetectedBpm <= (hostBpm * 0.5 + tolerance))
+			{
+				correctedSoundTouchBpm = soundTouchDetectedBpm * 2.0f;
+				DBG("📊 SoundTouch BPM corrected for half tempo: " + juce::String(soundTouchDetectedBpm, 2) +
+					" → " + juce::String(correctedSoundTouchBpm, 2));
+			}
+			else if (soundTouchDetectedBpm >= (hostBpm * 2.0 - tolerance) &&
+					 soundTouchDetectedBpm <= (hostBpm * 2.0 + tolerance))
+			{
+				correctedSoundTouchBpm = soundTouchDetectedBpm / 2.0f;
+				DBG("📊 SoundTouch BPM corrected for double tempo: " + juce::String(soundTouchDetectedBpm, 2) +
+					" → " + juce::String(correctedSoundTouchBpm, 2));
+			}
+		}
+	}
+
+	float detectedBPM;
+
 	if (serverDetectedBpm > 0.0f && soundTouchDetectedBpm > 0.0f && hostBpm > 0.0)
 	{
-		float serverDiff = std::abs(serverDetectedBpm - static_cast<float>(hostBpm));
-		float soundTouchDiff = std::abs(soundTouchDetectedBpm - static_cast<float>(hostBpm));
+		float serverDiff = std::abs(correctedServerBpm - static_cast<float>(hostBpm));
+		float soundTouchDiff = std::abs(correctedSoundTouchBpm - static_cast<float>(hostBpm));
 
 		if (serverDiff < soundTouchDiff)
 		{
-			detectedBPM = serverDetectedBpm;
-			DBG("🎯 Using server-detected BPM: " + juce::String(detectedBPM) +
+			detectedBPM = correctedServerBpm;
+			DBG("🎯 Using server-detected BPM: " + juce::String(detectedBPM, 2) +
 				" (diff: " + juce::String(serverDiff, 2) + " vs SoundTouch diff: " + juce::String(soundTouchDiff, 2) + ")");
 		}
 		else
 		{
-			detectedBPM = soundTouchDetectedBpm;
-			DBG("🔍 Using SoundTouch-detected BPM: " + juce::String(detectedBPM) +
+			detectedBPM = correctedSoundTouchBpm;
+			DBG("🔍 Using SoundTouch-detected BPM: " + juce::String(detectedBPM, 2) +
 				" (diff: " + juce::String(soundTouchDiff, 2) + " vs server diff: " + juce::String(serverDiff, 2) + ")");
 		}
 	}
 	else if (serverDetectedBpm > 0.0f)
 	{
-		detectedBPM = serverDetectedBpm;
-		DBG("🎯 Using server-detected BPM (SoundTouch unavailable): " + juce::String(detectedBPM));
+		detectedBPM = correctedServerBpm;
+		DBG("🎯 Using server-detected BPM (SoundTouch unavailable): " + juce::String(detectedBPM, 2));
 	}
 	else
 	{
-		detectedBPM = soundTouchDetectedBpm;
-		DBG("🔍 Using SoundTouch-detected BPM (server unavailable): " + juce::String(detectedBPM));
+		detectedBPM = correctedSoundTouchBpm;
+		DBG("🔍 Using SoundTouch-detected BPM (server unavailable): " + juce::String(detectedBPM, 2));
 	}
 
 	pendingDetectedBpm.store(-1.0f);
 
-	bool isDoubleTempo = false;
-	bool isHalfTempo = false;
-
-	if (hostBpm > 0)
-	{
-		double expectedDoubleTempo = hostBpm * 2.0;
-		double expectedHalfTempo = hostBpm / 2.0;
-		double tolerance = hostBpm * 0.2;
-
-		if (detectedBPM >= (expectedDoubleTempo - tolerance) &&
-			detectedBPM <= (expectedDoubleTempo + tolerance))
-		{
-			isDoubleTempo = true;
-		}
-		if (detectedBPM >= (expectedHalfTempo - tolerance) &&
-			detectedBPM <= (expectedHalfTempo + tolerance))
-		{
-			isHalfTempo = true;
-		}
-	}
-
 	bool bpmValid = (detectedBPM > 60.0f && detectedBPM < 200.0f);
-
-	if (isDoubleTempo)
-	{
-		track->stagingOriginalBpm = detectedBPM / 2;
-	}
-	else if (isHalfTempo)
-	{
-		track->stagingOriginalBpm = detectedBPM * 2;
-	}
-	else
-	{
-		track->stagingOriginalBpm = bpmValid ? detectedBPM : track->bpm;
-	}
+	track->stagingOriginalBpm = bpmValid ? detectedBPM : static_cast<float>(hostBpm);
 
 	double bpmDifference = std::abs(hostBpm - track->stagingOriginalBpm);
 	bool hostBpmValid = (hostBpm > 0.0);
@@ -2754,12 +2766,26 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData *track)
 		track->stagingNumSamples.store(track->stagingBuffer.getNumSamples());
 		track->stagingOriginalBpm = static_cast<float>(hostBpm);
 		track->nextHasOriginalVersion.store(true);
+
+		DBG("✅ Time-stretched from " + juce::String(detectedBPM, 2) +
+			" to " + juce::String(hostBpm, 2) + " BPM (ratio: " + juce::String(stretchRatio, 3) + ")");
 	}
 	else
 	{
 		track->stagingNumSamples.store(track->stagingBuffer.getNumSamples());
-		track->stagingOriginalBpm = hostBpm;
+		track->stagingOriginalBpm = static_cast<float>(hostBpm);
 		track->nextHasOriginalVersion.store(false);
+
+		if (bpmDifferenceSignificant)
+		{
+			DBG("⚠️  BPM difference (" + juce::String(bpmDifference, 2) +
+				") is significant but outside stretch range (0.01-5.0), using as-is");
+		}
+		else
+		{
+			DBG("✅ BPM is close enough (" + juce::String(bpmDifference, 2) +
+				" diff), no time-stretch needed");
+		}
 	}
 }
 
