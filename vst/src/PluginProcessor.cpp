@@ -2758,7 +2758,7 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 	bool originalBpmValid = (track->stagingOriginalBpm > 0.0f);
 	bool bpmDifferenceSignificant = (bpmDifference > 0.01 && bpmDifference < 5.0);
 
-	if (hostBpmValid && originalBpmValid && bpmDifferenceSignificant)
+	if ((hostBpmValid && originalBpmValid && bpmDifferenceSignificant) || useLocalModel)
 	{
 		track->originalStagingBuffer.makeCopyOf(track->stagingBuffer);
 		double stretchRatio = hostBpm / static_cast<double>(track->stagingOriginalBpm);
