@@ -18,11 +18,16 @@ bool StableAudioEngine::initialize(const juce::String& modelsDir)
 		modelsDirectory = modelsDir;
 
 		auto baseDir = juce::File(modelsDir);
+
+#ifdef _WIN32
 		audiogenExecutable = baseDir.getChildFile("audiogen.exe");
+#else
+		audiogenExecutable = baseDir.getChildFile("audiogen");
+#endif
 
 		if (!audiogenExecutable.exists())
 		{
-			audiogenExecutable = baseDir.getChildFile("audiogen");
+			return false;
 		}
 
 		if (!checkRequiredFiles())
@@ -87,11 +92,24 @@ StableAudioEngine::GenerationResult StableAudioEngine::generateSample(const Gene
 		auto seed = (params.seed == -1) ? generateRandomSeed() : params.seed;
 
 		juce::StringArray command;
+
+#ifdef _WIN32
 		command.add(audiogenExecutable.getFullPathName());
 		command.add(modelsDirectory);
 		command.add(sanitizedPrompt);
 		command.add(juce::String(params.numThreads));
 		command.add(juce::String(seed));
+#else
+		command.add(audiogenExecutable.getFullPathName());
+		command.add("-m");
+		command.add(modelsDirectory);
+		command.add("-p");
+		command.add(sanitizedPrompt);
+		command.add("-t");
+		command.add(juce::String(params.numThreads));
+		command.add("-s");
+		command.add(juce::String(seed));
+#endif
 
 		DBG("Executing command: " << command.joinIntoString(" "));
 
