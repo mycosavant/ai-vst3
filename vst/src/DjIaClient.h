@@ -31,6 +31,7 @@ public:
 		juce::File audioData;
 		float duration;
 		float bpm;
+		float detectedBpm;
 		juce::String key;
 		juce::String errorMessage = "";
 		int creditsRemaining = -1;
@@ -39,7 +40,7 @@ public:
 		int usedCredits = -1;
 
 		LoopResponse()
-			: duration(0.0f), bpm(120.0f)
+			: duration(0.0f), bpm(120.0f), detectedBpm(-1.0f)
 		{
 		}
 	};
@@ -53,7 +54,6 @@ public:
 		bool success = false;
 		juce::String errorMessage = "";
 	};
-
 
 	DjIaClient(const juce::String& apiKey = "", const juce::String& baseUrl = "http://localhost:8000")
 		: apiKey(apiKey), baseUrl(baseUrl + "/api/v1")
@@ -316,6 +316,17 @@ public:
 					result.creditsRemaining = creditsRemaining.getIntValue();
 					result.isUnlimitedKey = false;
 				}
+			}
+
+			auto detectedBpmStr = responseHeaders["X-Detected-BPM"];
+			if (detectedBpmStr.isNotEmpty())
+			{
+				result.detectedBpm = detectedBpmStr.getFloatValue();
+				DBG("BPM detected server: " + juce::String(result.detectedBpm));
+			}
+			else
+			{
+				DBG("No X-Detected-BPM header from server");
 			}
 
 			DBG("WAV file created: " + result.audioData.getFullPathName() +

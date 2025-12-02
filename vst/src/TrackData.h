@@ -25,8 +25,11 @@ struct TrackPage
 	double loopStart = 0.0;
 	double loopEnd = 4.0;
 
+	float fineOffset = 0.0f;
+	float stagingOriginalBpm = 126.0f;
+	float bpm = 126.0f;
 	float originalBpm = 126.0f;
-	float generationBpm = 126.0f;
+	float generationBpm;
 
 	std::atomic<bool> useOriginalFile{ false };
 	std::atomic<bool> hasOriginalVersion{ false };
