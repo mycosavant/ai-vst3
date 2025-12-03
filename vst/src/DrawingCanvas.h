@@ -320,6 +320,11 @@ public:
 
 			if (currentBrushType == BrushType::Fill)
 			{
+				if (undoHistory.empty() || historyIndex == -1)
+				{
+					saveToHistory();
+				}
+
 				auto point = getCanvasPoint(e.getPosition());
 				juce::Colour targetColor = canvas.getPixelAt(point.x, point.y);
 				floodFill(point.x, point.y, targetColor, currentColor);
@@ -328,6 +333,11 @@ public:
 			}
 			else
 			{
+				if (undoHistory.empty() || historyIndex == -1)
+				{
+					saveToHistory();
+				}
+
 				isDrawing = true;
 				lastPoint = getCanvasPoint(e.getPosition());
 
@@ -462,8 +472,35 @@ public:
 		juce::Graphics g(canvas);
 		g.fillAll(juce::Colours::white);
 		repaint();
+	}
 
-		updateUndoRedoButtons();
+	void clearCanvasWithConfirmation()
+	{
+		if (!isShowing() || !isVisible())
+		{
+			return;
+		}
+
+		juce::AlertWindow::showOkCancelBox(
+			juce::MessageBoxIconType::QuestionIcon,
+			"Clear Canvas",
+			"Are you sure you want to clear the canvas? This will erase the undo/redo history.",
+			"Clear",
+			"Cancel",
+			nullptr,
+			juce::ModalCallbackFunction::create([this](int result)
+				{
+					if (result == 1 && isShowing())
+					{
+						juce::Graphics g(canvas);
+						g.fillAll(juce::Colours::white);
+						repaint();
+						undoHistory.clear();
+						historyIndex = -1;
+						updateUndoRedoButtons();
+					}
+				})
+		);
 	}
 
 	juce::String getBase64Image()
@@ -1094,7 +1131,7 @@ private:
 		clearButton.setButtonText("Clear");
 		clearButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonDanger);
 		clearButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
-		clearButton.onClick = [this] { clearCanvas(); };
+		clearButton.onClick = [this] { clearCanvasWithConfirmation(); };
 
 		addAndMakeVisible(undoButton);
 		undoButton.setButtonText("Undo");
@@ -1127,6 +1164,7 @@ private:
 			swatch->setSize(28, 28);
 		}
 	}
+
 	void resetHistory()
 	{
 		undoHistory.clear();
@@ -1134,7 +1172,6 @@ private:
 		saveToHistory();
 		updateUndoRedoButtons();
 	}
-
 
 	void saveToHistory(bool forceAdd = false)
 	{
