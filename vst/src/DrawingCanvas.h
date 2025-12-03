@@ -121,7 +121,8 @@ public:
 		case BrushType::Pencil: state.brushType = 0; break;
 		case BrushType::Brush: state.brushType = 1; break;
 		case BrushType::Airbrush: state.brushType = 2; break;
-		case BrushType::Eraser: state.brushType = 3; break;
+		case BrushType::Fill: state.brushType = 3; break;
+		case BrushType::Eraser: state.brushType = 4; break;
 		}
 
 		state.brushSize = currentBrushSize;
@@ -136,7 +137,8 @@ public:
 		Pencil,
 		Brush,
 		Airbrush,
-		Eraser
+		Eraser,
+		Fill
 	};
 
 	DrawingCanvas(DjIaVstProcessor& proc)
@@ -144,9 +146,11 @@ public:
 	{
 		canvas = juce::Image(juce::Image::RGB, 512, 512, true);
 		clearCanvas();
+		resetHistory();
 		setLookAndFeel(&CustomLookAndFeel::getInstance());
 		setupUI();
 		setupKeywordsUI();
+		setWantsKeyboardFocus(true);
 		setSize(900, 750);
 		startTimerHz(60);
 	}
@@ -242,13 +246,15 @@ public:
 		auto toolsArea = bounds;
 
 		auto brushRow = toolsArea.removeFromTop(45);
-		int btnW = (brushRow.getWidth() - 15) / 4;
+		int btnW = (brushRow.getWidth() - 20) / 5;
 
 		pencilButton.setBounds(brushRow.removeFromLeft(btnW));
 		brushRow.removeFromLeft(5);
 		brushButton.setBounds(brushRow.removeFromLeft(btnW));
 		brushRow.removeFromLeft(5);
 		airbrushButton.setBounds(brushRow.removeFromLeft(btnW));
+		brushRow.removeFromLeft(5);
+		fillButton.setBounds(brushRow.removeFromLeft(btnW));
 		brushRow.removeFromLeft(5);
 		eraserButton.setBounds(brushRow.removeFromLeft(btnW));
 
@@ -284,8 +290,12 @@ public:
 		toolsArea.removeFromTop(15);
 
 		auto actionRow = toolsArea.removeFromTop(45);
-		int halfWidth = (actionRow.getWidth() - 10) / 2;
-		clearButton.setBounds(actionRow.removeFromLeft(halfWidth));
+		int thirdWidth = (actionRow.getWidth() - 20) / 4;
+		undoButton.setBounds(actionRow.removeFromLeft(thirdWidth));
+		actionRow.removeFromLeft(10);
+		redoButton.setBounds(actionRow.removeFromLeft(thirdWidth));
+		actionRow.removeFromLeft(10);
+		clearButton.setBounds(actionRow.removeFromLeft(thirdWidth));
 		actionRow.removeFromLeft(10);
 		generateButton.setBounds(actionRow);
 	}
@@ -307,12 +317,24 @@ public:
 		if (isPointInCanvas(e.getPosition()))
 		{
 			updateMouseCursor();
-			isDrawing = true;
-			lastPoint = getCanvasPoint(e.getPosition());
 
-			juce::Graphics g(canvas);
-			drawAtPoint(g, lastPoint);
-			needsRepaint = true;
+			if (currentBrushType == BrushType::Fill)
+			{
+				auto point = getCanvasPoint(e.getPosition());
+				juce::Colour targetColor = canvas.getPixelAt(point.x, point.y);
+				floodFill(point.x, point.y, targetColor, currentColor);
+				needsRepaint = true;
+				saveToHistory();
+			}
+			else
+			{
+				isDrawing = true;
+				lastPoint = getCanvasPoint(e.getPosition());
+
+				juce::Graphics g(canvas);
+				drawAtPoint(g, lastPoint);
+				needsRepaint = true;
+			}
 		}
 	}
 
@@ -334,6 +356,10 @@ public:
 
 	void mouseUp(const juce::MouseEvent&) override
 	{
+		if (isDrawing)
+		{
+			saveToHistory();
+		}
 		isDrawing = false;
 	}
 
@@ -436,6 +462,8 @@ public:
 		juce::Graphics g(canvas);
 		g.fillAll(juce::Colours::white);
 		repaint();
+
+		updateUndoRedoButtons();
 	}
 
 	juce::String getBase64Image()
@@ -500,6 +528,7 @@ public:
 			DBG("Restoring image from state");
 			loadFromBase64(state.imageBase64);
 		}
+		resetHistory();
 
 		switch (state.brushType)
 		{
@@ -516,6 +545,10 @@ public:
 			airbrushButton.setToggleState(true, juce::dontSendNotification);
 			break;
 		case 3:
+			currentBrushType = BrushType::Fill;
+			fillButton.setToggleState(true, juce::dontSendNotification);
+			break;
+		case 4:
 			currentBrushType = BrushType::Eraser;
 			eraserButton.setToggleState(true, juce::dontSendNotification);
 			break;
@@ -575,12 +608,10 @@ private:
 	{
 		switch (currentBrushType)
 		{
-		case BrushType::Pencil:
-			setMouseCursor(juce::MouseCursor::CrosshairCursor);
-			break;
-
 		case BrushType::Brush:
 		case BrushType::Airbrush:
+		case BrushType::Pencil:
+		case BrushType::Fill:
 			setMouseCursor(juce::MouseCursor::CrosshairCursor);
 			break;
 
@@ -989,6 +1020,19 @@ private:
 				currentBrushType = BrushType::Eraser;
 			};
 
+		addAndMakeVisible(fillButton);
+		fillButton.setButtonText("Fill");
+		fillButton.setRadioGroupId(1);
+		fillButton.setClickingTogglesState(true);
+		fillButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
+		fillButton.setColour(juce::TextButton::buttonOnColourId, ColourPalette::buttonPrimary);
+		fillButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
+		fillButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+		fillButton.onClick = [this]
+			{
+				currentBrushType = BrushType::Fill;
+			};
+
 		addAndMakeVisible(brushSizeLabel);
 		brushSizeLabel.setText("Size:", juce::dontSendNotification);
 		brushSizeLabel.setColour(juce::Label::textColourId, ColourPalette::textPrimary);
@@ -1052,6 +1096,20 @@ private:
 		clearButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
 		clearButton.onClick = [this] { clearCanvas(); };
 
+		addAndMakeVisible(undoButton);
+		undoButton.setButtonText("Undo");
+		undoButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
+		undoButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
+		undoButton.onClick = [this] { undo(); };
+		undoButton.setEnabled(false);
+
+		addAndMakeVisible(redoButton);
+		redoButton.setButtonText("Redo");
+		redoButton.setColour(juce::TextButton::buttonColourId, ColourPalette::backgroundLight);
+		redoButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textSecondary);
+		redoButton.onClick = [this] { redo(); };
+		redoButton.setEnabled(false);
+
 		addAndMakeVisible(generateButton);
 		generateButton.setButtonText("Generate");
 		generateButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonSuccess);
@@ -1069,6 +1127,135 @@ private:
 			swatch->setSize(28, 28);
 		}
 	}
+	void resetHistory()
+	{
+		undoHistory.clear();
+		historyIndex = -1;
+		saveToHistory();
+		updateUndoRedoButtons();
+	}
+
+
+	void saveToHistory(bool forceAdd = false)
+	{
+		if (!forceAdd && !undoHistory.empty() && historyIndex >= 0)
+		{
+			auto& lastImage = undoHistory[historyIndex];
+			if (imagesAreEqual(canvas, lastImage))
+			{
+				return;
+			}
+		}
+
+		if (historyIndex < (int)undoHistory.size() - 1)
+		{
+			undoHistory.erase(undoHistory.begin() + historyIndex + 1, undoHistory.end());
+		}
+
+		undoHistory.push_back(canvas.createCopy());
+
+		if (undoHistory.size() > maxHistorySize)
+		{
+			undoHistory.erase(undoHistory.begin());
+		}
+		else
+		{
+			historyIndex++;
+		}
+
+		updateUndoRedoButtons();
+	}
+
+	bool imagesAreEqual(const juce::Image& img1, const juce::Image& img2)
+	{
+		if (img1.getWidth() != img2.getWidth() || img1.getHeight() != img2.getHeight())
+			return false;
+
+		juce::Image::BitmapData data1(img1, juce::Image::BitmapData::readOnly);
+		juce::Image::BitmapData data2(img2, juce::Image::BitmapData::readOnly);
+
+		for (int y = 0; y < img1.getHeight(); y += 10)
+		{
+			for (int x = 0; x < img1.getWidth(); x += 10)
+			{
+				if (data1.getPixelColour(x, y) != data2.getPixelColour(x, y))
+					return false;
+			}
+		}
+
+		return true;
+	}
+
+	void undo()
+	{
+		if (historyIndex > 0)
+		{
+			historyIndex--;
+			canvas = undoHistory[historyIndex].createCopy();
+			needsRepaint = true;
+			updateUndoRedoButtons();
+		}
+	}
+
+	void redo()
+	{
+		if (historyIndex < (int)undoHistory.size() - 1)
+		{
+			historyIndex++;
+			canvas = undoHistory[historyIndex].createCopy();
+			needsRepaint = true;
+			updateUndoRedoButtons();
+		}
+	}
+
+	void updateUndoRedoButtons()
+	{
+		undoButton.setEnabled(historyIndex > 0);
+		redoButton.setEnabled(historyIndex < (int)undoHistory.size() - 1);
+	}
+
+	void floodFill(int x, int y, juce::Colour targetColor, juce::Colour replacementColor)
+	{
+		if (targetColor == replacementColor) return;
+		if (!canvas.getBounds().contains(x, y)) return;
+
+		std::vector<juce::Point<int>> stack;
+		stack.push_back({ x, y });
+
+		while (!stack.empty())
+		{
+			auto p = stack.back();
+			stack.pop_back();
+
+			if (!canvas.getBounds().contains(p.x, p.y)) continue;
+			if (canvas.getPixelAt(p.x, p.y) != targetColor) continue;
+
+			canvas.setPixelAt(p.x, p.y, replacementColor);
+
+			stack.push_back({ p.x + 1, p.y });
+			stack.push_back({ p.x - 1, p.y });
+			stack.push_back({ p.x, p.y + 1 });
+			stack.push_back({ p.x, p.y - 1 });
+		}
+		repaint();
+	}
+
+	bool keyPressed(const juce::KeyPress& key) override
+	{
+		if (key == juce::KeyPress('z', juce::ModifierKeys::commandModifier, 0))
+		{
+			undo();
+			return true;
+		}
+		if (key == juce::KeyPress('y', juce::ModifierKeys::commandModifier, 0) ||
+			key == juce::KeyPress('z', juce::ModifierKeys::commandModifier | juce::ModifierKeys::shiftModifier, 0))
+		{
+			redo();
+			return true;
+		}
+		return false;
+	}
+
 
 	juce::Image canvas;
 	juce::Rectangle<int> canvasAreaBounds;
@@ -1084,13 +1271,21 @@ private:
 	juce::TextButton pencilButton;
 	juce::TextButton brushButton;
 	juce::TextButton airbrushButton;
+	juce::TextButton fillButton;
+	juce::TextButton undoButton;
+	juce::TextButton redoButton;
 	juce::TextButton eraserButton;
 	juce::Label brushSizeLabel;
 	juce::Slider brushSizeSlider;
 	juce::Label colorLabel;
-	juce::OwnedArray<juce::TextButton> colorSwatches;
+
 	juce::TextButton clearButton;
 	juce::TextButton generateButton;
+	std::vector<juce::Image> undoHistory;
+	juce::OwnedArray<juce::TextButton> colorSwatches;
+
+	int historyIndex = -1;
+	static constexpr int maxHistorySize = 10;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DrawingCanvas)
 };
