@@ -534,10 +534,10 @@ void DjIaVstEditor::timerCallback()
 			if (blinkCounter % 3 == 0)
 			{
 				auto currentColor = generateButton.findColour(juce::TextButton::buttonColourId);
-				bool isWarning = (currentColor == ColourPalette::buttonWarning);
+				bool isWarning = (currentColor == ColourPalette::buttonPrimary);
 
 				generateButton.setColour(juce::TextButton::buttonColourId,
-					isWarning ? ColourPalette::buttonSuccess : ColourPalette::buttonWarning);
+					isWarning ? ColourPalette::buttonSuccess : ColourPalette::buttonPrimary);
 			}
 		}
 	}
@@ -547,9 +547,7 @@ void DjIaVstEditor::startGenerationButtonAnimation()
 {
 	if (!isButtonBlinking)
 	{
-		originalButtonText = generateButton.getButtonText();
 		generateButton.setEnabled(false);
-		generateButton.setButtonText("Generating Track...");
 		generateButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonWarning);
 		isButtonBlinking = true;
 		blinkCounter = 0;
@@ -561,7 +559,6 @@ void DjIaVstEditor::stopGenerationButtonAnimation()
 	if (isButtonBlinking)
 	{
 		generateButton.setEnabled(true);
-		generateButton.setButtonText(originalButtonText);
 		generateButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonSuccess);
 		isButtonBlinking = false;
 		generatingTrackId.clear();
@@ -743,7 +740,7 @@ void DjIaVstEditor::setupUI()
 	durationLabel.setText("Duration", juce::dontSendNotification);
 
 	addAndMakeVisible(generateButton);
-	generateButton.setButtonText("Generate Loop");
+	generateButton.setButtonText(juce::String::fromUTF8("\xE2\x96\xB6"));
 
 	addAndMakeVisible(configButton);
 	configButton.setButtonText(juce::String::fromUTF8("\xE2\x98\xB0"));
@@ -1245,9 +1242,14 @@ void DjIaVstEditor::layoutPromptSection(juce::Rectangle<int> area, int spacing)
 	promptPresetSelector.setBounds(row1.removeFromLeft(area.getWidth() - saveButtonWidth - spacing));
 	row1.removeFromLeft(spacing);
 	savePresetButton.setBounds(row1.removeFromLeft(saveButtonWidth));
+
 	area.removeFromTop(spacing);
+
 	auto row2 = area.removeFromTop(35);
-	promptInput.setBounds(row2.removeFromLeft(area.getWidth()));
+	int generateButtonWidth = 50;
+	promptInput.setBounds(row2.removeFromLeft(row2.getWidth() - generateButtonWidth - spacing));
+	row2.removeFromLeft(spacing);
+	generateButton.setBounds(row2);
 }
 
 void DjIaVstEditor::layoutConfigSection(juce::Rectangle<int> area, int reducing)
@@ -1329,11 +1331,10 @@ void DjIaVstEditor::resized()
 	}
 
 	auto buttonsRow = area.removeFromTop(40);
-	auto buttonWidth = buttonsRow.getWidth() / 10;
+	auto buttonWidth = buttonsRow.getWidth() / 9;
 	bypassSequencerButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	autoLoadButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	addTrackButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
-	generateButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	loadSampleButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	showSampleBankButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
 	openMidiEditorButton.setBounds(buttonsRow.removeFromLeft(buttonWidth).reduced(5));
