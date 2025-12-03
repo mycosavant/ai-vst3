@@ -768,12 +768,28 @@ void DjIaVstProcessor::processMidiMessages(juce::MidiBuffer& midiMessages, bool 
 
 void DjIaVstProcessor::previewTrack(const juce::String& trackId)
 {
+	if (!currentPreviewTrackId.isEmpty() && currentPreviewTrackId != trackId)
+	{
+		stopTrackPreview(currentPreviewTrackId);
+	}
+
 	TrackData* track = trackManager.getTrack(trackId);
 	if (track && track->numSamples > 0)
 	{
 		track->readPosition = 0.0;
 		track->isPlaying.store(true);
 		needsUIUpdate = true;
+
+		currentPreviewTrackId = trackId;
+
+		if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+		{
+			auto* trackComp = editor->getTrackComponent(trackId);
+			if (trackComp)
+			{
+				trackComp->setPreviewPlaying(true);
+			}
+		}
 	}
 }
 
@@ -2626,7 +2642,7 @@ void DjIaVstProcessor::saveBufferToFile(const juce::AudioBuffer<float>& buffer,
 		{
 			sampleBank->markSampleAsUsed(sampleId, projectId);
 			track->currentSampleId = sampleId;
-			DBG("✓ Sample added to bank: " + sampleId + " for prompt: " + prompt);
+			DBG("Sample added to bank: " + sampleId + " for prompt: " + prompt);
 
 			if (track->usePages.load())
 			{
@@ -2639,7 +2655,7 @@ void DjIaVstProcessor::saveBufferToFile(const juce::AudioBuffer<float>& buffer,
 		}
 		else
 		{
-			DBG("✗ Failed to add sample to bank");
+			DBG("Failed to add sample to bank");
 		}
 	}
 }
@@ -2687,14 +2703,14 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 			{
 				correctedServerBpm = serverDetectedBpm * 2.0f;
 				DBG("Server BPM corrected for half tempo: " + juce::String(serverDetectedBpm, 2) +
-					" → " + juce::String(correctedServerBpm, 2));
+					" -> " + juce::String(correctedServerBpm, 2));
 			}
 			else if (serverDetectedBpm >= (hostBpm * 2.0 - tolerance) &&
 				serverDetectedBpm <= (hostBpm * 2.0 + tolerance))
 			{
 				correctedServerBpm = serverDetectedBpm / 2.0f;
 				DBG("Server BPM corrected for double tempo: " + juce::String(serverDetectedBpm, 2) +
-					" → " + juce::String(correctedServerBpm, 2));
+					" -> " + juce::String(correctedServerBpm, 2));
 			}
 		}
 
@@ -2705,14 +2721,14 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 			{
 				correctedSoundTouchBpm = soundTouchDetectedBpm * 2.0f;
 				DBG("SoundTouch BPM corrected for half tempo: " + juce::String(soundTouchDetectedBpm, 2) +
-					" → " + juce::String(correctedSoundTouchBpm, 2));
+					" -> " + juce::String(correctedSoundTouchBpm, 2));
 			}
 			else if (soundTouchDetectedBpm >= (hostBpm * 2.0 - tolerance) &&
 				soundTouchDetectedBpm <= (hostBpm * 2.0 + tolerance))
 			{
 				correctedSoundTouchBpm = soundTouchDetectedBpm / 2.0f;
 				DBG("SoundTouch BPM corrected for double tempo: " + juce::String(soundTouchDetectedBpm, 2) +
-					" → " + juce::String(correctedSoundTouchBpm, 2));
+					" -> " + juce::String(correctedSoundTouchBpm, 2));
 			}
 		}
 	}
@@ -3227,7 +3243,7 @@ void DjIaVstProcessor::handlePageChange(const juce::String& parameterID)
 	juce::String slotStr = parameterID.substring(4, 5);
 	int slotNumber = slotStr.getIntValue();
 
-	char pageChar = parameterID[parameterID.length() - 1];
+	char pageChar = static_cast<char>(parameterID[parameterID.length() - 1]);
 	int pageIndex = pageChar - 'A';
 
 	if (slotNumber < 1 || slotNumber > 8 || pageIndex < 0 || pageIndex > 3)
@@ -3786,6 +3802,18 @@ void DjIaVstProcessor::stopSamplePreview()
 {
 	isPreviewPlaying = false;
 	previewPosition = 0.0;
+	if (!currentPreviewTrackId.isEmpty())
+	{
+		if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+		{
+			auto* trackComp = editor->getTrackComponent(currentPreviewTrackId);
+			if (trackComp)
+			{
+				trackComp->setPreviewPlaying(false);
+			}
+		}
+		currentPreviewTrackId = "";
+	}
 }
 
 juce::File DjIaVstProcessor::getTrackPageAudioFile(const juce::String& trackId, int pageIndex)
@@ -3897,5 +3925,66 @@ void DjIaVstProcessor::loadSampleToBankPage(const juce::String& trackId, int pag
 	catch (const std::exception& /*e*/)
 	{
 		DBG("Failed to load sample from bank to page");
+	}
+}
+
+juce::File DjIaVstProcessor::getExportDirectory()
+{
+	auto documentsDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+	auto exportDir = documentsDir.getChildFile("OBSIDIAN_Exports");
+
+	if (!exportDir.exists())
+		exportDir.createDirectory();
+
+	return exportDir;
+}
+
+juce::File DjIaVstProcessor::exportSampleForDragDrop(const juce::File& originalFile)
+{
+	if (!originalFile.existsAsFile())
+		return juce::File();
+
+	auto exportDir = getExportDirectory();
+
+	auto now = juce::Time::getCurrentTime();
+	juce::String timestamp = now.formatted("%Y%m%d_%H%M%S");
+
+	juce::String baseName = originalFile.getFileNameWithoutExtension();
+	juce::String extension = originalFile.getFileExtension();
+	juce::String newFileName = baseName + "_" + timestamp + extension;
+
+	auto exportFile = exportDir.getChildFile(newFileName);
+
+	if (originalFile.copyFileTo(exportFile))
+	{
+		DBG("Sample exported for drag&drop: " + exportFile.getFullPathName());
+		return exportFile;
+	}
+
+	DBG("Failed to export sample for drag&drop");
+	return juce::File();
+}
+
+void DjIaVstProcessor::stopTrackPreview(const juce::String& trackId)
+{
+	TrackData* track = trackManager.getTrack(trackId);
+	if (track)
+	{
+		track->isPlaying.store(false);
+		track->readPosition = 0.0;
+	}
+
+	if (currentPreviewTrackId == trackId)
+	{
+		currentPreviewTrackId = "";
+	}
+
+	if (auto* editor = dynamic_cast<DjIaVstEditor*>(getActiveEditor()))
+	{
+		auto* trackComp = editor->getTrackComponent(trackId);
+		if (trackComp)
+		{
+			trackComp->setPreviewPlaying(false);
+		}
 	}
 }

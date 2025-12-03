@@ -43,6 +43,7 @@ public:
 	std::function<void(const juce::String&, const juce::String&)> onTrackPromptChanged;
 	std::function<void(const juce::String&)> onStatusMessage;
 	std::function<void(const juce::String&, const juce::String&, const juce::StringArray&)> onGenerateWithImage;
+	std::function<void(const juce::String&)> onStopPreview;
 
 	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
 	void itemDragEnter(const SourceDetails& dragSourceDetails) override;
@@ -84,6 +85,7 @@ public:
 	void updatePagesDisplay();
 	void setSamplePending(bool pending);
 	bool isSamplePending() const { return hasSamplePending; }
+	void setPreviewPlaying(bool playing);
 
 	bool isEditingLabel = false;
 	bool sequencerVisible = false;
@@ -183,6 +185,7 @@ private:
 	bool pagesMode = true;
 	bool pageBlinkState = false;
 	bool canvasIsGenerating = false;
+	bool isPreviewPlaying = false;
 
 	juce::TextButton togglePagesButton;
 
@@ -219,6 +222,7 @@ private:
 	void updateRandomRetriggerButtonColor();
 	void updateRandomDurationButtonColor();
 	void openDrawingCanvas();
+	void updatePreviewButton();
 
 	float calculateEffectiveBpm();
 

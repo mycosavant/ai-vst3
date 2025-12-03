@@ -617,14 +617,25 @@ void SampleBankItem::mouseDrag(const juce::MouseEvent& event)
 			juce::File sampleFile(sampleEntry->filePath);
 			if (sampleFile.exists())
 			{
-				juce::StringArray files;
-				files.add(sampleFile.getFullPathName());
-				DBG("Starting external drag with: " + sampleFile.getFullPathName());
-				performExternalDragDropOfFiles(files, false);
+				juce::File exportedFile = audioProcessor.exportSampleForDragDrop(sampleFile);
+
+				if (exportedFile.existsAsFile())
+				{
+					juce::StringArray files;
+					files.add(exportedFile.getFullPathName());
+					DBG("Starting external drag with exported copy: " + exportedFile.getFullPathName());
+					performExternalDragDropOfFiles(files, false);
+				}
+				else
+				{
+					juce::StringArray files;
+					files.add(sampleFile.getFullPathName());
+					DBG("Export failed, dragging original file: " + sampleFile.getFullPathName());
+					performExternalDragDropOfFiles(files, false);
+				}
 				return;
 			}
 		}
-
 		juce::DragAndDropContainer* dragContainer = juce::DragAndDropContainer::findParentDragContainerFor(this);
 		if (dragContainer)
 		{

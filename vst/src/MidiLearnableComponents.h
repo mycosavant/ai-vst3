@@ -85,7 +85,7 @@ public:
 		{
 			auto bounds = this->getLocalBounds();
 			g.setColour(ColourPalette::textAccent);
-			g.drawRect(bounds, 3.0f);
+			g.drawRect(bounds, 3);
 
 			g.setColour(ColourPalette::withAlpha(ColourPalette::textAccent, 0.2f));
 			g.fillRect(bounds);
