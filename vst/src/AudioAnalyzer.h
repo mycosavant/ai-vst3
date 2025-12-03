@@ -46,8 +46,8 @@ public:
 		}
 	}
 	static float returnDetectedBPMorFallback(float detectedBPM,
-		const juce::AudioSampleBuffer& buffer,
-		double sampleRate)
+		const juce::AudioSampleBuffer& /*buffer*/,
+		double /*sampleRate*/)
 	{
 		if (detectedBPM >= 30.0f && detectedBPM <= 300.0f)
 		{

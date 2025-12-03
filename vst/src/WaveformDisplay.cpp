@@ -187,12 +187,30 @@ void WaveformDisplay::mouseDrag(const juce::MouseEvent& e)
 		if (distanceFromStart > 10 && !isDraggingAudio)
 		{
 			isDraggingAudio = true;
-			juce::StringArray files;
-			files.add(currentAudioFile.getFullPathName());
-			performExternalDragDropOfFiles(files, false);
+
+			juce::File exportedFile = audioProcessor.exportSampleForDragDrop(currentAudioFile);
+
+			if (exportedFile.existsAsFile())
+			{
+				juce::StringArray files;
+				files.add(exportedFile.getFullPathName());
+				performExternalDragDropOfFiles(files, false);
+
+				DBG("Dragging exported copy: " + exportedFile.getFullPathName());
+			}
+			else
+			{
+				juce::StringArray files;
+				files.add(currentAudioFile.getFullPathName());
+				performExternalDragDropOfFiles(files, false);
+
+				DBG("Export failed, dragging original file");
+			}
+
 			return;
 		}
 	}
+
 	if (loopPointsLocked || trackBpm <= 0.0f)
 		return;
 
@@ -599,6 +617,32 @@ void WaveformDisplay::drawLoopMarkers(juce::Graphics& g)
 
 	g.drawLine(startX, 0.0f, startX, height, lineWidth);
 	g.drawLine(endX, 0.0f, endX, height, lineWidth);
+
+	int triangleSize = 12;
+
+	juce::Path startTriangle;
+	startTriangle.addTriangle(
+		startX, 0.0f,
+		startX, static_cast<float>(triangleSize),
+		startX + triangleSize, triangleSize / 2.0f
+	);
+
+	g.setColour(loopColour);
+	g.fillPath(startTriangle);
+	g.setColour(loopColour.brighter(0.3f));
+	g.strokePath(startTriangle, juce::PathStrokeType(1.5f));
+
+	juce::Path endTriangle;
+	endTriangle.addTriangle(
+		endX, 0.0f,
+		endX, static_cast<float>(triangleSize),
+		endX - triangleSize, triangleSize / 2.0f
+	);
+
+	g.setColour(loopColour);
+	g.fillPath(endTriangle);
+	g.setColour(loopColour.brighter(0.3f));
+	g.strokePath(endTriangle, juce::PathStrokeType(1.5f));
 
 	if (trackBpm > 0.0f)
 	{

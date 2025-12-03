@@ -13,9 +13,28 @@ class DjIaVstEditor : public juce::AudioProcessorEditor, public juce::MenuBarMod
 {
 public:
 	explicit DjIaVstEditor(DjIaVstProcessor&);
+
 	~DjIaVstEditor() override;
+
 	std::vector<std::unique_ptr<TrackComponent>> trackComponents;
+	std::vector<std::unique_ptr<TrackComponent>>& getTrackComponents()
+	{
+		return trackComponents;
+	}
+
+	MixerPanel* getMixerPanel() { return mixerPanel.get(); }
+
 	std::unique_ptr<MixerPanel> mixerPanel;
+
+	juce::StringArray getBuiltInPrompts() const { return promptPresets; }
+	juce::StringArray getMenuBarNames() override;
+
+	juce::Label statusLabel;
+
+	juce::PopupMenu getMenuForIndex(int topLevelMenuIndex, const juce::String& menuName) override;
+
+	TrackComponent* getTrackComponent(const juce::String& trackId);
+
 	void paint(juce::Graphics&) override;
 	void layoutPromptSection(juce::Rectangle<int> area, int spacing);
 	void layoutConfigSection(juce::Rectangle<int> area, int reducing);
@@ -27,32 +46,21 @@ public:
 	void onGenerationComplete(const juce::String& trackId, const juce::String& message) override;
 	void refreshMixerChannels();
 	void initUI();
-	bool keyStateChanged(bool isKeyDown) override;
 	void refreshWavevormsAndSequencers();
-
-	juce::Label statusLabel;
-
-	juce::StringArray getMenuBarNames() override;
-	juce::PopupMenu getMenuForIndex(int topLevelMenuIndex, const juce::String& menuName) override;
 	void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
-
-	std::vector<std::unique_ptr<TrackComponent>>& getTrackComponents()
-	{
-		return trackComponents;
-	}
-	MixerPanel* getMixerPanel() { return mixerPanel.get(); }
 	void toggleWaveFormButtonOnTrack();
 	void setStatusWithTimeout(const juce::String& message, int timeoutMs = 2000);
 	void* getSequencerForTrack(const juce::String& trackId);
 	void stopGenerationUI(const juce::String& trackId, bool success = true, const juce::String& errorMessage = "");
 	void startGenerationUI(const juce::String& trackId);
-	juce::StringArray getBuiltInPrompts() const { return promptPresets; }
 	void restoreUICallbacks();
 	void updateSelectedTrack();
 	void onGenerateButtonClicked();
 	void toggleSampleBank();
 	void onSampleLoaded(const juce::String& trackId);
 	void reEnableCanvasForTrack();
+
+	bool keyStateChanged(bool isKeyDown) override;
 
 private:
 	DjIaVstProcessor& audioProcessor;
@@ -75,8 +83,6 @@ private:
 	MidiMappingEditorWindow* midiEditorWindow = nullptr;
 
 	void openMidiMappingEditor();
-	bool keyMatches(const juce::KeyPress& pressed, const juce::KeyPress& expected);
-	bool keyPressed(const juce::KeyPress& key) override;
 	void setupUI();
 	void addEventListeners();
 	void loadPromptPresets();
@@ -107,6 +113,9 @@ private:
 	void generateFromTrackComponent(const juce::String& trackId);
 	void refreshCredits();
 	void refreshCreditsAsync();
+
+	bool keyMatches(const juce::KeyPress& pressed, const juce::KeyPress& expected);
+	bool keyPressed(const juce::KeyPress& key) override;
 
 	juce::StringArray getAllPrompts() const;
 

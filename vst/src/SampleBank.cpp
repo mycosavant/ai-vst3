@@ -73,28 +73,39 @@ juce::String SampleBank::addSample(const juce::String& prompt,
 
 bool SampleBank::removeSample(const juce::String& sampleId)
 {
-	juce::ScopedLock lock(bankLock);
+	juce::File fileToDelete;
+	bool needsCallback = false;
 
-	auto it = std::find_if(samples.begin(), samples.end(),
-		[&sampleId](const std::unique_ptr<SampleBankEntry>& entry)
-		{
-			return entry->id == sampleId;
-		});
-
-	if (it == samples.end())
-		return false;
-
-	juce::File sampleFile((*it)->filePath);
-	if (sampleFile.exists())
 	{
-		sampleFile.deleteFile();
+		juce::ScopedLock lock(bankLock);
+
+		auto it = std::find_if(samples.begin(), samples.end(),
+			[&sampleId](const std::unique_ptr<SampleBankEntry>& entry)
+			{
+				return entry->id == sampleId;
+			});
+
+		if (it == samples.end())
+			return false;
+
+		fileToDelete = juce::File((*it)->filePath);
+
+		samples.erase(it);
+		needsCallback = true;
+
+		saveBankData();
+
 	}
 
-	samples.erase(it);
-	saveBankData();
+	if (fileToDelete.exists())
+	{
+		fileToDelete.deleteFile();
+	}
 
-	if (onBankChanged)
+	if (needsCallback && onBankChanged)
+	{
 		onBankChanged();
+	}
 
 	return true;
 }
@@ -150,22 +161,46 @@ int SampleBank::removeUnusedSamples()
 			removedCount++;
 	}
 
+	if (removedCount > 0 && onBankChanged)
+	{
+		juce::MessageManager::callAsync([this]()
+			{
+				if (onBankChanged)
+					onBankChanged();
+			});
+	}
+
 	return removedCount;
 }
 
+
 void SampleBank::markSampleAsUsed(const juce::String& sampleId, const juce::String& projectId)
 {
-	juce::ScopedLock lock(bankLock);
+	bool needsSave = false;
 
-	auto* entry = getSample(sampleId);
-	if (entry)
 	{
-		auto& projects = entry->usedInProjects;
-		if (std::find(projects.begin(), projects.end(), projectId) == projects.end())
+		juce::ScopedLock lock(bankLock);
+
+		auto it = std::find_if(samples.begin(), samples.end(),
+			[&sampleId](const std::unique_ptr<SampleBankEntry>& entry)
+			{
+				return entry->id == sampleId;
+			});
+
+		if (it != samples.end())
 		{
-			projects.push_back(projectId);
-			saveBankData();
+			auto& projects = (*it)->usedInProjects;
+			if (std::find(projects.begin(), projects.end(), projectId) == projects.end())
+			{
+				projects.push_back(projectId);
+				needsSave = true;
+			}
 		}
+	}
+
+	if (needsSave)
+	{
+		saveBankData();
 	}
 }
 

@@ -379,6 +379,15 @@ void TrackComponent::updateFromTrackData()
 		}
 	}
 
+	if (track->isPlaying.load() && !isPreviewPlaying)
+	{
+		previewButton.setEnabled(false);
+	}
+	else
+	{
+		previewButton.setEnabled(true);
+	}
+
 	if (!intervalKnob.isMouseButtonDown())
 	{
 		int interval = track->randomRetriggerInterval.load();
@@ -1328,12 +1337,22 @@ void TrackComponent::setupUI()
 
 	addAndMakeVisible(previewButton);
 	previewButton.setButtonText(juce::String::fromUTF8("\xE2\x96\xB6"));
-	previewButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonPrimary);
+	previewButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonSuccess);
 	previewButton.setTooltip("Preview sample (independent of ARM/STOP state)");
 	previewButton.onClick = [this]()
 		{
 			if (track && onPreviewTrack)
-				onPreviewTrack(trackId);
+			{
+				if (isPreviewPlaying)
+				{
+					if (onStopPreview)
+						onStopPreview(trackId);
+				}
+				else
+				{
+					onPreviewTrack(trackId);
+				}
+			}
 		};
 
 	addAndMakeVisible(promptPresetSelector);
@@ -2006,4 +2025,27 @@ void TrackComponent::itemDropped(const SourceDetails& dragSourceDetails)
 	}
 
 	repaint();
+}
+
+void TrackComponent::setPreviewPlaying(bool playing)
+{
+	isPreviewPlaying = playing;
+	updatePreviewButton();
+	repaint();
+}
+
+void TrackComponent::updatePreviewButton()
+{
+	if (isPreviewPlaying)
+	{
+		previewButton.setButtonText(juce::String::fromUTF8("\xE2\x96\xA0"));
+		previewButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonDanger);
+		previewButton.setTooltip("Stop preview");
+	}
+	else
+	{
+		previewButton.setButtonText(juce::String::fromUTF8("\xE2\x96\xB6"));
+		previewButton.setColour(juce::TextButton::buttonColourId, ColourPalette::buttonSuccess);
+		previewButton.setTooltip("Preview sample (independent of ARM/STOP state)");
+	}
 }

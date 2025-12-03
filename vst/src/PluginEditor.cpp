@@ -828,7 +828,7 @@ void DjIaVstEditor::setupUI()
 	promptInput.setTooltip("Enter your custom prompt for audio generation");
 	savePresetButton.setTooltip("Save current prompt as custom preset");
 	keySelector.setTooltip("Select musical key and mode for generation");
-	durationSlider.setTooltip("Generation duration in seconds (2-30s)");
+	durationSlider.setTooltip("Generation duration in seconds (2-30s) - (unavailable with local TFLite models)");
 	generateButton.setTooltip("Generate audio loop for selected track (Right-click for MIDI learn)");
 	configButton.setTooltip("Configure API settings and generation mode");
 	autoLoadButton.setTooltip("Automatically load generated samples (disable for manual control)");
@@ -1871,7 +1871,7 @@ void DjIaVstEditor::refreshTrackComponents()
 	setEnabled(false);
 	juce::String previousSelectedId = audioProcessor.getSelectedTrackId();
 	juce::String generatingId = audioProcessor.getGeneratingTrackId();
-	bool wasGenerating = audioProcessor.getIsGenerating();
+	bool wasGeneratingLocal = audioProcessor.getIsGenerating();
 
 	trackComponents.clear();
 	tracksContainer.removeAllChildren();
@@ -1955,6 +1955,11 @@ void DjIaVstEditor::refreshTrackComponents()
 						setStatusWithTimeout(message, 3000);
 					};
 
+				trackComp->onStopPreview = [this](const juce::String& trackId)
+					{
+						audioProcessor.stopTrackPreview(trackId);
+					};
+
 				int fullWidth = tracksContainer.getWidth() - 4;
 				trackComp->setBounds(2, yPos, fullWidth, 60);
 
@@ -1962,7 +1967,7 @@ void DjIaVstEditor::refreshTrackComponents()
 				{
 					trackComp->setSelected(true);
 				}
-				if (wasGenerating && trackId == generatingId)
+				if (wasGeneratingLocal && trackId == generatingId)
 				{
 					trackComp->startGeneratingAnimation();
 				}
@@ -2567,4 +2572,17 @@ void DjIaVstEditor::refreshCreditsAsync()
 			}
 			});
 		});
+}
+
+TrackComponent* DjIaVstEditor::getTrackComponent(const juce::String& trackId)
+{
+	for (auto& track : trackComponents)
+	{
+		if (track->getTrackId() == trackId)
+		{
+			return track.get();
+		}
+	}
+
+	return nullptr;
 }

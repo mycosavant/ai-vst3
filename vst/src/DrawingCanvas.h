@@ -32,7 +32,7 @@ public:
 		setColour(juce::TextButton::buttonColourId, color);
 	}
 
-	void paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
+	void paintButton(juce::Graphics& g, bool /*shouldDrawButtonAsHighlighted*/, bool /*shouldDrawButtonAsDown*/) override
 	{
 		auto bounds = getLocalBounds().toFloat();
 
