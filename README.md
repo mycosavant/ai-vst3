@@ -35,6 +35,18 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 
 ---
 
+## What Obsidian Neural does NOT
+
+**OBSIDIAN Neural is NOT a song generator** like Suno or Udio. It's a performance tool for musicians:
+
+- **No full songs in one click** - You build your track loop by loop
+- **No lyrics or vocals** - Focus on instrumental loops and sound design
+- **No auto-arrangement** - You're the composer, AI is your loop generator
+
+**Think of it as:** A creative sampler that generates sounds on-demand, not a "press play and get a song" tool.
+
+---
+
 ## Features
 
 ### Text-to-Audio Generation
@@ -255,9 +267,6 @@ _Experimental web-based music creation tool with procedural generation._
 
 🎵 **[YouTube Channel](https://www.youtube.com/@innermost9675)** - Original compositions  
 _Electronic music, ambient soundscapes, metal, and experimental productions by InnerMost (2010-2023)._
-
-🎙️ **[AI Harmony Radio](https://autogenius.anthony-charretier.fr/webradio)** - 24/7 automated radio  
-_Broadcasting original music compositions by Innermost with AI-generated news bulletins and stories._
 
 ### 💬 Connect
 
