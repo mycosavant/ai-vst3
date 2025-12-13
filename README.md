@@ -7,7 +7,10 @@
 📄 **[Late Breaking Paper - AIMLA 2025](https://drive.google.com/file/d/1cwqmrV0_qC462LLQgQUz-5Cd422gL-8F/view)** - Presented at the first AES International Conference on Artificial Intelligence and Machine Learning for Audio (Queen Mary University London, Sept 8-10, 2025)  
 🎓 **[Tutorial](https://youtu.be/-qdFo_PcKoY)** - From DAW setup to live performance (French + English subtitles)
 
----
+<div align="center">
+  <img src="assets/screenshot.png" alt="OBSIDIAN-Neural Interface" width="800"/>
+  <p><i>Live AI music generation in your DAW</i></p>
+</div>
 
 ## Draw-to-Audio Live Demo
 
