@@ -61,7 +61,7 @@ jobs:
 
   build-macos-universal:
     name: Build macOS Universal (10.15+)
-    runs-on: macos-13
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -241,9 +241,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: "Ventura"
-            runner: macos-13
-            deployment_target: "13.0"
           - name: "Sonoma"
             runner: macos-14
             deployment_target: "14.0"
@@ -286,8 +283,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-13
-            name: "13-Ventura"
           - runner: macos-14
             name: "14-Sonoma"
           - runner: macos-15
