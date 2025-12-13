@@ -9,7 +9,7 @@
 
 class SequencerComponent;
 
-class DjIaVstEditor : public juce::AudioProcessorEditor, public juce::MenuBarModel, public juce::Timer, public DjIaVstProcessor::GenerationListener, public juce::DragAndDropContainer
+class DjIaVstEditor : public juce::AudioProcessorEditor, public juce::Timer, public DjIaVstProcessor::GenerationListener, public juce::DragAndDropContainer
 {
 public:
 	explicit DjIaVstEditor(DjIaVstProcessor&);
@@ -27,11 +27,8 @@ public:
 	std::unique_ptr<MixerPanel> mixerPanel;
 
 	juce::StringArray getBuiltInPrompts() const { return promptPresets; }
-	juce::StringArray getMenuBarNames() override;
 
 	juce::Label statusLabel;
-
-	juce::PopupMenu getMenuForIndex(int topLevelMenuIndex, const juce::String& menuName) override;
 
 	TrackComponent* getTrackComponent(const juce::String& trackId);
 
@@ -47,7 +44,6 @@ public:
 	void refreshMixerChannels();
 	void initUI();
 	void refreshWavevormsAndSequencers();
-	void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
 	void toggleWaveFormButtonOnTrack();
 	void setStatusWithTimeout(const juce::String& message, int timeoutMs = 2000);
 	void* getSequencerForTrack(const juce::String& trackId);
@@ -93,11 +89,6 @@ private:
 	void updateLoadButtonState();
 	void updateMidiIndicator(const juce::String& noteInfo);
 	void onAddTrack();
-	void onSaveSession();
-	void onLoadSession();
-	void loadSessionList();
-	void saveCurrentSession(const juce::String& sessionName);
-	void loadSession(const juce::String& sessionName);
 	void updateUIComponents();
 	void setAllGenerateButtonsEnabled(bool enabled);
 	void showFirstTimeSetup();
@@ -119,7 +110,6 @@ private:
 
 	juce::StringArray getAllPrompts() const;
 
-	juce::File getSessionsDirectory();
 	juce::TextButton showMixerButton;
 	bool mixerVisible = false;
 	std::atomic<bool> isGenerating{ false };
@@ -174,11 +164,7 @@ private:
 	juce::Component tracksContainer;
 	juce::TextButton addTrackButton;
 	juce::Label tracksLabel;
-	juce::TextButton saveSessionButton;
-	juce::TextButton loadSessionButton;
-	juce::ComboBox sessionSelector;
 	juce::TextButton  bypassSequencerButton;
-	std::unique_ptr<juce::MenuBarComponent> menuBar;
 
 	MidiLearnableButton nextTrackButton;
 	MidiLearnableButton prevTrackButton;
