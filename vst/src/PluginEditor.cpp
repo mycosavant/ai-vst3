@@ -1324,7 +1324,7 @@ void DjIaVstEditor::resized()
 
 	if (sampleBankPanel && sampleBankVisible)
 	{
-		auto bankArea = getLocalBounds().removeFromRight(400).reduced(5);
+		auto bankArea = getLocalBounds().removeFromRight(400);
 		sampleBankPanel->setBounds(bankArea);
 	}
 	resizing = false;

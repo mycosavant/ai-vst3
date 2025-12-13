@@ -795,9 +795,21 @@ void SampleBankPanel::timerCallback()
 
 void SampleBankPanel::paint(juce::Graphics& g)
 {
-	g.fillAll(juce::Colours::white);
-	g.setColour(ColourPalette::backgroundDeep);
-	g.drawRect(getLocalBounds(), 1);
+	auto bounds = getLocalBounds();
+
+	g.setGradientFill(juce::ColourGradient(
+		juce::Colours::black.withAlpha(0.3f), bounds.getTopLeft().toFloat(),
+		juce::Colours::transparentBlack, bounds.getTopLeft().toFloat().translated(10, 0),
+		false));
+	g.fillRect(bounds.removeFromLeft(10));
+
+	g.fillAll(ColourPalette::backgroundDeep);
+
+	g.setColour(ColourPalette::violet.withAlpha(0.6f));
+	g.drawLine(0.0f, 0.0f, 0.0f, (float)getHeight(), 2.0f);
+
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.2f));
+	g.drawRect(bounds, 1);
 }
 
 void SampleBankPanel::resized()
