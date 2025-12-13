@@ -260,7 +260,7 @@ void DjIaVstEditor::initUI()
 void DjIaVstEditor::showFirstTimeSetup()
 {
 	auto alertWindow = std::make_unique<juce::AlertWindow>(
-		"OBSIDIAN-Neural Configuration",
+		"OBSIDIAN-Neural Configuration " + Version::FULL,
 		"Choose your generation method:",
 		juce::MessageBoxIconType::InfoIcon);
 
@@ -341,7 +341,7 @@ void DjIaVstEditor::refreshUIForMode()
 void DjIaVstEditor::showConfigDialog()
 {
 	auto alertWindow = std::make_unique<juce::AlertWindow>(
-		"Update Configuration",
+		"OBSIDIAN-Neural Configuration " + Version::FULL,
 		"Update your settings:",
 		juce::MessageBoxIconType::QuestionIcon);
 
@@ -431,7 +431,7 @@ void DjIaVstEditor::showConfigDialog()
 						});
 				}
 			}
-
+			windowPtr->setLookAndFeel(nullptr);
 			windowPtr->exitModalState(result);
 			delete windowPtr; }));
 }
@@ -595,8 +595,6 @@ void DjIaVstEditor::setupUI()
 	stabilityLabel.setColour(juce::Label::textColourId, ColourPalette::credits);
 	stabilityLabel.setJustificationType(juce::Justification::left);
 
-	menuBar = std::make_unique<juce::MenuBarComponent>(this);
-	addAndMakeVisible(*menuBar);
 	addAndMakeVisible(promptPresetSelector);
 
 	addAndMakeVisible(savePresetButton);
@@ -743,7 +741,7 @@ void DjIaVstEditor::setupUI()
 	generateButton.setButtonText(juce::String::fromUTF8("\xE2\x96\xB6"));
 
 	addAndMakeVisible(configButton);
-	configButton.setButtonText(juce::String::fromUTF8("\xE2\x98\xB0"));
+	configButton.setButtonText(juce::String::fromUTF8("\xE2\x9B\xAD"));
 	configButton.setTooltip("Configure settings globally");
 	configButton.onClick = [this]()
 		{ showConfigDialog(); };
@@ -795,12 +793,6 @@ void DjIaVstEditor::setupUI()
 	tracksViewport.setWantsKeyboardFocus(false);
 	setWantsKeyboardFocus(true);
 
-	addAndMakeVisible(saveSessionButton);
-	saveSessionButton.setButtonText("Save Session");
-
-	addAndMakeVisible(loadSessionButton);
-	loadSessionButton.setButtonText("Load Session");
-
 	if (!mixerPanel)
 	{
 		mixerPanel = std::make_unique<MixerPanel>(audioProcessor);
@@ -831,8 +823,6 @@ void DjIaVstEditor::setupUI()
 	autoLoadButton.setTooltip("Automatically load generated samples (disable for manual control)");
 	loadSampleButton.setTooltip("Manually load pending generated sample");
 	addTrackButton.setTooltip("Add a new track to the session");
-	saveSessionButton.setTooltip("Save current session to file");
-	loadSessionButton.setTooltip("Load a previously saved session");
 	resetUIButton.setTooltip("Reset UI if stuck in generation mode");
 
 	if (!sampleBankPanel) {
@@ -853,10 +843,6 @@ void DjIaVstEditor::addEventListeners()
 {
 	addTrackButton.onClick = [this]()
 		{ onAddTrack(); };
-	saveSessionButton.onClick = [this]()
-		{ onSaveSession(); };
-	loadSessionButton.onClick = [this]()
-		{ onLoadSession(); };
 	autoLoadButton.onClick = [this]
 		{ onAutoLoadToggled(); };
 	loadSampleButton.onClick = [this]
@@ -1264,11 +1250,6 @@ void DjIaVstEditor::resized()
 	auto bottomArea = getLocalBounds().removeFromBottom(45);
 	auto area = getLocalBounds();
 
-	if (menuBar)
-	{
-		menuBar->setBounds(area.removeFromTop(24));
-	}
-
 	area = area.reduced(padding);
 
 	auto topArea = area.removeFromTop(80);
@@ -1288,12 +1269,12 @@ void DjIaVstEditor::resized()
 
 	topArea.removeFromLeft(spacing * 2);
 
-	auto column2 = topArea.removeFromLeft(400);
+	auto column2 = topArea.removeFromLeft(490);
 	layoutPromptSection(column2, spacing);
 
 	topArea.removeFromLeft(spacing * 2);
 
-	auto column3 = topArea.removeFromLeft(400);
+	auto column3 = topArea.removeFromLeft(370);
 	layoutConfigSection(column3, reducing);
 
 	topArea.removeFromLeft(spacing * 2);
@@ -1343,7 +1324,7 @@ void DjIaVstEditor::resized()
 
 	if (sampleBankPanel && sampleBankVisible)
 	{
-		auto bankArea = getLocalBounds().removeFromRight(400).reduced(5);
+		auto bankArea = getLocalBounds().removeFromRight(400);
 		sampleBankPanel->setBounds(bankArea);
 	}
 	resizing = false;
@@ -2175,311 +2156,6 @@ void DjIaVstEditor::updateSelectedTrack()
 	if (mixerPanel)
 	{
 		mixerPanel->trackSelected(selectedId);
-	}
-}
-
-void DjIaVstEditor::onSaveSession()
-{
-	juce::AlertWindow::showAsync(
-		juce::MessageBoxOptions()
-		.withIconType(juce::MessageBoxIconType::QuestionIcon)
-		.withTitle("Save Session")
-		.withMessage("Enter session name:")
-		.withButton("Save")
-		.withButton("Cancel"),
-		[this](int result)
-		{
-			if (result == 1)
-			{
-				juce::String sessionName = "Session_" + juce::String(juce::Time::getCurrentTime().toMilliseconds());
-
-				auto alertWindow = std::make_unique<juce::AlertWindow>("Save Session",
-					"Enter session name:", juce::MessageBoxIconType::QuestionIcon);
-				alertWindow->addTextEditor("sessionName", sessionName, "Session name:");
-				alertWindow->addButton("Save", 1);
-				alertWindow->addButton("Cancel", 0);
-
-				alertWindow->enterModalState(true, juce::ModalCallbackFunction::create([this](int modalResult)
-					{
-						if (modalResult == 1) {
-							auto* nameEditor = dynamic_cast<juce::AlertWindow*>(juce::Component::getCurrentlyModalComponent())
-								->getTextEditor("sessionName");
-							if (nameEditor) {
-								saveCurrentSession(nameEditor->getText());
-							}
-						} }));
-			}
-		});
-}
-
-void DjIaVstEditor::saveCurrentSession(const juce::String& sessionName)
-{
-	try
-	{
-		juce::File sessionsDir = getSessionsDirectory();
-		if (!sessionsDir.exists())
-		{
-			sessionsDir.createDirectory();
-		}
-
-		juce::File sessionFile = sessionsDir.getChildFile(sessionName + ".djiasession");
-
-		juce::MemoryBlock stateData;
-		audioProcessor.getStateInformation(stateData);
-
-		juce::FileOutputStream stream(sessionFile);
-		if (stream.openedOk())
-		{
-			stream.write(stateData.getData(), stateData.getSize());
-			statusLabel.setText("Session saved: " + sessionName, juce::dontSendNotification);
-			loadSessionList();
-		}
-		else
-		{
-			statusLabel.setText("Failed to save session file", juce::dontSendNotification);
-		}
-	}
-	catch (const std::exception& e)
-	{
-		statusLabel.setText("Failed to save session: " + juce::String(e.what()),
-			juce::dontSendNotification);
-	}
-}
-
-void DjIaVstEditor::onLoadSession()
-{
-	int selectedIndex = sessionSelector.getSelectedItemIndex();
-	if (selectedIndex >= 0)
-	{
-		juce::String sessionName = sessionSelector.getItemText(selectedIndex);
-		if (sessionName != "No sessions found")
-		{
-			loadSession(sessionName);
-		}
-	}
-	else
-	{
-		statusLabel.setText("Please select a session to load", juce::dontSendNotification);
-	}
-}
-
-void DjIaVstEditor::loadSession(const juce::String& sessionName)
-{
-	try
-	{
-		juce::File sessionFile = getSessionsDirectory().getChildFile(sessionName + ".djiasession");
-
-		if (sessionFile.existsAsFile())
-		{
-			juce::FileInputStream stream(sessionFile);
-			if (stream.openedOk())
-			{
-				juce::MemoryBlock stateData;
-				stream.readIntoMemoryBlock(stateData);
-
-				audioProcessor.setStateInformation(stateData.getData(),
-					static_cast<int>(stateData.getSize()));
-
-				refreshTrackComponents();
-				updateUIFromProcessor();
-				statusLabel.setText("Session loaded: " + sessionName, juce::dontSendNotification);
-			}
-			else
-			{
-				statusLabel.setText("Failed to read session file", juce::dontSendNotification);
-			}
-		}
-		else
-		{
-			statusLabel.setText("Session file not found: " + sessionName, juce::dontSendNotification);
-		}
-	}
-	catch (const std::exception& e)
-	{
-		statusLabel.setText("Failed to load session: " + juce::String(e.what()),
-			juce::dontSendNotification);
-	}
-}
-
-void DjIaVstEditor::loadSessionList()
-{
-	sessionSelector.clear();
-
-	juce::File sessionsDir = getSessionsDirectory();
-	if (sessionsDir.exists())
-	{
-		auto sessionFiles = sessionsDir.findChildFiles(juce::File::findFiles, false, "*.djiasession");
-
-		for (const auto& file : sessionFiles)
-		{
-			sessionSelector.addItem(file.getFileNameWithoutExtension(),
-				sessionSelector.getNumItems() + 1);
-		}
-	}
-
-	if (sessionSelector.getNumItems() == 0)
-	{
-		sessionSelector.addItem("No sessions found", 1);
-	}
-	else
-	{
-		sessionSelector.setSelectedItemIndex(0);
-	}
-}
-
-juce::File DjIaVstEditor::getSessionsDirectory()
-{
-	return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-		.getChildFile("OBSIDIAN-Neural")
-		.getChildFile("Sessions");
-}
-
-juce::StringArray DjIaVstEditor::getMenuBarNames()
-{
-	return { "File", "Tracks", "Help" };
-}
-
-juce::PopupMenu DjIaVstEditor::getMenuForIndex(int topLevelMenuIndex, const juce::String& /*menuName*/)
-{
-	juce::PopupMenu menu;
-
-	if (topLevelMenuIndex == 0)
-	{
-		menu.addItem(newSession, "New Session", true);
-		menu.addSeparator();
-		menu.addItem(saveSession, "Save Session", true);
-		menu.addItem(saveSessionAs, "Save Session As...", true);
-		menu.addItem(loadSessionMenu, "Load Session...", true);
-		menu.addSeparator();
-		menu.addItem(exportSession, "Export Session", true);
-	}
-	else if (topLevelMenuIndex == 1)
-	{
-		menu.addItem(addTrack, "Add New Track", true);
-		menu.addSeparator();
-		menu.addItem(deleteAllTracks, "Delete All Tracks", audioProcessor.getAllTrackIds().size() > 1);
-		menu.addItem(resetTracks, "Reset All Tracks", true);
-	}
-	else if (topLevelMenuIndex == 2)
-	{
-		menu.addItem(aboutDjIa, "About OBSIDIAN-Neural", true);
-		menu.addItem(showHelp, "Show Help", true);
-	}
-
-	return menu;
-}
-
-void DjIaVstEditor::menuItemSelected(int menuItemID, int /*topLevelMenuIndex*/)
-{
-	switch (menuItemID)
-	{
-	case newSession:
-		statusLabel.setText("New session created", juce::dontSendNotification);
-		break;
-
-	case saveSession:
-		onSaveSession();
-		break;
-
-	case saveSessionAs:
-		onSaveSession();
-		break;
-
-	case loadSessionMenu:
-		onLoadSession();
-		break;
-
-	case exportSession:
-		statusLabel.setText("Export - Coming soon!", juce::dontSendNotification);
-		break;
-
-	case addTrack:
-		onAddTrack();
-		break;
-
-	case deleteAllTracks:
-		juce::AlertWindow::showAsync(
-			juce::MessageBoxOptions()
-			.withIconType(juce::MessageBoxIconType::WarningIcon)
-			.withTitle("Delete All Tracks")
-			.withMessage("Are you sure you want to delete all tracks?")
-			.withButton("Delete")
-			.withButton("Cancel"),
-			[this](int result)
-			{
-				if (result == 1)
-				{
-					auto trackIds = audioProcessor.getAllTrackIds();
-					for (int i = 1; i < trackIds.size(); ++i)
-					{
-						audioProcessor.deleteTrack(trackIds[i]);
-					}
-					refreshTrackComponents();
-					refreshWavevormsAndSequencers();
-					statusLabel.setText("All tracks deleted except one", juce::dontSendNotification);
-				}
-			});
-		break;
-
-	case resetTracks:
-		statusLabel.setText("Reset tracks - Coming soon!", juce::dontSendNotification);
-		break;
-
-	case aboutDjIa:
-		juce::AlertWindow::showAsync(
-			juce::MessageBoxOptions()
-			.withIconType(juce::MessageBoxIconType::InfoIcon)
-			.withTitle("About OBSIDIAN-Neural")
-			.withMessage("OBSIDIAN-Neural\n\nVersion: " + Version::FULL +
-				"\nBecause writing melodies is hard\n"
-				"Let the robots do the work while you take credit\n\n"
-				"GitHub: https://github.com/innermost47/ai-dj\n\n"
-				"InnerMost47 - Probably overthinking this")
-			.withButton("OK"),
-			nullptr);
-		break;
-
-	case showHelp:
-	{
-		juce::String helpText =
-			"OBSIDIAN-Neural Help\n\n"
-			"Quick Start:\n"
-			"1. Configure server URL and API key\n"
-			"2. Add tracks and assign MIDI notes\n"
-			"3. Generate loops with prompts\n"
-			"4. Play with MIDI keyboard!\n\n"
-
-			"Pages System:\n"
-			"- Click button to enable multi-page mode (A/B/C/D)\n"
-			"- Keyboard shortcuts:\n"
-			"  Slot 1: 1,2,3,4 -> Pages A,B,C,D\n"
-			"  Slot 2: A,Z,E,R -> Pages A,B,C,D\n"
-			"  Slot 3: Q,S,D,F -> Pages A,B,C,D\n"
-			"  etc...\n\n"
-
-			"Sample Bank:\n"
-			"- Auto-saves all generated samples\n"
-			"- Drag & Drop samples to tracks or DAW\n"
-			"- Preview with play button\n\n"
-
-			"Controls:\n"
-			"- Waveform: Show/edit loop points\n"
-			"- Sequencer: Program patterns\n"
-			"- Beat Repeat: Live loop slicing\n"
-			"- MIDI Learn: Right-click any control\n\n"
-
-			"See documentation for complete features.";
-
-		juce::AlertWindow::showAsync(
-			juce::MessageBoxOptions()
-			.withIconType(juce::MessageBoxIconType::InfoIcon)
-			.withTitle("OBSIDIAN-Neural Help")
-			.withMessage(helpText)
-			.withButton("OK"),
-			nullptr);
-
-		break;
-	}
 	}
 }
 

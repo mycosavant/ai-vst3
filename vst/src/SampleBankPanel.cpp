@@ -711,12 +711,6 @@ SampleBankPanel::SampleBankPanel(DjIaVstProcessor& processor)
 
 	loadCategoriesConfig();
 	setupUI();
-	refreshSampleList();
-
-	juce::Timer::callAfterDelay(500, [this]()
-		{
-			rebuildCategoryFilter();
-			refreshSampleList(); });
 
 	if (auto* bank = audioProcessor.getSampleBank())
 	{
@@ -787,17 +781,111 @@ void SampleBankPanel::stopPreview()
 
 void SampleBankPanel::timerCallback()
 {
+	if (isLoading.load())
+	{
+		loadingAngle += 0.15f;
+		if (loadingAngle >= juce::MathConstants<float>::twoPi)
+			loadingAngle -= juce::MathConstants<float>::twoPi;
+
+		repaint();
+	}
+
 	if (currentPreviewEntry && !audioProcessor.isSamplePreviewing())
 	{
 		stopPreview();
+	}
+
+	if (!isLoading.load() && !currentPreviewEntry)
+	{
+		stopTimer();
 	}
 }
 
 void SampleBankPanel::paint(juce::Graphics& g)
 {
-	g.fillAll(juce::Colours::white);
-	g.setColour(ColourPalette::backgroundDeep);
-	g.drawRect(getLocalBounds(), 1);
+	auto bounds = getLocalBounds();
+
+	g.setGradientFill(juce::ColourGradient(
+		juce::Colours::black.withAlpha(0.3f), bounds.getTopLeft().toFloat(),
+		juce::Colours::transparentBlack, bounds.getTopLeft().toFloat().translated(10, 0),
+		false));
+	g.fillRect(bounds.removeFromLeft(10));
+
+	g.fillAll(ColourPalette::backgroundDeep);
+
+	g.setColour(ColourPalette::violet.withAlpha(0.6f));
+	g.drawLine(0.0f, 0.0f, 0.0f, (float)getHeight(), 2.0f);
+
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.2f));
+	g.drawRect(bounds, 1);
+
+	bool showLoader = isLoading.load();
+	bool showEmpty = !showLoader && sampleItems.empty() && hasEverLoaded.load();
+
+	if (showLoader)
+	{
+		drawLoader(g);
+	}
+	else if (showEmpty)
+	{
+		drawEmptyState(g);
+	}
+}
+
+void SampleBankPanel::drawLoader(juce::Graphics& g)
+{
+	auto bounds = samplesViewport.getBounds();
+	auto centerX = bounds.getCentreX();
+	auto centerY = bounds.getCentreY();
+
+	const float radius = 40.0f;
+	const float thickness = 4.0f;
+
+	juce::Path backgroundArc;
+	backgroundArc.addCentredArc(centerX, centerY, radius, radius,
+		0.0f, 0.0f, juce::MathConstants<float>::twoPi, true);
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.3f));
+	g.strokePath(backgroundArc, juce::PathStrokeType(thickness));
+
+	juce::Path animatedArc;
+	float startAngle = loadingAngle;
+	float endAngle = loadingAngle + juce::MathConstants<float>::pi * 1.5f;
+
+	animatedArc.addCentredArc(centerX, centerY, radius, radius,
+		0.0f, startAngle, endAngle, true);
+
+	g.setColour(ColourPalette::violet);
+	g.strokePath(animatedArc, juce::PathStrokeType(thickness,
+		juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+	g.setColour(ColourPalette::textSecondary);
+	g.setFont(juce::FontOptions(14.0f));
+	g.drawText("Loading samples...",
+		bounds.withSizeKeepingCentre(200, 30).translated(0, radius + 30),
+		juce::Justification::centred);
+}
+
+void SampleBankPanel::drawEmptyState(juce::Graphics& g)
+{
+	auto bounds = samplesViewport.getBounds();
+
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.3f));
+	g.setFont(juce::FontOptions(60.0f));
+	g.drawText(juce::String::fromUTF8("♪"),
+		bounds.withSizeKeepingCentre(80, 80),
+		juce::Justification::centred);
+
+	g.setColour(ColourPalette::textSecondary);
+	g.setFont(juce::FontOptions(16.0f, juce::Font::bold));
+	g.drawText("No samples yet",
+		bounds.withSizeKeepingCentre(300, 30).translated(0, 60),
+		juce::Justification::centred);
+
+	g.setFont(juce::FontOptions(13.0f));
+	g.setColour(ColourPalette::textSecondary.withAlpha(0.7f));
+	g.drawText("Generate some loops to populate your bank!",
+		bounds.withSizeKeepingCentre(300, 30).translated(0, 90),
+		juce::Justification::centred);
 }
 
 void SampleBankPanel::resized()
@@ -839,11 +927,18 @@ void SampleBankPanel::resized()
 
 void SampleBankPanel::refreshSampleList()
 {
+	auto startTime = juce::Time::getCurrentTime();
 	sampleItems.clear();
 	samplesContainer.removeAllChildren();
 	auto* bank = audioProcessor.getSampleBank();
 	if (!bank)
+	{
+		isLoading.store(false);
+		hasEverLoaded.store(true);
+		stopTimer();
+		repaint();
 		return;
+	}
 
 	auto samples = bank->getAllSamples();
 
@@ -920,29 +1015,58 @@ void SampleBankPanel::refreshSampleList()
 		break;
 	}
 
-	createSampleItems(samples);
+	auto elapsed = juce::Time::getCurrentTime() - startTime;
+	int elapsedMs = (int)elapsed.inMilliseconds();
+	int minLoaderTime = 600;
+	int remainingTime = std::max(0, minLoaderTime - elapsedMs);
+
+	juce::Timer::callAfterDelay(remainingTime, [this, samples, safeThis = juce::Component::SafePointer(this)]()
+		{
+			if (safeThis != nullptr)
+			{
+				createSampleItems(samples);
+				if (!currentPreviewEntry)
+				{
+					stopTimer();
+				}
+
+				isLoading.store(false);
+				hasEverLoaded.store(true);
+
+				repaint();
+			}
+		});
 }
 
 void SampleBankPanel::setVisible(bool shouldBeVisible)
 {
 	Component::setVisible(shouldBeVisible);
+
 	if (shouldBeVisible)
 	{
-		for (auto& item : sampleItems)
-		{
-			item->loadAudioDataIfNeeded();
-		}
-		juce::Timer::callAfterDelay(100, [this]()
-			{ refreshSampleList(); });
+		hasEverLoaded.store(false);
+
+		isLoading.store(true);
+		startTimer(30);
+		repaint();
+
+		juce::Timer::callAfterDelay(100, [this, safeThis = juce::Component::SafePointer(this)]()
+			{
+				if (safeThis != nullptr)
+				{
+					refreshSampleList();
+				}
+			});
 	}
 	else
 	{
 		stopPreview();
+		isLoading.store(false);
+		stopTimer();
 		sampleItems.clear();
 		samplesContainer.removeAllChildren();
 	}
 }
-
 void SampleBankPanel::setupUI()
 {
 	addAndMakeVisible(titleLabel);

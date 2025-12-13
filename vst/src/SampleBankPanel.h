@@ -8,33 +8,33 @@ class DjIaVstProcessor;
 class SampleBankItem : public juce::Component, public juce::DragAndDropContainer, public juce::Timer
 {
 public:
-	SampleBankItem(SampleBankEntry *entry, DjIaVstProcessor &processor);
+	SampleBankItem(SampleBankEntry* entry, DjIaVstProcessor& processor);
 	~SampleBankItem() override;
 
-	void paint(juce::Graphics &g) override;
+	void paint(juce::Graphics& g) override;
 	void resized() override;
-	void mouseDown(const juce::MouseEvent &event) override;
-	void mouseDrag(const juce::MouseEvent &event) override;
-	void mouseUp(const juce::MouseEvent &event) override;
-	void mouseEnter(const juce::MouseEvent &event) override;
-	void mouseExit(const juce::MouseEvent &event) override;
+	void mouseDown(const juce::MouseEvent& event) override;
+	void mouseDrag(const juce::MouseEvent& event) override;
+	void mouseUp(const juce::MouseEvent& event) override;
+	void mouseEnter(const juce::MouseEvent& event) override;
+	void mouseExit(const juce::MouseEvent& event) override;
 	void setIsPlaying(bool playing);
 	void loadAudioDataIfNeeded();
 	void showCategoryMenu();
 	int getRequiredHeight();
 
-	SampleBankEntry *getSampleEntry() const { return sampleEntry; }
+	SampleBankEntry* getSampleEntry() const { return sampleEntry; }
 
-	std::function<void(const juce::String &)> onDeleteRequested;
-	std::function<void(SampleBankEntry *)> onPreviewRequested;
+	std::function<void(const juce::String&)> onDeleteRequested;
+	std::function<void(SampleBankEntry*)> onPreviewRequested;
 	std::function<void()> onStopRequested;
-	std::function<void(SampleBankEntry *, const std::vector<juce::String> &)> onCategoriesChanged;
+	std::function<void(SampleBankEntry*, const std::vector<juce::String>&)> onCategoriesChanged;
 
 	std::function<std::vector<juce::String>()> getCategoriesList;
 
 private:
-	SampleBankEntry *sampleEntry;
-	DjIaVstProcessor &audioProcessor;
+	SampleBankEntry* sampleEntry;
+	DjIaVstProcessor& audioProcessor;
 
 	juce::Label nameLabel;
 	juce::Label durationLabel;
@@ -47,7 +47,7 @@ private:
 	std::vector<float> thumbnail;
 	juce::AudioBuffer<float> audioBuffer;
 	std::shared_ptr<std::atomic<bool>> validityFlag;
-	std::atomic<bool> isDestroyed{false};
+	std::atomic<bool> isDestroyed{ false };
 
 	int maxVisibleBadges = 0;
 	double sampleRate = 48000.0;
@@ -65,11 +65,11 @@ private:
 	void updatePlayButton();
 	void generateThumbnail();
 	void loadAudioData();
-	void drawMiniWaveform(juce::Graphics &g);
+	void drawMiniWaveform(juce::Graphics& g);
 	void setPlaybackPosition(float positionInSeconds);
 	void timerCallback() override;
-	void drawCategoryBadges(juce::Graphics &g);
-	juce::Colour getCategoryColor(const juce::String &category);
+	void drawCategoryBadges(juce::Graphics& g);
+	juce::Colour getCategoryColor(const juce::String& category);
 	void updateBadgeLayout();
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleBankItem)
@@ -106,22 +106,22 @@ struct CategoryInfo
 };
 
 class SampleBankPanel : public juce::Component,
-						public juce::Timer
+	public juce::Timer
 {
 public:
-	SampleBankPanel(DjIaVstProcessor &processor);
+	SampleBankPanel(DjIaVstProcessor& processor);
 	~SampleBankPanel() override;
 
-	void paint(juce::Graphics &g) override;
+	void paint(juce::Graphics& g) override;
 	void resized() override;
 	void timerCallback() override;
 	void refreshSampleList();
 	void setVisible(bool shouldBeVisible) override;
 
-	std::function<void(const juce::String &, const juce::String &)> onSampleDroppedToTrack;
+	std::function<void(const juce::String&, const juce::String&)> onSampleDroppedToTrack;
 
 private:
-	DjIaVstProcessor &audioProcessor;
+	DjIaVstProcessor& audioProcessor;
 
 	juce::Label titleLabel;
 	juce::TextButton cleanupButton;
@@ -134,6 +134,11 @@ private:
 	juce::TextButton addCategoryButton;
 	juce::TextButton editCategoryButton;
 	juce::TextButton deleteCategoryButton;
+
+	std::atomic<bool> isLoading{ false };
+	std::atomic<bool> hasEverLoaded{ false };
+
+	float loadingAngle = 0.0f;
 
 	int currentCategoryId = 0;
 	std::vector<CategoryInfo> categoryInfos = {
@@ -155,7 +160,7 @@ private:
 		{15, "Electronic"},
 		{16, "Piano"},
 		{17, "Guitar"},
-		{18, "Synth"}};
+		{18, "Synth"} };
 
 	juce::ComboBox categoryFilter;
 	SampleCategory currentCategory = SampleCategory::All;
@@ -175,22 +180,24 @@ private:
 
 	std::vector<std::unique_ptr<SampleBankItem>> sampleItems;
 
-	SampleBankEntry *currentPreviewEntry = nullptr;
-	SampleBankItem *currentPreviewItem = nullptr;
+	SampleBankEntry* currentPreviewEntry = nullptr;
+	SampleBankItem* currentPreviewItem = nullptr;
 
 	void setupUI();
-	void createSampleItems(const std::vector<SampleBankEntry *> &samples);
-	void playPreview(SampleBankEntry *entry);
+	void createSampleItems(const std::vector<SampleBankEntry*>& samples);
+	void playPreview(SampleBankEntry* entry);
 	void stopPreview();
-	void deleteSample(const juce::String &sampleId);
+	void deleteSample(const juce::String& sampleId);
 	void cleanupUnusedSamples();
-	void showDeleteConfirmation(const juce::String &sampleId, const juce::String &sampleName);
+	void showDeleteConfirmation(const juce::String& sampleId, const juce::String& sampleName);
 	void addCategory();
 	void editCategory();
 	void deleteCategory();
 	void saveCategoriesConfig();
 	void loadCategoriesConfig();
 	int getNextCategoryId();
+	void drawLoader(juce::Graphics& g);
+	void drawEmptyState(juce::Graphics& g);
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleBankPanel)
 };
