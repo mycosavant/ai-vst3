@@ -157,7 +157,6 @@ private:
 	juce::ComboBox keySelector;
 	MidiLearnableButton generateButton;
 	juce::TextButton configButton;
-	juce::TextButton sponsorButton;
 	juce::TextButton resetUIButton;
 	juce::Label serverUrlLabel;
 	juce::TextEditor serverUrlInput;

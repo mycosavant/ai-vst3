@@ -835,16 +835,6 @@ void DjIaVstEditor::setupUI()
 	loadSessionButton.setTooltip("Load a previously saved session");
 	resetUIButton.setTooltip("Reset UI if stuck in generation mode");
 
-	addAndMakeVisible(sponsorButton);
-	sponsorButton.setButtonText(juce::String::fromUTF8("\xE2\x98\x85 Sponsor"));
-	sponsorButton.setColour(juce::TextButton::buttonColourId, ColourPalette::violet.withAlpha(0.35f));
-	sponsorButton.setColour(juce::TextButton::textColourOffId, ColourPalette::textPrimary);
-	sponsorButton.setTooltip("Support the project on GitHub Sponsors");
-	sponsorButton.onClick = [this]() {
-		juce::URL("https://github.com/sponsors/innermost47").launchInDefaultBrowser();
-		statusLabel.setText("Thank you for considering sponsorship!", juce::dontSendNotification);
-		};
-
 	if (!sampleBankPanel) {
 		sampleBankPanel = std::make_unique<SampleBankPanel>(audioProcessor);
 		addChildComponent(*sampleBankPanel);
@@ -1309,9 +1299,6 @@ void DjIaVstEditor::resized()
 	topArea.removeFromLeft(spacing * 2);
 
 	auto column4 = topArea;
-
-	auto sponsorButtonArea = column4.removeFromTop(35);
-	sponsorButton.setBounds(sponsorButtonArea.reduced(2));
 
 	auto configButtonArea = column4.removeFromTop(35);
 	configButton.setBounds(configButtonArea.reduced(2));
