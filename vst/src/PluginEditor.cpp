@@ -1205,7 +1205,7 @@ void DjIaVstEditor::paint(juce::Graphics& g)
 
 	if (logoImage.isValid())
 	{
-		auto logoArea = juce::Rectangle<int>(0, 40, 100, 60);
+		auto logoArea = juce::Rectangle<int>(0, 12, 100, 60);
 		g.drawImage(logoImage, logoArea.toFloat(),
 			juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
 	}
