@@ -2,6 +2,15 @@
 
 🎵 **Real-time AI music generation VST3 plugin for live performance**
 
+---
+
+> *"I've cycled through almost every AI music tool on the market, but Obsidian is the first one that actually feels like a **real production tool** rather than a novelty. While other AI apps try to replace the songwriter, Obsidian treats AI like a powerful, playable instrument. The 8-track MIDI-triggering is a total game-changer—having immediate access to eight distinct loops that I can mix and manipulate individually makes it feel like a **smart sampler** rather than a 'black box.' Because it lives directly in my DAW, there is **zero latency** and zero break in my workflow; I'm not downloading files or waiting for a browser to render. It stays perfectly locked to my project's tempo and vibe, serving as the ultimate **'intelligent jam partner VST'** whenever I need to break through a creative block, or start a new track from scratch."*
+>
+> **Moteka, Producer**  
+> [SoundCloud](https://soundcloud.com/moteka) • [Instagram](https://www.instagram.com/pmoteka/)
+
+---
+
 **⚡ Quick Start:** [Get your API key](https://obsidian-neural.com) and start generating in minutes — no GPU or setup required. 🔥 [Free codes available ↓](#-free-pro-pack-codes)
 
 📄 **[Late Breaking Paper - AIMLA 2025](https://drive.google.com/file/d/1cwqmrV0_qC462LLQgQUz-5Cd422gL-8F/view)** - Presented at the first AES International Conference on Artificial Intelligence and Machine Learning for Audio (Queen Mary University London, Sept 8-10, 2025)  
