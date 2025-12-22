@@ -1471,8 +1471,6 @@ void DjIaVstEditor::onSampleLoaded(const juce::String& trackId)
 
 void DjIaVstEditor::onGenerateButtonClicked()
 {
-	audioProcessor.syncSelectedTrackWithGlobalPrompt();
-	audioProcessor.setIsGenerating(true);
 	juce::String serverUrl = audioProcessor.getServerUrl();
 	juce::String apiKey = audioProcessor.getApiKey();
 	if (serverUrl.isEmpty())
@@ -1487,12 +1485,15 @@ void DjIaVstEditor::onGenerateButtonClicked()
 		statusLabel.setText("Error: API Key is required", juce::dontSendNotification);
 		return;
 	}
-	if (promptInput.getText().isEmpty())
+	juce::String currentPrompt = promptInput.getText().trim();
+	if (currentPrompt.isEmpty())
 	{
-		statusLabel.setText("Error: Prompt is required", juce::dontSendNotification);
+		statusLabel.setText("Error: Prompt cannot be empty", juce::dontSendNotification);
+		statusLabel.setColour(juce::Label::textColourId, ColourPalette::textDanger);
 		return;
 	}
-
+	audioProcessor.syncSelectedTrackWithGlobalPrompt();
+	audioProcessor.setIsGenerating(true);
 	generatingTrackId = audioProcessor.getSelectedTrackId();
 	audioProcessor.setGeneratingTrackId(generatingTrackId);
 	TrackData* track = audioProcessor.trackManager.getTrack(generatingTrackId);
