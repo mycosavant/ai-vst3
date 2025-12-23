@@ -111,11 +111,9 @@ class MusicGenerator:
 
             output = result.audios[0].T.float().cpu().numpy()
             
-            if len(output.shape) > 1 and output.shape[0] > 1:
-                sample_audio = output[0]
-            else:
-                sample_audio = output.flatten()
+            sample_audio = output[0] 
 
+            print(f"🎵 Mono audio: {len(sample_audio)} samples")
             print(f"⏱️  Total post-processing: {time.time() - start_post:.2f}s")
             print(f"✅ Generation complete!")
 
