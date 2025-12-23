@@ -7,37 +7,65 @@ import random
 import gc
 import librosa
 import soundfile as sf
-from stable_audio_tools import get_pretrained_model
-from einops import rearrange
-from stable_audio_tools.inference.generation import (
-    generate_diffusion_cond,
-)
+from diffusers import BitsAndBytesConfig as DiffusersBitsAndBytesConfig, StableAudioDiTModel, StableAudioPipeline
+from transformers import BitsAndBytesConfig as TransformersBitsAndBytesConfig, T5EncoderModel
 
 
 class MusicGenerator:
-    def __init__(self, model_id="stable-audio-open-1.0"):
+    def __init__(self, model_id="stabilityai/stable-audio-open-1.0"):
         self.model_id = model_id
-        self.model = None
+        self.pipeline = None
         self.sample_rate = 44100
         self.default_duration = 6
         self.sample_cache = {}
 
     def init_model(self):
-        print(f"⚡ Initializing Stable Audio Model..")
+        print(f"⚡ Initializing Stable Audio Model with quantization...")
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"ℹ️  Using device: {device}")
 
-        self.model, self.model_config = get_pretrained_model(self.model_id)
-        self.sample_rate = self.model_config["sample_rate"]
-        self.sample_size = self.model_config["sample_size"]
-        self.model = self.model.to(device)
+        if device == "cuda" and self.model_id == "stabilityai/stable-audio-open-1.0":
+            print("🎯 Loading with 8-bit quantization...")
+            
+            text_encoder_quant_config = TransformersBitsAndBytesConfig(load_in_8bit=True)
+            text_encoder_8bit = T5EncoderModel.from_pretrained(
+                self.model_id,
+                subfolder="text_encoder",
+                quantization_config=text_encoder_quant_config,
+                torch_dtype=torch.float16,
+            )
+            
+            transformer_quant_config = DiffusersBitsAndBytesConfig(load_in_8bit=True)
+            transformer_8bit = StableAudioDiTModel.from_pretrained(
+                self.model_id,
+                subfolder="transformer",
+                quantization_config=transformer_quant_config,
+                torch_dtype=torch.float16,
+            )
+            
+            self.pipeline = StableAudioPipeline.from_pretrained(
+                self.model_id,
+                text_encoder=text_encoder_8bit,
+                transformer=transformer_8bit,
+                torch_dtype=torch.float16,
+                device_map="balanced",
+            )
+        else:
+            print("📦 Loading without quantization...")
+            self.pipeline = StableAudioPipeline.from_pretrained(
+                self.model_id,
+                torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+            )
+            self.pipeline = self.pipeline.to(device)
+
+        self.sample_rate = self.pipeline.vae.sampling_rate
         self.device = device
 
         print(f"✅ Stable Audio initialized (sample rate: {self.sample_rate}Hz)!")
 
     def destroy_model(self):
-        self.model = None
+        self.pipeline = None
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         gc.collect()
@@ -53,74 +81,40 @@ class MusicGenerator:
         try:
             print(f"🔮 Direct generation with prompt: '{musicgen_prompt}'")
 
-            seconds_total = generation_duration
-            conditioning = [
-                {
-                    "prompt": musicgen_prompt,
-                    "seconds_start": 0,
-                    "seconds_total": seconds_total,
-                }
-            ]
-
+            num_inference_steps = 50
             cfg_scale = 7.0
-            sampler_type = "dpmpp-3m-sde"
-            steps_value = 75
-            if self.model_id == "stabilityai/stable-audio-open-small":
+            
+            if "small" in self.model_id.lower():
+                num_inference_steps = 8
                 cfg_scale = 1.0
-                steps_value = 8
-                sampler_type = "pingpong"
 
             seed_value = random.randint(0, 2**31 - 1)
+            generator = torch.Generator(device=self.device).manual_seed(seed_value)
 
-            print(f"⚙️  Stable Audio: steps={steps_value}, cfg_scale={cfg_scale}")
+            print(f"⚙️  Stable Audio: steps={num_inference_steps}, cfg_scale={cfg_scale}")
 
-            output = generate_diffusion_cond(
-                self.model,
-                steps=steps_value,
-                cfg_scale=cfg_scale,
-                conditioning=conditioning,
-                sample_size=self.sample_size,
-                sigma_min=0.3,
-                sigma_max=500,
-                sampler_type=sampler_type,
-                device=self.device,
-                seed=seed_value,
+            start_gen = time.time()
+            
+            result = self.pipeline(
+                musicgen_prompt,
+                negative_prompt="Low quality, distorted, noise",
+                num_inference_steps=num_inference_steps,
+                audio_end_in_s=generation_duration,
+                num_waveforms_per_prompt=1,
+                generator=generator,
+                guidance_scale=cfg_scale,
             )
 
-            target_samples = int(seconds_total * self.sample_rate)
+            print(f"✅ Diffusion steps complete in {time.time() - start_gen:.2f}s!")
 
-            print(f"✅ Diffusion steps complete!")
             start_post = time.time()
 
-            start = time.time()
-            output = rearrange(output, "b d n -> d (b n)")
-            print(f"⏱️  Rearrange: {time.time() - start:.2f}s")
+            output = result.audios[0].float().cpu().numpy()
+            
+            sample_audio = output[0] 
 
-            start = time.time()
-            target_samples = int(seconds_total * self.sample_rate)
-            if output.shape[1] > target_samples:
-                output = output[:, :target_samples]
-            print(f"⏱️  Truncate: {time.time() - start:.2f}s")
-
-            start = time.time()
-            output_normalized = (
-                output.to(torch.float32)
-                .div(torch.max(torch.abs(output) + 1e-8))
-                .cpu()
-                .numpy()
-            )
-
-            print(f"⏱️  Normalize + CPU transfer: {time.time() - start:.2f}s")
+            print(f"🎵 Mono audio: {len(sample_audio)} samples")
             print(f"⏱️  Total post-processing: {time.time() - start_post:.2f}s")
-
-            sample_audio = (
-                output_normalized[0]
-                if output_normalized.shape[0] > 1
-                else output_normalized
-            )
-
-            del output, output_normalized
-
             print(f"✅ Generation complete!")
 
             sample_info = {
@@ -144,14 +138,12 @@ class MusicGenerator:
             else:
                 temp_dir = tempfile.gettempdir()
                 path = os.path.join(temp_dir, filename)
+            
             if not isinstance(sample_audio, np.ndarray):
                 sample_audio = np.array(sample_audio)
+            
             if self.sample_rate != sample_rate:
-                print(
-                    f"🔄 Resampling {str(self.sample_rate)}Hz → "
-                    + str(sample_rate)
-                    + "hz"
-                )
+                print(f"🔄 Resampling {self.sample_rate}Hz → {sample_rate}Hz")
                 sample_audio = librosa.resample(
                     sample_audio, orig_sr=self.sample_rate, target_sr=sample_rate
                 )
