@@ -109,7 +109,7 @@ class MusicGenerator:
 
             start_post = time.time()
 
-            output = result.audios[0].T.float().cpu().numpy()
+            output = result.audios[0].float().cpu().numpy()
             
             sample_audio = output[0] 
 
