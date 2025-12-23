@@ -3937,10 +3937,24 @@ class ObsidianNeuralInstaller:
                 self.log(f"Llama CPP Python installation failed: {e.stderr}", "ERROR")
                 raise
 
+        if self.system_info.get("cuda_available") or self.system_info.get("rocm_available"):
+            self.log("Installing bitsandbytes for 8-bit quantization...")
+            cmd = [str(python_path), "-m", "pip", "install", "bitsandbytes"]
+            try:
+                self.safe_subprocess_run(cmd, check=True, timeout=300)
+                self.log("✅ bitsandbytes installed (8-bit quantization available)", "SUCCESS")
+            except Exception as e:
+                self.log(f"⚠️ bitsandbytes installation failed: {e}", "WARNING")
+                self.log("Quantization 8-bit will not be available", "WARNING")
+        else:
+            self.log("ℹ️ Skipping bitsandbytes (not compatible with CPU/MPS)")
+
         self.log("Installing additional libraries...")
 
         packages = [
-            "stable-audio-tools",
+            "diffusers",         
+            "transformers",      
+            "accelerate",         
             "librosa",
             "soundfile",
             "fastapi",
