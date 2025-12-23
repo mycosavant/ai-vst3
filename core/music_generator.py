@@ -81,7 +81,7 @@ class MusicGenerator:
         try:
             print(f"🔮 Direct generation with prompt: '{musicgen_prompt}'")
 
-            num_inference_steps = 100
+            num_inference_steps = 50
             cfg_scale = 7.0
             
             if "small" in self.model_id.lower():
