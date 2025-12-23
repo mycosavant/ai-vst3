@@ -2255,7 +2255,7 @@ class ObsidianNeuralInstaller:
     def install_cuda_func(self, install_dir):
         if platform.system() == "Windows":
             self.log("Downloading CUDA Toolkit 11.8...")
-            cuda_url = "https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe"
+            cuda_url = "https://developer.download.nvidia.com/compute/cuda/12.4.0/local_installers/cuda_12.4.0_551.61_windows.exe"
             cuda_installer = install_dir / "cuda_installer.exe"
             self.log("⚠️ CUDA download (3+ GB) - this may take some time...")
             urllib.request.urlretrieve(cuda_url, cuda_installer)
@@ -3718,7 +3718,7 @@ class ObsidianNeuralInstaller:
                 "torchvision",
                 "torchaudio",
                 "--index-url",
-                "https://download.pytorch.org/whl/cu118",
+                "https://download.pytorch.org/whl/cu124",
             ]
 
             try:
@@ -3737,9 +3737,9 @@ class ObsidianNeuralInstaller:
                 "-m",
                 "pip",
                 "install",
-                "llama-cpp-python==0.3.9",
+                "llama-cpp-python",
                 "--prefer-binary",
-                "--extra-index-url=https://jllllll.github.io/llama-cpp-python-cuBLAS-wheels/AVX2/cu118",
+                "--extra-index-url=https://jllllll.github.io/llama-cpp-python-cuBLAS-wheels/AVX2/cu124",
             ]
 
             try:
@@ -3789,7 +3789,7 @@ class ObsidianNeuralInstaller:
                     "-m",
                     "pip",
                     "install",
-                    "llama-cpp-python==0.3.9",
+                    "llama-cpp-python",
                     "--prefer-binary",
                 ]
                 self.safe_subprocess_run(cmd, check=True, timeout=600)
@@ -3805,7 +3805,7 @@ class ObsidianNeuralInstaller:
                         "-m",
                         "pip",
                         "install",
-                        "llama-cpp-python==0.3.9",
+                        "llama-cpp-python",
                     ]
                     self.safe_subprocess_run(cmd, check=True, timeout=600)
                     self.log("Llama CPP Python installed successfully (CPU fallback)")
