@@ -93,7 +93,7 @@ find_package(SoundTouch QUIET)
 if(NOT SoundTouch_FOUND)
     include(FetchContent)
     FetchContent_Declare(soundtouch
-        GIT_REPOSITORY https://codeberg.org/soundtouch/soundtouch.git
+        GIT_REPOSITORY https://github.com/innermost47/soundtouch.git
         GIT_TAG 2.4.0
     )
     FetchContent_MakeAvailable(soundtouch)
