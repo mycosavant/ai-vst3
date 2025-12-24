@@ -120,18 +120,15 @@ jobs:
       - name: Create ZIPs for notarization
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          cd vst/build/ObsidianNeuralVST_artefacts/Release
-
           # VST3
-          cd VST3
-          ditto -c -k --keepParent OBSIDIAN-Neural.vst3 OBSIDIAN-Neural-VST3.zip
-          mv OBSIDIAN-Neural-VST3.zip ../../../../../../
-          cd ..
+          ditto -c -k --keepParent \
+            vst/build/ObsidianNeuralVST_artefacts/Release/VST3/OBSIDIAN-Neural.vst3 \
+            OBSIDIAN-Neural-VST3.zip
 
           # AU
-          cd AU
-          ditto -c -k --keepParent OBSIDIAN-Neural.component OBSIDIAN-Neural-AU.zip
-          mv OBSIDIAN-Neural-AU.zip ../../../../../../
+          ditto -c -k --keepParent \
+            vst/build/ObsidianNeuralVST_artefacts/Release/AU/OBSIDIAN-Neural.component \
+            OBSIDIAN-Neural-AU.zip
 
       - name: Notarize VST3
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
