@@ -122,7 +122,7 @@ juce_add_plugin(ObsidianNeuralVST
     PLUGIN_CODE "Obsi"
     COMPANY_NAME "InnerMost47"
     BUNDLE_ID "com.innermost47.obsidian-neural-vst" 
-    FORMATS VST3
+    FORMATS VST3 $<$<PLATFORM_ID:Darwin>:AU>
     PRODUCT_NAME "OBSIDIAN-Neural"
     IS_SYNTH TRUE
     WANTS_MIDI_INPUT TRUE
