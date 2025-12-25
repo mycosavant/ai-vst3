@@ -4,7 +4,7 @@
 
 ---
 
-> *"I've cycled through almost every AI music tool on the market, but Obsidian is the first one that actually feels like a **real production tool** rather than a novelty. While other AI apps try to replace the songwriter, Obsidian treats AI like a powerful, playable instrument. The 8-track MIDI-triggering is a total game-changer—having immediate access to eight distinct loops that I can mix and manipulate individually makes it feel like a **smart sampler** rather than a 'black box.' Because it lives directly in my DAW, there is **zero latency** and zero break in my workflow; I'm not downloading files or waiting for a browser to render. It stays perfectly locked to my project's tempo and vibe, serving as the ultimate **'intelligent jam partner VST'** whenever I need to break through a creative block, or start a new track from scratch."*
+> _"I've cycled through almost every AI music tool on the market, but Obsidian is the first one that actually feels like a **real production tool** rather than a novelty. While other AI apps try to replace the songwriter, Obsidian treats AI like a powerful, playable instrument. The 8-track MIDI-triggering is a total game-changer—having immediate access to eight distinct loops that I can mix and manipulate individually makes it feel like a **smart sampler** rather than a 'black box.' Because it lives directly in my DAW, there is **zero latency** and zero break in my workflow; I'm not downloading files or waiting for a browser to render. It stays perfectly locked to my project's tempo and vibe, serving as the ultimate **'intelligent jam partner VST'** whenever I need to break through a creative block, or start a new track from scratch."_
 >
 > **Moteka, Producer**  
 > [SoundCloud](https://soundcloud.com/moteka) • [Instagram](https://www.instagram.com/pmoteka/)
@@ -118,7 +118,7 @@ This feature bridges the gap between visual creativity and sonic experimentation
 4. Configure in the plugin:
    - Click the **⚙️ settings button** (top right) or wait for the first-time setup dialog
    - Choose "Server/API" mode
-   - Enter Server URL: `https://ai-harmony.duckdns.org/obsidian`
+   - Enter Server URL: `https://api.obsidian-neural.com`
    - Enter your API key
    - Click "Save & Continue"
 
