@@ -57,38 +57,134 @@ Complete installation instructions for OBSIDIAN-Neural VST3 plugin.
 
 ### Prerequisites
 
+#### All Platforms
 - **Python 3.10+** from [python.org](https://python.org)
 - **Git** for cloning repository
-- **Build tools** for VST3 compilation (optional)
-- **CUDA/ROCm** for GPU acceleration (optional)
+- **CMake** for building VST3 plugin
 
-#### Manual Build
+#### Platform-Specific Requirements
+
+**Windows:**
+- [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with "Desktop development with C++" workload
+- Optional: [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) for GPU acceleration
+
+**macOS:**
+- Xcode Command Line Tools: `xcode-select --install`
+- Optional: [Homebrew](https://brew.sh/) for package management
+
+**Linux:**
+- Build essentials and audio libraries:
+  ```bash
+  # Ubuntu/Debian
+  sudo apt install build-essential cmake git python3 python3-venv python3-pip libasound2-dev
+  
+  # Fedora
+  sudo dnf groupinstall 'Development Tools'
+  sudo dnf install cmake git python3 python3-pip alsa-lib-devel
+  
+  # Arch
+  sudo pacman -S base-devel cmake git python python-pip alsa-lib
+  ```
+- Optional: NVIDIA CUDA Toolkit for GPU acceleration
+
+### Installation Scripts
+
+We provide automated installation scripts for each platform that handle all the setup:
+
+#### Windows
+
+```cmd
+git clone https://github.com/innermost47/ai-dj.git
+cd ai-dj
+install-win.bat
+```
+
+#### macOS
 
 ```bash
 git clone https://github.com/innermost47/ai-dj.git
 cd ai-dj
-python installer.py
+chmod +x install-mac.sh
+./install-mac.sh
 ```
 
-### What the Installer Does
+#### Linux
 
-- Creates isolated Python virtual environment
-- Installs all dependencies (PyTorch, FastAPI, Stable Audio Tools, etc.)
-- Downloads AI models (Gemma-3-4B, ~2.5GB)
-- Detects and configures CUDA/ROCm if available
-- Compiles VST3 plugin (optional, requires build tools)
-- Sets up configuration files
+```bash
+git clone https://github.com/innermost47/ai-dj.git
+cd ai-dj
+chmod +x install-lnx.sh
+./install-lnx.sh
+```
+
+### What the Installation Scripts Do
+
+1. **Verify Prerequisites**
+   - Check for Python, CMake, and Git
+   - Display detected versions
+   - Provide installation instructions if missing
+
+2. **Create Python Environment**
+   - Set up isolated virtual environment
+   - Upgrade pip to latest version
+   - Prevent conflicts with system Python
+
+3. **Detect Hardware Acceleration**
+   - **Windows/Linux:** Detect NVIDIA CUDA support
+   - **macOS (Apple Silicon):** Configure Metal Performance Shaders (MPS)
+   - **macOS (Intel):** CPU-only configuration
+   - Install appropriate PyTorch version
+
+4. **Install Dependencies**
+   - PyTorch with GPU support (if available)
+   - llama-cpp-python with hardware acceleration
+   - FastAPI, Stable Audio Tools, and all required libraries
+   - Platform-specific packages (excludes pywin32 on macOS/Linux)
+
+5. **Build Plugin**
+   - Compile VST3 plugin from source
+   - **macOS:** Also builds Audio Unit (AU) format
+   - Place build artifacts in `vst/build/` directory
 
 ### Post-Installation Setup
 
-#### 1. Launch Server Interface
+#### 1. Install Plugin Files
 
+**Windows:**
+```cmd
+copy vst\build\*_artefacts\Release\VST3\*.vst3 "%CommonProgramFiles%\VST3\"
+```
+
+**macOS:**
 ```bash
+# VST3
+cp -r vst/build/*_artefacts/Release/VST3/*.vst3 ~/Library/Audio/Plug-Ins/VST3/
+
+# Audio Unit (for Logic Pro, GarageBand, etc.)
+cp -r vst/build/*_artefacts/Release/AU/*.component ~/Library/Audio/Plug-Ins/Components/
+```
+
+**Linux:**
+```bash
+mkdir -p ~/.vst3
+cp -r vst/build/*_artefacts/Release/VST3/*.vst3 ~/.vst3/
+```
+
+#### 2. Launch Server Interface
+
+**Windows:**
+```cmd
+env\Scripts\activate.bat
+python server_interface.py
+```
+
+**macOS/Linux:**
+```bash
+source env/bin/activate
 python server_interface.py
 ```
 
 **Features:**
-
 - System tray integration with green triangle icon
 - Real-time server status and controls
 - Configuration management with API keys
@@ -96,13 +192,13 @@ python server_interface.py
 - Live server logs with color coding
 - First-time setup wizard
 
-#### 2. Configure Server
+#### 3. Configure Server
 
 - **First launch:** Setup wizard guides through configuration
 - **Hugging Face Token:** Enter approved token (verification available)
 - **API Keys:** Generate with credit limits or unlimited access
 
-#### 3. Start Server
+#### 4. Start Server
 
 - Click "Start" in server interface
 - **Authentication prompt:**
@@ -110,7 +206,7 @@ python server_interface.py
   - **No:** Development bypass (for localhost only)
 - Note the server URL (usually `http://localhost:8000`)
 
-#### 4. Configure VST3
+#### 5. Configure Plugin
 
 - Load OBSIDIAN-Neural in your DAW
 - **Server URL:** Paste from server GUI
@@ -118,35 +214,78 @@ python server_interface.py
 
 ### Troubleshooting
 
-#### Common Issues
+#### Installation Issues
+
+**"Python not found"**
+- Ensure Python 3.10+ is installed
+- Windows: Check "Add Python to PATH" during installation
+- macOS/Linux: Use `python3` command
+
+**"CMake not found"**
+- Windows: Download from [cmake.org](https://cmake.org/download/)
+- macOS: `brew install cmake`
+- Linux: Install via package manager (see prerequisites)
+
+**"Git not found"**
+- Windows: Download from [git-scm.com](https://git-scm.com/)
+- macOS: `xcode-select --install`
+- Linux: Install via package manager
+
+#### GPU Acceleration Issues
+
+**NVIDIA (Windows/Linux):**
+- Verify CUDA installation: `nvidia-smi`
+- Check CUDA version compatibility
+- Update GPU drivers if needed
+
+**Apple Silicon (macOS):**
+- Metal support is automatic on M1/M2/M3
+- Ensure macOS 12.3+ for best performance
+
+**AMD (Linux only):**
+- ROCm support requires manual configuration
+- Consider CPU mode for simplicity
+
+#### Build Failures
+
+**Windows:**
+- Install Visual Studio Build Tools with C++ workload
+- Run installation script as administrator if needed
+
+**macOS:**
+- Install Xcode Command Line Tools: `xcode-select --install`
+- For signing issues, build may complete but need manual code signing
+
+**Linux:**
+- Install missing development packages (see prerequisites)
+- Check for audio library dependencies: `libasound2-dev` or `alsa-lib-devel`
+
+#### Runtime Issues
 
 - **No Hugging Face access:** Must be approved for Stable Audio Open first
-- **Build errors:** Download pre-compiled VST3 from releases instead
 - **Connection failed:** Ensure server is running before configuring VST
 - **API confusion:** Choose "No" authentication for simple localhost setup
-
-#### Windows Specific
-
-- Ensure Python is added to PATH
-- Visual Studio Build Tools may be required for some dependencies
-
-#### macOS Specific
-
-- May require Xcode command line tools: `xcode-select --install`
-- For Apple Silicon: Ensure Python supports ARM64
-
-#### Linux Specific
-
-- Install development packages: `sudo apt install python3-dev build-essential`
-- May require additional audio libraries
+- **Port conflicts:** Server default is 8000, change in config if needed
 
 ### Performance Optimization
 
-#### GPU Acceleration
+#### GPU Acceleration Status
 
-- **NVIDIA:** CUDA will be detected and configured automatically
-- **AMD:** ROCm support available on Linux
-- **No GPU:** CPU-only mode works but slower generation
+The installation script automatically detects and configures:
+
+- **NVIDIA CUDA (Windows/Linux):**
+  - PyTorch with CUDA 12.4 support
+  - llama-cpp-python with cuBLAS
+  - bitsandbytes for 8-bit quantization
+
+- **Apple Metal (macOS M1/M2/M3):**
+  - PyTorch with MPS backend
+  - llama-cpp-python with Metal acceleration
+  - Optimized for Apple Silicon architecture
+
+- **CPU Fallback (All platforms):**
+  - Automatic if no GPU detected
+  - Slower but fully functional
 
 #### Memory Management
 
@@ -160,34 +299,58 @@ python server_interface.py
 
 ### Test Installation
 
-1. Load plugin in DAW
-2. Type simple prompt: "techno kick"
-3. Click generate button
-4. Wait for audio generation
-5. Play generated sample
+1. **Start the server** (see Post-Installation Setup)
+2. **Load plugin** in your DAW
+3. **Type simple prompt:** "techno kick"
+4. **Click generate button**
+5. **Wait for audio generation** (10-30 seconds)
+6. **Play generated sample** via MIDI (C3-B3)
 
 ### Expected Behavior
 
-- Generation takes 10-30 seconds depending on setup
+- Generation progress shown in plugin UI
 - Audio appears in waveform display
-- Sample plays when triggered via MIDI (C3-B3)
+- Sample plays when triggered via MIDI
 - DAW sync works with project tempo
+- Server logs show generation activity
+
+### Platform-Specific Notes
+
+**macOS:**
+- Both VST3 and AU formats available
+- AU works in Logic Pro, GarageBand, MainStage
+- VST3 works in most other DAWs
+
+**Linux:**
+- VST3 compatibility varies by DAW
+- Test with REAPER, Bitwig, or Ardour
+- May require audio server configuration (JACK/PipeWire)
 
 ---
 
 ## Uninstallation
 
-### Remove Files
+### Remove Plugin Files
 
-- Delete VST3 plugin from VST folder
-- Remove `%APPDATA%\OBSIDIAN-Neural\` folder (Windows)
-- Delete downloaded models and cache
+**Windows:**
+- Delete from: `C:\Program Files\Common Files\VST3\`
+- Remove: `%APPDATA%\OBSIDIAN-Neural\`
+
+**macOS:**
+- Delete VST3: `~/Library/Audio/Plug-Ins/VST3/OBSIDIAN-Neural.vst3`
+- Delete AU: `~/Library/Audio/Plug-Ins/Components/OBSIDIAN-Neural.component`
+- Remove config: `~/Library/Application Support/OBSIDIAN-Neural/`
+
+**Linux:**
+- Delete from: `~/.vst3/`
+- Remove config: `~/.config/OBSIDIAN-Neural/`
 
 ### Server Installation
 
-- Stop server process
-- Delete cloned repository folder
-- Remove Python virtual environment
+1. Stop server process
+2. Deactivate virtual environment: `deactivate`
+3. Delete cloned repository folder
+4. Remove downloaded models from cache
 
 ---
 
@@ -202,17 +365,51 @@ python server_interface.py
 ### Support
 
 - **Issues:** [GitHub Issues](https://github.com/innermost47/ai-dj/issues)
-- **Status:** Check server interface logs for detailed error messages
+- **Server Logs:** Check server interface for detailed error messages
+- **Installation Logs:** Review console output from installation scripts
 
 ### Before Reporting Issues
 
 Include the following information:
 
 - Operating system and version
+- Platform architecture (Intel/ARM/Apple Silicon)
 - DAW name and version
-- Installation method used
-- Complete error messages
+- Installation method and script used
+- GPU type and drivers (if applicable)
+- Complete error messages from installation
+- Server logs if runtime issue
 - Steps to reproduce problem
+
+---
+
+## Quick Reference
+
+### Start Server (After Installation)
+
+**Windows:**
+```cmd
+cd path\to\ai-dj
+env\Scripts\activate.bat
+python server_interface.py
+```
+
+**macOS/Linux:**
+```bash
+cd path/to/ai-dj
+source env/bin/activate
+python server_interface.py
+```
+
+### Default Paths
+
+| Platform | VST3 Location | Config Location |
+|----------|--------------|-----------------|
+| Windows | `C:\Program Files\Common Files\VST3\` | `%APPDATA%\OBSIDIAN-Neural\` |
+| macOS | `~/Library/Audio/Plug-Ins/VST3/` | `~/Library/Application Support/OBSIDIAN-Neural/` |
+| Linux | `~/.vst3/` | `~/.config/OBSIDIAN-Neural/` |
+
+**macOS AU:** `~/Library/Audio/Plug-Ins/Components/`
 
 ---
 
