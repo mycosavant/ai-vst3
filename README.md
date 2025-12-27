@@ -322,8 +322,7 @@ Every star, contribution, and piece of feedback helps make Obsidian Neural bette
 ## License
 
 - 🆓 **GNU Affero General Public License v3.0** (Open source)
-
-**AI Model:** Stability AI Community License
+- **AI Model:** Stability AI Community License
 
 ---
 
