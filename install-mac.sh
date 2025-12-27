@@ -165,8 +165,8 @@ echo "  Python dependencies installed successfully!"
 echo "==============================================="
 echo ""
 
-# Build VST plugin
-echo "[Step 8/8] Building VST3 plugin..."
+# Build VST/AU plugins
+echo "[Step 8/8] Building VST3 and AU plugins..."
 echo ""
 
 if [ ! -d "vst" ]; then
@@ -206,17 +206,17 @@ fi
 echo "   CMake configuration successful"
 echo ""
 
-# Build VST
-echo "Compiling VST plugin..."
+# Build plugins
+echo "Compiling VST3 and AU plugins..."
 echo "This may take several minutes..."
 cmake --build . --config Release
 if [ $? -ne 0 ]; then
-    echo "[ERROR] VST compilation failed!"
+    echo "[ERROR] Plugin compilation failed!"
     echo ""
     cd ../..
     exit 1
 fi
-echo "   VST plugin compiled successfully"
+echo "   Plugins compiled successfully"
 echo ""
 
 cd ../..
@@ -230,7 +230,14 @@ echo "To use OBSIDIAN-Neural:"
 echo "  1. Activate the environment: source env/bin/activate"
 echo "  2. Start the server: python main.py"
 echo ""
-echo "The VST3 plugin can be found in: vst/build/"
-echo "Copy the .vst3 bundle to: ~/Library/Audio/Plug-Ins/VST3/"
+echo "Plugins can be found in: vst/build/"
+echo ""
+echo "Installation instructions:"
+echo "  VST3: Copy the .vst3 bundle to ~/Library/Audio/Plug-Ins/VST3/"
+echo "  AU:   Copy the .component bundle to ~/Library/Audio/Plug-Ins/Components/"
+echo ""
+echo "Quick install command:"
+echo "  cp -r vst/build/*_artefacts/Release/VST3/*.vst3 ~/Library/Audio/Plug-Ins/VST3/"
+echo "  cp -r vst/build/*_artefacts/Release/AU/*.component ~/Library/Audio/Plug-Ins/Components/"
 echo ""
 echo ""
