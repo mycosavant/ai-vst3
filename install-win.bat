@@ -111,7 +111,7 @@ echo.
 
 REM Upgrade pip
 echo    Upgrading pip...
-python -m pip install --upgrade pip
+python -m pip install --upgrade pip >nul 2>&1
 if errorlevel 1 (
     echo    [WARNING] Failed to upgrade pip, continuing anyway...
 )
@@ -158,7 +158,7 @@ if %CUDA_AVAILABLE%==1 (
     )
     echo.
 ) else (
-    echo Installing PyTorch (CPU only)...
+    echo Installing PyTorch CPU only...
     echo This may take several minutes...
     python -m pip install torch torchvision torchaudio
     if errorlevel 1 (
@@ -169,7 +169,7 @@ if %CUDA_AVAILABLE%==1 (
     echo    PyTorch CPU installed
     echo.
     
-    echo Installing llama-cpp-python (CPU)...
+    echo Installing llama-cpp-python CPU...
     python -m pip install llama-cpp-python==0.3.9
     if errorlevel 1 (
         echo [ERROR] llama-cpp-python installation failed!
@@ -184,11 +184,11 @@ REM Install main dependencies
 echo Installing main libraries...
 echo.
 
-set PACKAGES=diffusers transformers accelerate librosa soundfile fastapi uvicorn python-dotenv requests apscheduler demucs cryptography pyinstaller pystray psutil Pillow pywin32
+set PACKAGES=diffusers transformers accelerate librosa soundfile fastapi uvicorn python-dotenv requests apscheduler cryptography pystray psutil Pillow pywin32
 
 for %%p in (%PACKAGES%) do (
     echo    Installing %%p...
-    python -m pip install %%p
+    python -m pip install %%p >nul 2>&1
     if errorlevel 1 (
         echo    [WARNING] Error installing %%p
     )
@@ -268,7 +268,7 @@ echo ===============================================
 echo.
 echo To use OBSIDIAN-Neural:
 echo   1. Activate the environment: env\Scripts\activate.bat
-echo   2. Start the server: python main.py
+echo   2. Start the server: python server_interface.py
 echo.
 echo The VST3 plugin can be found in: vst\build\
 echo Copy the .vst3 file/folder to your DAW's VST3 directory
