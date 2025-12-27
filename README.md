@@ -6,12 +6,12 @@
 
 > _"I've cycled through almost every AI music tool on the market, but Obsidian is the first one that actually feels like a **real production tool** rather than a novelty. While other AI apps try to replace the songwriter, Obsidian treats AI like a powerful, playable instrument. The 8-track MIDI-triggering is a total game-changer—having immediate access to eight distinct loops that I can mix and manipulate individually makes it feel like a **smart sampler** rather than a 'black box.' Because it lives directly in my DAW, there is **zero latency** and zero break in my workflow; I'm not downloading files or waiting for a browser to render. It stays perfectly locked to my project's tempo and vibe, serving as the ultimate **'intelligent jam partner VST'** whenever I need to break through a creative block, or start a new track from scratch."_
 >
-> **Moteka, Producer**  
+> **— Moteka, Electronic Music Producer**  
 > [SoundCloud](https://soundcloud.com/moteka) • [Instagram](https://www.instagram.com/pmoteka/)
 
 ---
 
-**⚡ Quick Start:** [Get your API key](https://obsidian-neural.com) and start generating in minutes — no GPU or setup required. 🔥 [Free codes available ↓](#-free-pro-pack-codes)
+**⚡ Quick Start:** [Get your API key](https://obsidian-neural.com) and start generating in minutes — no GPU or setup required.
 
 📄 **[Late Breaking Paper - AIMLA 2025](https://drive.google.com/file/d/1cwqmrV0_qC462LLQgQUz-5Cd422gL-8F/view)** - Presented at the first AES International Conference on Artificial Intelligence and Machine Learning for Audio (Queen Mary University London, Sept 8-10, 2025)  
 🎓 **[Tutorial](https://youtu.be/-qdFo_PcKoY)** - From DAW setup to live performance (French + English subtitles)
@@ -20,6 +20,8 @@
   <img src="assets/screenshot.png" alt="OBSIDIAN-Neural Interface" width="800"/>
   <p><i>Live AI music generation in your DAW</i></p>
 </div>
+
+---
 
 ## Draw-to-Audio Live Demo
 
@@ -152,7 +154,7 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 **Best for privacy, customization, and unlimited generations.**
 
 1. Get [Stability AI access](https://huggingface.co/stabilityai/stable-audio-open-1.0)
-2. Follow [build from source instructions](INSTALLATION.md#option-3-build-from-source)
+2. Follow [build from source instructions](INSTALLATION.md)
 3. Run server interface: `python server_interface.py`
 4. Download VST3 from [Releases](https://github.com/innermost47/ai-dj/releases)
 5. Load the VST in your DAW
@@ -163,13 +165,44 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
    - Leave API key empty for local server
    - Click "Save & Continue"
 
+👉 **Complete installation guide:** See [INSTALLATION.md](INSTALLATION.md) for:
+- Platform-specific installation scripts (Windows, macOS, Linux)
+- GPU detection and optimization (CUDA, Metal, ROCm)
+- VST3 + AU building (macOS includes Audio Unit format)
+- Troubleshooting and prerequisites
+
+**Quick install commands:**
+
+**Windows:**
+```cmd
+git clone https://github.com/innermost47/ai-dj.git
+cd ai-dj
+install-win.bat
+```
+
+**macOS:**
+```bash
+git clone https://github.com/innermost47/ai-dj.git
+cd ai-dj
+chmod +x install-mac.sh
+./install-mac.sh
+```
+
+**Linux:**
+```bash
+git clone https://github.com/innermost47/ai-dj.git
+cd ai-dj
+chmod +x install-lnx.sh
+./install-lnx.sh
+```
+
 **Benefits:** Unlimited generations, full privacy, variable duration
 
-**Requirements:** GPU with CUDA support, Python environment
+**Requirements:** GPU with CUDA support (NVIDIA) or Metal (Apple Silicon), Python environment
 
 ---
 
-### 🟢 Local Models (Offline)
+### 🟢 Local Models (Offline - Windows only)
 
 **Runs completely offline. No servers, Python, or GPU needed.**
 
@@ -179,7 +212,7 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 4. Download VST3 from [Releases](https://github.com/innermost47/ai-dj/releases)
 5. Choose "Local Model" in plugin
 
-**Requirements:** 16GB+ RAM, Windows (macOS/Linux coming soon)
+**Requirements:** 16GB+ RAM, Windows 
 
 **Current limitations:**
 
@@ -194,13 +227,33 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 | Feature                   | Cloud API               | Self-Hosted                    | Local Models          |
 | ------------------------- | ----------------------- | ------------------------------ | --------------------- |
 | **Setup Difficulty**      | ⭐ Easy                 | ⭐⭐⭐ Advanced                | ⭐⭐ Moderate         |
-| **Hardware Requirements** | None                    | GPU + CUDA                     | 16GB+ RAM             |
-| **Generation Quality**    | ⭐⭐⭐ Best             | ⭐⭐ Good                      | ⭐ Bad                |
+| **Hardware Requirements** | None                    | GPU + CUDA/Metal               | 16GB+ RAM             |
+| **Generation Quality**    | ⭐⭐⭐ Best             | ⭐⭐ Good                      | ⭐ Basic              |
 | **Variable Duration**     | ✅ Up to 30s            | ✅ Yes                         | ❌ Fixed 10s          |
 | **Cost**                  | Pay per use             | Free (after setup)             | Free                  |
 | **Privacy**               | Data processed on cloud | Full privacy                   | Full privacy          |
 | **Internet Required**     | ✅ Yes                  | ❌ No                          | ❌ No                 |
 | **Best For**              | Beginners, live gigs    | Privacy-focused, unlimited use | Offline work, testing |
+
+---
+
+## 🌍 Press Coverage
+
+Featured in **8 countries** and **6 languages** across major music production publications:
+
+- 🇺🇸 **[Synthtopia](https://www.synthtopia.com/content/2025/12/22/obsidian-neural-brings-ai-generated-samples-to-your-daw/)** - "Brings AI-Generated Samples To Your DAW"
+- 🇨🇳 **[MIDIFAN](https://www.midifan.com/modulenews-detailview-57259.htm)** - Leading Chinese music tech publication (multiple features)
+- 🇰🇷 **[S1 Forum](https://s1forum.kr/news/innermost47%EC%97%90%EC%84%9C-obsidian-neural-%EA%B3%B5%EA%B0%9C/)** - Korean music production community
+- 🇳🇱 **[Rekkerd](https://rekkerd.org/obsidian-neural-real-time-ai-music-generation-vst3/)** - "Real-time AI music generation VST3"
+- 🇫🇷 **[Audiofanzine](https://fr.audiofanzine.com/sequenceur-divers/obsidian-neural/obsidian-neural/news/a.play,n.78783.html)** - Major French music technology publication
+- 🇪🇸 **[FutureMusic](https://www.futuremusic-es.com/obsidian-neural-vst3-ia-generativa/)** - Spanish music production coverage
+- 🇯🇵 **[DTM Plugin Sale](https://projectofnapskint.com/obsidian-2/)** - Japanese music production community
+- 🇺🇸 **[Bedroom Producers Blog](https://bedroomproducersblog.com/2025/06/06/obsidian-neural-sound-engine/)** - "FREE AI-powered jam partner"
+
+> *"Too many AI projects focus on the things AI can save you from doing rather than how AI can help you get better at what you do."*  
+> **— James Nugent, Bedroom Producers Blog**
+
+**[See all press coverage →](PRESS.md)**
 
 ---
 
@@ -222,21 +275,22 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 **VST3 Plugin:**
 
 - [Windows](https://github.com/innermost47/ai-dj/releases)
-- [macOS](https://github.com/innermost47/ai-dj/releases)
+- [macOS](https://github.com/innermost47/ai-dj/releases) (VST3 + AU formats)
 - [Linux](https://github.com/innermost47/ai-dj/releases)
 
 **Install to:**
 
-- Windows: `C:\Program Files\Common Files\VST3\`
-- macOS: `~/Library/Audio/Plug-Ins/VST3/`
-- Linux: `~/.vst3/`
+- **Windows:** `C:\Program Files\Common Files\VST3\`
+- **macOS VST3:** `~/Library/Audio/Plug-Ins/VST3/`
+- **macOS AU:** `~/Library/Audio/Plug-Ins/Components/`
+- **Linux:** `~/.vst3/`
 
 ---
 
 ## Status & Support
 
 🚀 **Active development** - Updates pushed regularly  
-⭐ **136+ GitHub stars** - Thanks for the support!  
+⭐ **153+ GitHub stars** - Thanks for the support!  
 🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)  
 📊 **API Status:** Check [status page](https://obsidian-neural.com/status.html) for real-time service monitoring
 
@@ -244,7 +298,7 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 
 ## 🎯 Community Milestone
 
-**Road to 200 Stars!** Currently at 136+ 🌟
+**Road to 200 Stars!** Currently at 153+ 🌟
 
 When we hit 200 stars, we're celebrating with a community giveaway:
 
@@ -254,6 +308,15 @@ When we hit 200 stars, we're celebrating with a community giveaway:
 👉 [Join the discussion](https://github.com/innermost47/ai-dj/discussions/156)
 
 Every star, contribution, and piece of feedback helps make Obsidian Neural better. Thank you for being part of this journey! 🙏
+
+---
+
+## 📚 Documentation
+
+- **[Installation Guide](INSTALLATION.md)** - Complete setup instructions with platform-specific scripts
+- **[Video Tutorial](https://youtu.be/-qdFo_PcKoY)** - Full walkthrough (French + English subtitles)
+- **[Online Documentation](https://obsidian-neural.com/documentation.html)** - Comprehensive guide
+- **[Press Coverage](press.md)** - Media features and reviews
 
 ---
 
@@ -295,6 +358,7 @@ _Electronic music, ambient soundscapes, metal, and experimental productions by I
 Special thanks to:
 
 - **A.D.** for the original draw-to-audio concept
+- **Moteka** for the incredible testimonial and early adoption
 - Stability AI for Stable Audio Open
 - The open-source community
 - All beta testers and early adopters
