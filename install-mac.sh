@@ -25,7 +25,7 @@ if [ ! -f "main.py" ]; then
 fi
 
 # Check if Python is installed
-echo "[Step 1/8] Checking Python..."
+echo "[Step 1/9] Checking Python..."
 if ! command -v python3 &> /dev/null; then
     echo "[ERROR] Python3 is not installed!"
     echo ""
@@ -40,7 +40,7 @@ echo "   Python $PYTHON_VERSION detected"
 echo ""
 
 # Check if CMake is installed
-echo "[Step 2/8] Checking CMake..."
+echo "[Step 2/9] Checking CMake..."
 if ! command -v cmake &> /dev/null; then
     echo "[ERROR] CMake is not installed!"
     echo ""
@@ -55,7 +55,7 @@ echo "   CMake $CMAKE_VERSION detected"
 echo ""
 
 # Check if Git is installed
-echo "[Step 3/8] Checking Git..."
+echo "[Step 3/9] Checking Git..."
 if ! command -v git &> /dev/null; then
     echo "[ERROR] Git is not installed!"
     echo ""
@@ -70,13 +70,62 @@ echo "   Git $GIT_VERSION detected"
 echo ""
 
 # Create necessary directories
-echo "[Step 4/8] Creating directories..."
+echo "[Step 4/9] Creating directories..."
 mkdir -p models
 echo "   models directory created"
 echo ""
 
+# Download GGUF models
+echo "[Step 5/9] Downloading AI models..."
+echo ""
+
+if [ ! -f "models/gemma-3-4b-it-Q4_K_M.gguf" ]; then
+    echo "Downloading Gemma 3 4B model (approximately 2.5GB)..."
+    echo "This may take several minutes depending on your connection..."
+    curl -L -o "models/gemma-3-4b-it-Q4_K_M.gguf" "https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf?download=true"
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] Failed to download Gemma 3 model!"
+        exit 1
+    fi
+    echo "   Gemma 3 4B model downloaded"
+else
+    echo "   Gemma 3 4B model already exists, skipping download"
+fi
+echo ""
+
+if [ ! -f "models/ggml-model-Q4_K_M.gguf" ]; then
+    echo "Downloading MiniCPM-V vision model (approximately 2.0GB)..."
+    curl -L -o "models/ggml-model-Q4_K_M.gguf" "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/ggml-model-Q4_K_M.gguf?download=true"
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] Failed to download MiniCPM-V model!"
+        exit 1
+    fi
+    echo "   MiniCPM-V vision model downloaded"
+else
+    echo "   MiniCPM-V vision model already exists, skipping download"
+fi
+echo ""
+
+if [ ! -f "models/mmproj-model-f16.gguf" ]; then
+    echo "Downloading MiniCPM-V projection model (approximately 600MB)..."
+    curl -L -o "models/mmproj-model-f16.gguf" "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/mmproj-model-f16.gguf?download=true"
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] Failed to download MiniCPM-V projection model!"
+        exit 1
+    fi
+    echo "   MiniCPM-V projection model downloaded"
+else
+    echo "   MiniCPM-V projection model already exists, skipping download"
+fi
+echo ""
+
+echo "==============================================="
+echo "  AI models downloaded successfully!"
+echo "==============================================="
+echo ""
+
 # Create virtual environment
-echo "[Step 5/8] Creating Python virtual environment..."
+echo "[Step 6/9] Creating Python virtual environment..."
 if [ -d "env" ]; then
     echo "   Existing virtual environment detected, cleaning up..."
     rm -rf env
@@ -87,7 +136,7 @@ echo "   Virtual environment created successfully"
 echo ""
 
 # Activate virtual environment
-echo "[Step 6/8] Activating virtual environment..."
+echo "[Step 7/9] Activating virtual environment..."
 source env/bin/activate
 echo "   Virtual environment activated"
 echo ""
@@ -98,7 +147,7 @@ python -m pip install --upgrade pip || echo "   [WARNING] Failed to upgrade pip,
 echo ""
 
 # Detect Apple Silicon vs Intel
-echo "[Step 7/8] Detecting architecture and installing Python dependencies..."
+echo "[Step 8/9] Detecting architecture and installing Python dependencies..."
 echo ""
 ARCH=$(uname -m)
 if [ "$ARCH" = "arm64" ]; then
@@ -166,7 +215,7 @@ echo "==============================================="
 echo ""
 
 # Build VST/AU plugins
-echo "[Step 8/8] Building VST3 and AU plugins..."
+echo "[Step 9/9] Building VST3 and AU plugins..."
 echo ""
 
 if [ ! -d "vst" ]; then
@@ -228,7 +277,7 @@ echo "==============================================="
 echo ""
 echo "To use OBSIDIAN-Neural:"
 echo "  1. Activate the environment: source env/bin/activate"
-echo "  2. Start the server: python main.py"
+echo "  2. Start the server: python server_interface.py"
 echo ""
 echo "Plugins can be found in: vst/build/"
 echo ""

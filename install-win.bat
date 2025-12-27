@@ -25,7 +25,7 @@ if not exist "main.py" (
 )
 
 REM Check if Python is installed
-echo [Step 1/8] Checking Python...
+echo [Step 1/9] Checking Python...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Python is not installed or not in PATH!
@@ -42,7 +42,7 @@ echo    Python %PYTHON_VERSION% detected
 echo.
 
 REM Check if CMake is installed
-echo [Step 2/8] Checking CMake...
+echo [Step 2/9] Checking CMake...
 cmake --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] CMake is not installed or not in PATH!
@@ -59,7 +59,7 @@ echo    CMake %CMAKE_VERSION% detected
 echo.
 
 REM Check if Git is installed
-echo [Step 3/8] Checking Git...
+echo [Step 3/9] Checking Git...
 git --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Git is not installed or not in PATH!
@@ -75,13 +75,65 @@ echo    Git %GIT_VERSION% detected
 echo.
 
 REM Create necessary directories
-echo [Step 4/8] Creating directories...
+echo [Step 4/9] Creating directories...
 if not exist "models" mkdir models
 echo    models directory created
 echo.
 
+REM Download GGUF models
+echo [Step 5/9] Downloading AI models...
+echo.
+
+if not exist "models\gemma-3-4b-it-Q4_K_M.gguf" (
+    echo Downloading Gemma 3 4B model (approximately 2.5GB)...
+    echo This may take several minutes depending on your connection...
+    curl -L -o "models\gemma-3-4b-it-Q4_K_M.gguf" "https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf?download=true"
+    if errorlevel 1 (
+        echo [ERROR] Failed to download Gemma 3 model!
+        pause
+        exit /b 1
+    )
+    echo    Gemma 3 4B model downloaded
+) else (
+    echo    Gemma 3 4B model already exists, skipping download
+)
+echo.
+
+if not exist "models\ggml-model-Q4_K_M.gguf" (
+    echo Downloading MiniCPM-V vision model (approximately 2.0GB)...
+    curl -L -o "models\ggml-model-Q4_K_M.gguf" "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/ggml-model-Q4_K_M.gguf?download=true"
+    if errorlevel 1 (
+        echo [ERROR] Failed to download MiniCPM-V model!
+        pause
+        exit /b 1
+    )
+    echo    MiniCPM-V vision model downloaded
+) else (
+    echo    MiniCPM-V vision model already exists, skipping download
+)
+echo.
+
+if not exist "models\mmproj-model-f16.gguf" (
+    echo Downloading MiniCPM-V projection model (approximately 600MB)...
+    curl -L -o "models\mmproj-model-f16.gguf" "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/mmproj-model-f16.gguf?download=true"
+    if errorlevel 1 (
+        echo [ERROR] Failed to download MiniCPM-V projection model!
+        pause
+        exit /b 1
+    )
+    echo    MiniCPM-V projection model downloaded
+) else (
+    echo    MiniCPM-V projection model already exists, skipping download
+)
+echo.
+
+echo ===============================================
+echo   AI models downloaded successfully!
+echo ===============================================
+echo.
+
 REM Create virtual environment
-echo [Step 5/8] Creating Python virtual environment...
+echo [Step 6/9] Creating Python virtual environment...
 if exist "env" (
     echo    Existing virtual environment detected, cleaning up...
     rmdir /s /q env
@@ -98,7 +150,7 @@ echo    Virtual environment created successfully
 echo.
 
 REM Activate virtual environment
-echo [Step 6/8] Activating virtual environment...
+echo [Step 7/9] Activating virtual environment...
 call env\Scripts\activate.bat
 if errorlevel 1 (
     echo [ERROR] Failed to activate virtual environment!
@@ -118,7 +170,7 @@ if errorlevel 1 (
 echo.
 
 REM Detect CUDA
-echo [Step 7/8] Detecting GPU and installing Python dependencies...
+echo [Step 8/9] Detecting GPU and installing Python dependencies...
 echo.
 set CUDA_AVAILABLE=0
 nvidia-smi >nul 2>&1
@@ -201,7 +253,7 @@ echo ===============================================
 echo.
 
 REM Build VST plugin
-echo [Step 8/8] Building VST3 plugin...
+echo [Step 9/9] Building VST3 plugin...
 echo.
 
 if not exist "vst" (
