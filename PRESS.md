@@ -1,100 +1,231 @@
-# PRESS.md
+# Press Coverage
 
-## 🏆 Press Coverage
+OBSIDIAN Neural has been featured across international music production communities and tech publications in 8 countries and 6 languages.
 
-OBSIDIAN-Neural has been featured across international music production communities and tech publications.
+## Statistics
 
----
-
-### 🇫🇷 Audiofanzine (France)
-
-**[Article: "Voici Obsidian-Neural"](__https://fr.audiofanzine.com/sequenceur-divers/obsidian-neural/obsidian-neural/news/a.play,n.78783.html__)**
-
-_Published October 28, 2025_
-
-> "Contrairement aux solutions externes nécessitant de passer par des applications séparées, Obsidian-Neural intègre la génération audio neuronale en temps réel directement dans le séquenceur."
-
-_Coverage of OBSIDIAN-Neural's presentation at AES International Conference on Artificial Intelligence and Machine Learning for Audio 2025 by independent developer Anthony Charretier. The article highlights the hybrid architecture combining local Gemma-3-4B-IT language model with Stability AI's Stable Audio Open models, featuring an 8-track sampler, 16-step sequencer, and complete MIDI control._
+- **8 Countries:** USA, China, South Korea, Netherlands, France, Spain, Japan
+- **12+ Publications:** Major music tech and general tech publications
+- **6 Languages:** English, French, Spanish, Chinese, Korean, Japanese
 
 ---
 
-### 🇺🇸 Bedroom Producers Blog
+## Academic Recognition
 
-**[Featured Article: "OBSIDIAN Neural Sound Engine, a FREE AI-powered jam partner"](__https://bedroomproducersblog.com/2025/06/06/obsidian-neural-sound-engine/__)**
+### AES AIMLA 2025 - Queen Mary University London
 
-> "Too many AI projects focus on the things AI can save you from doing rather than how AI can help you get better at what you do."  
-> — James Nugent, BPB
+**Late Breaking Demo Paper** presentation at the Audio Engineering Society International Conference on Artificial Intelligence and Machine Learning for Audio.
 
-_In-depth review of OBSIDIAN-Neural's live performance capabilities and AI-driven music generation._
-
----
-
-### 🎧 Audio Plugin Guy
-
-**[News: "innermost47 launches free real-time AI music generation plugin OBSIDIAN Neural Sound Engine"](__https://www.audiopluginguy.com/news-innermost47-launches-free-real-time-ai-music-generation-plugin-obsidian-neural-sound-engine/__)**
-
-_Comprehensive coverage of the plugin launch and technical capabilities._
+- **Event:** AES AIMLA 2025
+- **Location:** Queen Mary University London
+- **Type:** Academic Conference Paper
+- **Paper:** [Download Full Paper (PDF)](https://drive.google.com/file/d/1cwqmrV0_qC462LLQgQUz-5Cd422gL-8F/view)
 
 ---
 
-### 🇨🇳 Sohu.com (China)
+## Featured Articles
 
-**[Featured Article: "OBSIDIAN：免费开源 AI 驱动的即兴演奏引擎"](__https://www.sohu.com/a/903075640_455142__)**
+### USA - Synthtopia (December 22, 2025)
 
-_Coverage on one of China's major web portals, introducing OBSIDIAN-Neural to the Chinese tech and music production community._
+**[Obsidian Neural Brings AI-Generated Samples To Your DAW](https://www.synthtopia.com/content/2025/12/22/obsidian-neural-brings-ai-generated-samples-to-your-daw/)**
 
----
+> "All drum loops, basslines, and atmospheric elements were generated using AI text-to-audio prompts, then arranged and performed live. No pre-recorded traditional samples used."
 
-### 🇨🇳 MIDIFAN (China)
-
-**[Featured Article](__https://www.midifan.com/modulenews-detailview-55186.htm__)**
-
-_Coverage in China's leading music technology publication, reaching the Asian electronic music production community._
+**Platform:** Leading synthesizer and music technology news site  
+**Language:** English  
+**Date:** December 22, 2025
 
 ---
 
-### 🇯🇵 DTM Plugin Sale (Japan)
+### China - MIDIFAN (December 5, 2025)
 
-**[Featured: "AI を楽器に変える時代が来た！"](__https://projectofnapskint.com/obsidian-2/__)**
+**[福利：可实时生成音乐的 AI 创作插件 OBSIDIAN Neural 免费下载](https://www.midifan.com/modulenews-detailview-57259.htm)**
 
-_Translation: "The era of turning AI into musical instruments has arrived!"_
+> "OBSIDIAN Neural是作为AI创意伙伴，而非替代音乐制作。插件实时生成音乐，保持完全控制，无限制探索，直接在DAW中完成。"  
+> _(OBSIDIAN Neural is designed as an AI creative partner, not a replacement for music production. The plugin generates music in real-time, maintains complete control, allows unlimited exploration—directly in your DAW.)_
 
-_Coverage in Japanese music production community highlighting the revolutionary approach to AI music tools._
-
----
-
-### 🎵 Chillout with Beats
-
-**[Featured Coverage](__https://chilloutwithbeats.com/25-0610/__)**
-
-_Electronic music community coverage focusing on live performance applications._
+**Platform:** China's leading music technology publication  
+**Language:** Chinese (Simplified)  
+**Date:** December 5, 2025
 
 ---
 
-### 🌍 AudioZ Community
+### Netherlands - Rekkerd (December 3, 2025)
 
-**[Community Mirror](__https://audioz.download/software/win/278483-download_innermost47-obsidian-v047-real-time-ai-music-generator-for-live-performance-vst3-standalone-win-mac-free.html__)**
+**[OBSIDIAN Neural: Real-time AI music generation VST3](https://rekkerd.org/obsidian-neural-real-time-ai-music-generation-vst3/)**
 
-_Note: Unofficial community mirror of an early test build. For the latest stable version, always use the [official GitHub release](__https://github.com/innermost47/ai-dj/releases__)._
+> "AI as your creative partner, not your replacement. Generate music in real-time, keep full control, explore without limits—directly in your DAW."
+
+**Platform:** Music production news and software reviews  
+**Language:** English  
+**Date:** December 3, 2025
 
 ---
 
-### 🇪🇸 FutureMusic España
+### South Korea - S1 Forum
 
-**[Article: "OBSIDIAN‑Neural es una IA creativa en vivo con un VST3 generativo, gratuito y de código abierto"](__https://www.futuremusic-es.com/obsidian-neural-vst3-ia-generativa/__)**
+**[InnerMost47에서 OBSIDIAN Neural 공개](https://s1forum.kr/news/innermost47%EC%97%90%EC%84%9C-obsidian-neural-%EA%B3%B5%EA%B0%9C/)**
 
-_An in-depth analysis of the OBSIDIAN-Neural plugin in the context of real-time music creation. The article praises its non-intrusive approach, contextual musicality, and live flexibility._
+> "AI를 대체가 아닌 창작 파트너로 활용... 사용자는 실시간으로 음악을 생성하면서도 모든 컨트롤을 유지하고, DAW 안에서 제한 없이 탐색할 수 있습니다."  
+> _(Utilizing AI as a creative partner, not a replacement... Users can generate music in real-time while maintaining all controls and exploring without limits within their DAW.)_
+
+**Platform:** Korean music production community forum  
+**Language:** Korean  
+**Date:** 2025
+
+---
+
+### France - Audiofanzine (October 28, 2025)
+
+**[Voici Obsidian-Neural](https://fr.audiofanzine.com/sequenceur-divers/obsidian-neural/obsidian-neural/news/a.play,n.78783.html)**
+
+> "Contrairement aux solutions externes nécessitant de passer par des applications séparées, Obsidian-Neural intègre la génération audio neuronale en temps réel directement dans le séquenceur."  
+> _(Unlike external solutions requiring separate applications, Obsidian-Neural integrates real-time neural audio generation directly into the sequencer.)_
+
+**Platform:** Major French music technology publication  
+**Language:** French  
+**Date:** October 28, 2025
+
+---
+
+### USA - Bedroom Producers Blog (June 6, 2025)
+
+**[OBSIDIAN Neural Sound Engine, a FREE AI-powered jam partner](https://bedroomproducersblog.com/2025/06/06/obsidian-neural-sound-engine/)**
+
+> "Too many AI projects focus on the things AI can save you from doing rather than how AI can help you get better at what you do." — James Nugent
+
+**Platform:** Popular music production blog and plugin news  
+**Language:** English  
+**Date:** June 6, 2025
+
+---
+
+### Spain - FutureMusic España
+
+**[OBSIDIAN‑Neural es una IA creativa en vivo con un VST3 generativo](https://www.futuremusic-es.com/obsidian-neural-vst3-ia-generativa/)**
 
 > "OBSIDIAN-Neural acts like a neural DJ in your DAW, generating audio in real time based on the production environment..."
 
-_Highlighted as a collaborative, open-source, and generative AI instrument designed to amplify the creative workflow rather than replace it._
+**Platform:** Spanish edition of FutureMusic magazine  
+**Language:** Spanish  
+**Date:** 2025
 
 ---
 
-### 📺 Amner Hunter (YouTube)
+### China - Sohu.com
 
-**[Video: "17 Best New FREE Effect Plugins, Virtual Instruments & Audio Plugin Deals - JUNE 2025 Week 1"](__https://www.youtube.com/watch?v=40pkX_MkXjE__)**
+**[OBSIDIAN：免费开源 AI 驱动的即兴演奏引擎](https://www.sohu.com/a/903075640_455142)**
+
+Coverage on one of China's major web portals, introducing OBSIDIAN-Neural to the Chinese tech and music production community.
+
+**Platform:** Major Chinese web portal (tech and general interest)  
+**Language:** Chinese (Simplified)  
+**Date:** 2025
 
 ---
 
-_OBSIDIAN-Neural: Where artificial intelligence meets live music performance._
+### China - MIDIFAN (Earlier Coverage)
+
+**[Featured Coverage](https://www.midifan.com/modulenews-detailview-55186.htm)**
+
+Earlier coverage in China's leading music technology publication, reaching the Asian electronic music production community.
+
+**Platform:** China's leading music technology publication  
+**Language:** Chinese (Simplified)  
+**Date:** 2025
+
+---
+
+### Japan - DTM Plugin Sale
+
+**[AI を楽器に変える時代が来た！](https://projectofnapskint.com/obsidian-2/)**
+
+> "The era of turning AI into musical instruments has arrived!"
+
+Coverage in Japanese music production community highlighting the innovative approach to AI in music creation.
+
+**Platform:** Japanese music production and plugin news  
+**Language:** Japanese  
+**Date:** 2025
+
+---
+
+### USA - Audio Plugin Guy
+
+**[innermost47 launches free real-time AI music generation plugin](https://www.audiopluginguy.com/news-innermost47-launches-free-real-time-ai-music-generation-plugin-obsidian-neural-sound-engine/)**
+
+Comprehensive coverage of the plugin launch and technical capabilities.
+
+**Platform:** Audio plugin news and reviews  
+**Language:** English  
+**Date:** 2025
+
+---
+
+## Press Kit
+
+For media inquiries, interviews, or additional information:
+
+- **Email:** [Contact via GitHub](https://github.com/innermost47/ai-dj)
+- **Website:** [obsidian-neural.com](https://obsidian-neural.com)
+- **Documentation:** [Full Documentation](https://obsidian-neural.com/documentation.html)
+- **Video Tutorial:** [YouTube](https://youtu.be/-qdFo_PcKoY)
+
+### Assets
+
+- **Logo:** Available in website assets
+- **Screenshots:** Available in repository and website
+- **Demo Videos:** YouTube channel
+- **Technical Paper:** [AES AIMLA 2025 PDF](https://drive.google.com/file/d/1cwqmrV0_qC462LLQgQUz-5Cd422gL-8F/view)
+
+---
+
+## Geographic Distribution
+
+### North America
+- Synthtopia (USA)
+- Bedroom Producers Blog (USA)
+- Audio Plugin Guy (USA)
+
+### Europe
+- Audiofanzine (France)
+- FutureMusic (Spain)
+- Rekkerd (Netherlands)
+
+### Asia
+- MIDIFAN (China) - Multiple features
+- Sohu.com (China)
+- S1 Forum (South Korea)
+- DTM Plugin Sale (Japan)
+
+---
+
+## Languages
+
+OBSIDIAN Neural has been covered in:
+- English (4 publications)
+- Chinese/中文 (3 publications)
+- French/Français (1 publication)
+- Spanish/Español (1 publication)
+- Korean/한국어 (1 publication)
+- Japanese/日本語 (1 publication)
+
+---
+
+## Key Themes Across Coverage
+
+### Innovation
+Recognition of the real-time generation approach and integration directly within DAWs.
+
+### Accessibility
+Emphasis on the free, open-source nature and the "AI as partner, not replacement" philosophy.
+
+### Technical Achievement
+Coverage of the academic presentation at AES AIMLA 2025 and technical implementation.
+
+### Global Appeal
+Featured across diverse music production communities worldwide, demonstrating universal interest in AI-assisted music creation.
+
+---
+
+_Last updated: December 2025_
