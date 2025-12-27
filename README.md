@@ -291,8 +291,7 @@ Featured in **8 countries** and **6 languages** across major music production pu
 
 🚀 **Active development** - Updates pushed regularly  
 ⭐ **153+ GitHub stars** - Thanks for the support!  
-🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)  
-📊 **API Status:** Check [status page](https://obsidian-neural.com/status.html) for real-time service monitoring
+🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)
 
 ---
 
