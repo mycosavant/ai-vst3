@@ -137,7 +137,7 @@ This feature bridges the gap between visual creativity and sonic experimentation
 - **Pro**: €29.99/month - 1500 credits (1500 samples)
 - **Studio**: €59.99/month - 4000 credits (4000 samples)
 
-Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samples up to 30 seconds, ~10s generation time.
+Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samples up to 30 seconds, ~20s generation time.
 
 **Benefits:**
 
@@ -166,6 +166,7 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
    - Click "Save & Continue"
 
 👉 **Complete installation guide:** See [INSTALLATION.md](INSTALLATION.md) for:
+
 - Platform-specific installation scripts (Windows, macOS, Linux)
 - GPU detection and optimization (CUDA, Metal, ROCm)
 - VST3 + AU building (macOS includes Audio Unit format)
@@ -174,6 +175,7 @@ Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samp
 **Quick install commands:**
 
 **Windows:**
+
 ```cmd
 git clone https://github.com/innermost47/ai-dj.git
 cd ai-dj
@@ -181,6 +183,7 @@ install-win.bat
 ```
 
 **macOS:**
+
 ```bash
 git clone https://github.com/innermost47/ai-dj.git
 cd ai-dj
@@ -189,6 +192,7 @@ chmod +x install-mac.sh
 ```
 
 **Linux:**
+
 ```bash
 git clone https://github.com/innermost47/ai-dj.git
 cd ai-dj
@@ -212,7 +216,7 @@ chmod +x install-lnx.sh
 4. Download VST3 from [Releases](https://github.com/innermost47/ai-dj/releases)
 5. Choose "Local Model" in plugin
 
-**Requirements:** 16GB+ RAM, Windows 
+**Requirements:** 16GB+ RAM, Windows
 
 **Current limitations:**
 
@@ -250,7 +254,7 @@ Featured in **8 countries** and **6 languages** across major music production pu
 - 🇯🇵 **[DTM Plugin Sale](https://projectofnapskint.com/obsidian-2/)** - Japanese music production community
 - 🇺🇸 **[Bedroom Producers Blog](https://bedroomproducersblog.com/2025/06/06/obsidian-neural-sound-engine/)** - "FREE AI-powered jam partner"
 
-> *"Too many AI projects focus on the things AI can save you from doing rather than how AI can help you get better at what you do."*  
+> _"Too many AI projects focus on the things AI can save you from doing rather than how AI can help you get better at what you do."_  
 > **— James Nugent, Bedroom Producers Blog**
 
 **[See all press coverage →](PRESS.md)**
