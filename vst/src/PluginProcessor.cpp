@@ -2686,7 +2686,6 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 
 	float serverDetectedBpm = pendingDetectedBpm.load();
 	float soundTouchDetectedBpm = AudioAnalyzer::detectBPM(track->stagingBuffer, track->stagingSampleRate);
-
 	double hostBpm = cachedHostBpm.load();
 
 	float correctedServerBpm = serverDetectedBpm;
@@ -2694,69 +2693,76 @@ void DjIaVstProcessor::processAudioBPMAndSync(TrackData* track)
 
 	if (hostBpm > 0)
 	{
-		double tolerance = hostBpm * 0.2;
+		double directTolerance = 20.0;
+		double halfDoubleTolerance = hostBpm * 0.2;
 
 		if (serverDetectedBpm > 0.0f)
 		{
-			if (serverDetectedBpm >= (hostBpm * 0.5 - tolerance) &&
-				serverDetectedBpm <= (hostBpm * 0.5 + tolerance))
+			float directDiff = std::abs(serverDetectedBpm - static_cast<float>(hostBpm));
+			float halfDiff = std::abs(serverDetectedBpm * 2.0f - static_cast<float>(hostBpm));
+			float doubleDiff = std::abs(serverDetectedBpm / 2.0f - static_cast<float>(hostBpm));
+
+			if (directDiff <= directTolerance)
+			{
+				correctedServerBpm = serverDetectedBpm;
+				DBG("Server BPM is close enough: " + juce::String(serverDetectedBpm, 2));
+			}
+			else if (halfDiff < directDiff && halfDiff <= halfDoubleTolerance)
 			{
 				correctedServerBpm = serverDetectedBpm * 2.0f;
 				DBG("Server BPM corrected for half tempo: " + juce::String(serverDetectedBpm, 2) +
 					" -> " + juce::String(correctedServerBpm, 2));
 			}
-			else if (serverDetectedBpm >= (hostBpm * 2.0 - tolerance) &&
-				serverDetectedBpm <= (hostBpm * 2.0 + tolerance))
+			else if (doubleDiff < directDiff && doubleDiff <= halfDoubleTolerance)
 			{
 				correctedServerBpm = serverDetectedBpm / 2.0f;
 				DBG("Server BPM corrected for double tempo: " + juce::String(serverDetectedBpm, 2) +
 					" -> " + juce::String(correctedServerBpm, 2));
 			}
+			else
+			{
+				correctedServerBpm = serverDetectedBpm;
+				DBG("Server BPM used as-is (no good match): " + juce::String(serverDetectedBpm, 2));
+			}
 		}
 
 		if (soundTouchDetectedBpm > 0.0f)
 		{
-			if (soundTouchDetectedBpm >= (hostBpm * 0.5 - tolerance) &&
-				soundTouchDetectedBpm <= (hostBpm * 0.5 + tolerance))
+			float directDiff = std::abs(soundTouchDetectedBpm - static_cast<float>(hostBpm));
+			float halfDiff = std::abs(soundTouchDetectedBpm * 2.0f - static_cast<float>(hostBpm));
+			float doubleDiff = std::abs(soundTouchDetectedBpm / 2.0f - static_cast<float>(hostBpm));
+
+			if (directDiff <= directTolerance)
+			{
+				correctedSoundTouchBpm = soundTouchDetectedBpm;
+				DBG("SoundTouch BPM is close enough: " + juce::String(soundTouchDetectedBpm, 2));
+			}
+			else if (halfDiff < directDiff && halfDiff <= halfDoubleTolerance)
 			{
 				correctedSoundTouchBpm = soundTouchDetectedBpm * 2.0f;
 				DBG("SoundTouch BPM corrected for half tempo: " + juce::String(soundTouchDetectedBpm, 2) +
 					" -> " + juce::String(correctedSoundTouchBpm, 2));
 			}
-			else if (soundTouchDetectedBpm >= (hostBpm * 2.0 - tolerance) &&
-				soundTouchDetectedBpm <= (hostBpm * 2.0 + tolerance))
+			else if (doubleDiff < directDiff && doubleDiff <= halfDoubleTolerance)
 			{
 				correctedSoundTouchBpm = soundTouchDetectedBpm / 2.0f;
 				DBG("SoundTouch BPM corrected for double tempo: " + juce::String(soundTouchDetectedBpm, 2) +
 					" -> " + juce::String(correctedSoundTouchBpm, 2));
+			}
+			else
+			{
+				correctedSoundTouchBpm = soundTouchDetectedBpm;
+				DBG("SoundTouch BPM used as-is (no good match): " + juce::String(soundTouchDetectedBpm, 2));
 			}
 		}
 	}
 
 	float detectedBPM;
 
-	if (serverDetectedBpm > 0.0f && soundTouchDetectedBpm > 0.0f && hostBpm > 0.0)
-	{
-		float serverDiff = std::abs(correctedServerBpm - static_cast<float>(hostBpm));
-		float soundTouchDiff = std::abs(correctedSoundTouchBpm - static_cast<float>(hostBpm));
-
-		if (serverDiff < soundTouchDiff)
-		{
-			detectedBPM = correctedServerBpm;
-			DBG("Using server-detected BPM: " + juce::String(detectedBPM, 2) +
-				" (diff: " + juce::String(serverDiff, 2) + " vs SoundTouch diff: " + juce::String(soundTouchDiff, 2) + ")");
-		}
-		else
-		{
-			detectedBPM = correctedSoundTouchBpm;
-			DBG("Using SoundTouch-detected BPM: " + juce::String(detectedBPM, 2) +
-				" (diff: " + juce::String(soundTouchDiff, 2) + " vs server diff: " + juce::String(serverDiff, 2) + ")");
-		}
-	}
-	else if (serverDetectedBpm > 0.0f)
+	if (serverDetectedBpm > 0.0f)
 	{
 		detectedBPM = correctedServerBpm;
-		DBG("Using server-detected BPM (SoundTouch unavailable): " + juce::String(detectedBPM, 2));
+		DBG("Using server-detected BPM: " + juce::String(detectedBPM, 2));
 	}
 	else
 	{
