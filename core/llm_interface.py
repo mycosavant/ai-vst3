@@ -1,5 +1,4 @@
 import json
-import re
 import time
 import gc
 import threading
@@ -10,7 +9,6 @@ import torch
 
 
 class DJAILL:
-
     def __init__(self, model_path, config=None):
         self.model_path = model_path
         self.session_state = config or {}
@@ -88,59 +86,67 @@ class DJAILL:
                 self.session_state.get("session_duration", 0) + elapsed
             )
         self.session_state["last_action_time"] = current_time
+
         user_prompt = self._build_prompt()
         user_id = self.session_state["user_id"]
+
         with self.conversations_lock:
             self.init_user_conversation_history(user_id)
             self.conversations[user_id]["conversation_history"].append(
                 {"role": "user", "content": user_prompt}
             )
-            print(
-                f"🧠 AI-DJ generation with {len(self.conversations[user_id]['conversation_history'])} history messages..."
-            )
-            response = self.model.create_chat_completion(
-                self.conversations[user_id]["conversation_history"]
-            )
-            print("✅ Generation complete!")
-            try:
-                response_text = response["choices"][0]["message"]["content"]
-                json_match = re.search(r"({.*})", response_text, re.DOTALL)
-                if json_match:
-                    json_str = json_match.group(1)
-                    decision = json.loads(json_str)
-                else:
-                    decision = {
-                        "action_type": "generate_sample",
+
+        print(
+            f"🧠 AI-DJ generation with {len(self.conversations[user_id]['conversation_history'])} history messages..."
+        )
+
+        response = self.model.create_chat_completion(
+            messages=self.conversations[user_id]["conversation_history"],
+            response_format={
+                "type": "json_object",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "action_type": {"type": "string", "enum": ["generate_sample"]},
                         "parameters": {
-                            "sample_details": {
-                                "musicgen_prompt": "techno kick drum, driving beat",
-                                "key": self.session_state.get("current_key", "C minor"),
-                            }
+                            "type": "object",
+                            "properties": {
+                                "sample_details": {
+                                    "type": "object",
+                                    "properties": {
+                                        "musicgen_prompt": {"type": "string"},
+                                        "key": {"type": "string"},
+                                    },
+                                    "required": ["musicgen_prompt", "key"],
+                                }
+                            },
+                            "required": ["sample_details"],
                         },
-                        "reasoning": "Fallback: No valid JSON response",
-                    }
-
-            except (json.JSONDecodeError, KeyError) as e:
-                print(f"❌ Error parsing response: {e}")
-                print(f"Raw response: {response_text}")
-
-                decision = {
-                    "action_type": "generate_sample",
-                    "parameters": {
-                        "sample_details": {
-                            "musicgen_prompt": "electronic music sample",
-                            "key": self.session_state.get("current_key", "C minor"),
-                        }
+                        "reasoning": {"type": "string"},
                     },
-                    "reasoning": f"Parsing error: {str(e)}",
-                }
-            self.conversations[user_id]["conversation_history"].append(
-                {"role": "assistant", "content": decision}
-            )
-            self.conversations[user_id]["last_message_timestamp"] = datetime.now()
-            if len(self.conversations[user_id]["conversation_history"]) > 9:
-                del self.conversations[user_id]["conversation_history"][1:3]
-            return decision
+                    "required": ["action_type", "parameters", "reasoning"],
+                },
+            },
+            temperature=0.7,
+        )
+
+        print("✅ Generation complete!")
+
+        try:
+            decision = json.loads(response["choices"][0]["message"]["content"])
+
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"❌ Error parsing response: {e}")
+
+        self.conversations[user_id]["conversation_history"].append(
+            {"role": "assistant", "content": json.dumps(decision)}
+        )
+        self.conversations[user_id]["last_message_timestamp"] = datetime.now()
+
+        if len(self.conversations[user_id]["conversation_history"]) > 9:
+            del self.conversations[user_id]["conversation_history"][1:3]
+
+        return decision
 
     def _build_prompt(self):
         user_prompt = self.session_state.get("user_prompt", "")
@@ -157,19 +163,8 @@ Context:
 IMPORTANT: This new prompt has PRIORITY. If it's different from your previous generation, ABANDON the previous style completely and focus on this new prompt."""
 
     def get_system_prompt(self) -> str:
-        return """You are a smart music sample generator. The user provides you with keywords, you generate coherent JSON.
+        return """You are a smart music sample generator. The user provides you with keywords, you generate coherent prompt.
 
-MANDATORY FORMAT:
-{
-    "action_type": "generate_sample",
-    "parameters": {
-        "sample_details": {
-            "musicgen_prompt": "[prompt optimized for MusicGen based on keywords]",
-            "key": "[appropriate key or keep the provided one]"
-        }
-    },
-    "reasoning": "Short explanation of your choices"
-}
 
 PRIORITY RULES:
 1. 🔥 IF the user requests a specific style/genre → IGNORE the history and generate exactly what they ask for
@@ -178,16 +173,20 @@ PRIORITY RULES:
 
 TECHNICAL RULES:
 - Create a consistent and accurate MusicGen prompt
-- For the key: use the one provided or adapt if necessary
-- Respond ONLY in JSON
+- For the key: use the one provided
 
 EXAMPLES:
 User: "deep techno rhythm kick hardcore" → musicgen_prompt: "deep techno kick drum, hardcore rhythm, driving 4/4 beat, industrial"
 User: "ambient space" → musicgen_prompt: "ambient atmospheric space soundscape, ethereal pads"
 User: "jazzy piano" → musicgen_prompt: "jazz piano, smooth chords, melodic improvisation"""
 
-    def reset_conversation(self):
-        self.conversation_history = [
-            {"role": "system", "content": self.get_system_prompt()}
-        ]
-        print("🔄 Conversation history reset")
+    def reset_conversation(self, user_id):
+        with self.conversations_lock:
+            if user_id in self.conversations:
+                self.conversations[user_id] = {
+                    "conversation_history": [
+                        {"role": "system", "content": self.get_system_prompt()}
+                    ],
+                    "last_message_timestamp": datetime.now(),
+                }
+                print(f"🔄 Conversation history reset for user {user_id}")

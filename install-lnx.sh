@@ -215,7 +215,7 @@ fi
 echo "Installing main libraries..."
 echo ""
 
-PACKAGES="diffusers transformers accelerate librosa soundfile fastapi uvicorn python-dotenv requests apscheduler demucs cryptography pyinstaller pystray psutil Pillow"
+PACKAGES="diffusers transformers accelerate librosa soundfile torchsde fastapi uvicorn python-dotenv requests apscheduler demucs cryptography pyinstaller pystray psutil Pillow"
 
 for package in $PACKAGES; do
     echo "   Installing $package..."

@@ -236,7 +236,7 @@ REM Install main dependencies
 echo Installing main libraries...
 echo.
 
-set PACKAGES=diffusers transformers accelerate librosa soundfile fastapi uvicorn python-dotenv requests apscheduler cryptography pystray psutil Pillow pywin32
+set PACKAGES=diffusers transformers accelerate librosa torchsde soundfile fastapi uvicorn python-dotenv requests apscheduler cryptography pystray psutil Pillow pywin32
 
 for %%p in (%PACKAGES%) do (
     echo    Installing %%p...
