@@ -1,29 +1,30 @@
 #pragma once
 #include "JuceHeader.h"
+#include "MidiLearnableComponents.h"
 
 class DjIaVstProcessor;
 
 class SequencerComponent : public juce::Component
 {
 public:
-	SequencerComponent(const juce::String &trackId, DjIaVstProcessor &processor);
+	SequencerComponent(const juce::String& trackId, DjIaVstProcessor& processor);
 
-	void paint(juce::Graphics &g) override;
+	void paint(juce::Graphics& g) override;
 	void resized() override;
-	void mouseDown(const juce::MouseEvent &event) override;
+	void mouseDown(const juce::MouseEvent& event) override;
 
 	void setCurrentStep(int step);
 	void setPlaying(bool playing);
 	void setNumMeasures(int measures);
 	void setCurrentMeasure(int measure);
-
+	void updateSequenceButtonsDisplay();
 	void updateFromTrackData();
 
 	bool isSequencerPlaying() const { return isPlaying; }
 
 private:
 	juce::String trackId;
-	DjIaVstProcessor &audioProcessor;
+	DjIaVstProcessor& audioProcessor;
 
 	static const int MAX_STEPS_PER_MEASURE = 16;
 	static const int MAX_MEASURES = 4;
@@ -38,8 +39,9 @@ private:
 
 	juce::Slider measureSlider;
 	juce::Slider timeSignatureSlider;
+	std::array<MidiLearnableButton, 8> sequenceButtons;
 
-	juce::Timer *editingTimer = nullptr;
+	juce::Timer* editingTimer = nullptr;
 
 	juce::TextButton prevMeasureButton, nextMeasureButton;
 
@@ -52,6 +54,9 @@ private:
 	void setupUI();
 
 	int getTotalStepsForCurrentSignature() const;
+	void setupSequenceButtons();
+	void layoutSequenceButtons(juce::Rectangle<int> area);
+	void onSequenceSelected(int seqIndex);
 
 	double samplesPerStep;
 	double stepAccumulator;

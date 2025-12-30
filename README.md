@@ -38,14 +38,23 @@ _Raw improvisation showcasing the experimental draw-to-audio workflow: sketch pa
 Type words → Get musical loops instantly. No stopping your creative flow.
 
 - **8-track sampler** with MIDI triggering (C3-B3)
-- **4 pages per track** (A/B/C/D) - Switch variations instantly by clicking page buttons
+- **4 pages per track** (A/B/C/D) - Switch variations instantly
+- **8 sequences per page** - 256 total patterns for complex live sets
+- **16-step sequencer** with multi-measure support
+- **Quantized page changes** - Seamless transitions locked to measure boundaries
 - **Draw-to-sound** - Sketch your ideas visually and let AI interpret them musically
 - **Perfect DAW sync** - Auto time-stretch to project tempo
 - **Real-time generation** - No pre-recorded samples
 
-**Text example:** Type "dark techno kick" → AI generates techno loop → Trigger with MIDI while jamming
+**Text example:** Type "dark techno kick" → AI generates techno loop → Program sequence → Switch between 8 pattern variations
 
-**Drawing example:** Draw a chaotic pattern → AI interprets visual elements as musical characteristics → Generates matching loop
+**Performance example:**
+
+- Page A: Main groove (8 sequences)
+- Page B: Breakdown variation (8 sequences)
+- Page C: Build-up (8 sequences)
+- Page D: Drop (8 sequences)
+- Switch pages at measure boundaries while performing live
 
 ---
 
@@ -62,6 +71,51 @@ Type words → Get musical loops instantly. No stopping your creative flow.
 ---
 
 ## Features
+
+### Multi-Layer Performance System
+
+**256 independent patterns at your fingertips** - Each of the 8 tracks features a powerful multi-page, multi-sequence architecture:
+
+- **4 pages per track** (A/B/C/D) - Switch variations instantly with page buttons
+- **8 sequences per page** - Independent MIDI patterns per page (32 sequences per track total)
+- **Live page switching** - Quantized to measure boundaries for seamless transitions
+- **Per-page sequence memory** - Each page remembers its active sequence
+- **Quantized beat repeat** - Stutter/retrigger effects locked to tempo (1/4 to 1/128 subdivisions)
+- **Random retrigger intervals** - Enable automatic random interval selection for evolving patterns
+- **Seamless loop points** - Adjustable start/end points per page with auto-crossfade
+
+**Example workflow:**
+
+- Track 1, Page A, Sequence 1: Simple 4-on-floor kick
+- Track 1, Page A, Sequence 2: Broken beat variation
+- Track 1, Page B, Sequence 1: Minimal pattern
+- Enable beat repeat on Track 1 → Instant stuttered fills
+- Switch pages and sequences on the fly during performance
+
+### Beat Repeat & Performance FX
+
+**Quantized stutter effects** that stay locked to your DAW tempo:
+
+- **10 interval presets**: 4 bars, 2 bars, 1 bar, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128
+- **Half-beat quantization** - Beat repeat triggers snap to nearest half-beat
+- **Random duration mode** - Automatically randomizes interval length (1-10) on each trigger
+- **MIDI learnable** - Map beat repeat toggle and interval knob to any controller
+- **Visual feedback** - Interval knob displays current subdivision
+
+**How it works:**
+
+1. Load a sample on any track
+2. Enable beat repeat
+3. Adjust interval knob (or enable random mode)
+4. Effect triggers quantized to half-beats
+5. Returns to original playback seamlessly
+
+**Performance tricks:**
+
+- Use on drum loops for instant fill variations
+- Combine with page switching for complex breakdowns
+- Enable random duration for evolving glitch textures
+- MIDI map to foot controller for hands-free triggering
 
 ### Text-to-Audio Generation
 
@@ -294,14 +348,14 @@ Featured in **8 countries** and **6 languages** across major music production pu
 ## Status & Support
 
 🚀 **Active development** - Updates pushed regularly  
-⭐ **153+ GitHub stars** - Thanks for the support!  
+⭐ **154+ GitHub stars** - Thanks for the support!  
 🐛 **Issues:** [Report bugs here](https://github.com/innermost47/ai-dj/issues/new)
 
 ---
 
 ## 🎯 Community Milestone
 
-**Road to 200 Stars!** Currently at 153+ 🌟
+**Road to 200 Stars!** Currently at 154+ 🌟
 
 When we hit 200 stars, we're celebrating with a community giveaway:
 
