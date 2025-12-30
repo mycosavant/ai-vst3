@@ -111,7 +111,7 @@ class MusicGenerator:
 
             output = result.audios[0].float().cpu().numpy()
             
-            sample_audio = output[0] 
+            sample_audio = output 
 
             print(f"🎵 Mono audio: {len(sample_audio)} samples")
             print(f"⏱️  Total post-processing: {time.time() - start_post:.2f}s")
