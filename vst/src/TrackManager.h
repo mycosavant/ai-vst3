@@ -164,8 +164,6 @@ public:
 		}
 	}
 
-
-
 	juce::ValueTree saveState() const
 	{
 		juce::ValueTree state("TrackManager");

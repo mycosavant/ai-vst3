@@ -884,6 +884,12 @@ void TrackComponent::performPageChange(int pageIndex)
 	updatePagesDisplay();
 	updateFromTrackData();
 
+	if (sequencer)
+	{
+		sequencer->updateSequenceButtonsDisplay();
+		sequencer->updateFromTrackData();
+	}
+
 	if (waveformDisplay && showWaveformButton.getToggleState())
 	{
 		if (newPage.numSamples > 0 && newPage.isLoaded.load())

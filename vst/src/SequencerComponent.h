@@ -17,7 +17,7 @@ public:
 	void setPlaying(bool playing);
 	void setNumMeasures(int measures);
 	void setCurrentMeasure(int measure);
-
+	void updateSequenceButtonsDisplay();
 	void updateFromTrackData();
 
 	bool isSequencerPlaying() const { return isPlaying; }
@@ -56,7 +56,6 @@ private:
 	int getTotalStepsForCurrentSignature() const;
 	void setupSequenceButtons();
 	void layoutSequenceButtons(juce::Rectangle<int> area);
-	void updateSequenceButtonsDisplay();
 	void onSequenceSelected(int seqIndex);
 
 	double samplesPerStep;
