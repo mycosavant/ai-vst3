@@ -54,44 +54,46 @@ float MixerPanel::getMasterPan() const
 
 void MixerPanel::calculateMasterLevel()
 {
-	float totalLevelLeft = 0.0f;
-	float totalLevelRight = 0.0f;
-	float maxLevelLeft = 0.0f;
-	float maxLevelRight = 0.0f;
-	int activeChannels = 0;
+	float maxPeakLeft = 0.0f;
+	float maxPeakRight = 0.0f;
 
 	for (auto& channel : mixerChannels)
 	{
-		float channelLevelLeft = channel->getCurrentAudioLevelLeft();
-		float channelLevelRight = channel->getCurrentAudioLevelRight();
+		float channelPeakLeft = channel->getCurrentAudioLevelLeft();
+		float channelPeakRight = channel->getCurrentAudioLevelRight();
 
-		if (channelLevelLeft > 0.01f || channelLevelRight > 0.01f)
+		maxPeakLeft = std::max(maxPeakLeft, channelPeakLeft);
+		maxPeakRight = std::max(maxPeakRight, channelPeakRight);
+	}
+
+	auto dbToLinear = [](float normalized) -> float
 		{
-			totalLevelLeft += channelLevelLeft * channelLevelLeft;
-			totalLevelRight += channelLevelRight * channelLevelRight;
-			maxLevelLeft = std::max(maxLevelLeft, channelLevelLeft);
-			maxLevelRight = std::max(maxLevelRight, channelLevelRight);
-			activeChannels++;
-		}
-	}
+			float db = -60.0f + normalized * 60.0f;
+			return std::pow(10.0f, db / 20.0f);
+		};
 
-	if (activeChannels > 0)
-	{
-		float rmsLevelLeft = std::sqrt(totalLevelLeft / activeChannels);
-		float rmsLevelRight = std::sqrt(totalLevelRight / activeChannels);
+	auto linearToDb = [](float linear) -> float
+		{
+			if (linear <= 0.00001f)
+				return -100.0f;
+			return 20.0f * std::log10f(linear);
+		};
 
-		float finalLevelLeft = (rmsLevelLeft * 0.7f) + (maxLevelLeft * 0.3f);
-		float finalLevelRight = (rmsLevelRight * 0.7f) + (maxLevelRight * 0.3f);
+	auto dbToNormalized = [](float db) -> float
+		{
+			return juce::jlimit(0.0f, 1.0f, (db + 60.0f) / 60.0f);
+		};
 
-		finalLevelLeft *= masterVolume;
-		finalLevelRight *= masterVolume;
+	float linearLeft = dbToLinear(maxPeakLeft);
+	float linearRight = dbToLinear(maxPeakRight);
 
-		masterChannel->setRealAudioLevelStereo(finalLevelLeft, finalLevelRight);
-	}
-	else
-	{
-		masterChannel->setRealAudioLevelStereo(0.0f, 0.0f);
-	}
+	linearLeft *= masterVolume;
+	linearRight *= masterVolume;
+
+	masterChannel->setRealAudioLevelStereo(
+		dbToNormalized(linearToDb(linearLeft)),
+		dbToNormalized(linearToDb(linearRight))
+	);
 }
 
 void MixerPanel::refreshMixerChannels()

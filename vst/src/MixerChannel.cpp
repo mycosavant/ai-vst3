@@ -743,9 +743,9 @@ void MixerChannel::fillMeterSegment(juce::Graphics& g, juce::Rectangle<float>& v
 		vuArea.getX() + 1, segmentY, vuArea.getWidth() - 2, segmentHeight - 1);
 
 	juce::Colour segmentColour;
-	if (segmentLevel < 0.7f)
+	if (segmentLevel < 0.67f)
 		segmentColour = ColourPalette::vuGreen;
-	else if (segmentLevel < 0.9f)
+	else if (segmentLevel < 0.90f)
 		segmentColour = ColourPalette::vuOrange;
 	else
 		segmentColour = ColourPalette::vuRed;
@@ -834,8 +834,8 @@ void MixerChannel::updateVUMeter()
 {
 	if (!track || !track->isPlaying.load())
 	{
-		currentAudioLevelLeft *= 0.95f;
-		currentAudioLevelRight *= 0.95f;
+		currentAudioLevelLeft *= 0.88f;
+		currentAudioLevelRight *= 0.88f;
 
 		if (peakHoldTimerLeft > 0)
 		{
@@ -855,57 +855,40 @@ void MixerChannel::updateVUMeter()
 
 	auto levels = calculateInstantLevel();
 
-	levelHistoryLeft.push_back(levels.left);
-	if (levelHistoryLeft.size() > 5)
-		levelHistoryLeft.erase(levelHistoryLeft.begin());
-
-	float smoothedLeft = 0.0f;
-	for (float level : levelHistoryLeft)
-		smoothedLeft += level;
-	smoothedLeft /= levelHistoryLeft.size();
-
-	levelHistoryRight.push_back(levels.right);
-	if (levelHistoryRight.size() > 5)
-		levelHistoryRight.erase(levelHistoryRight.begin());
-
-	float smoothedRight = 0.0f;
-	for (float level : levelHistoryRight)
-		smoothedRight += level;
-	smoothedRight /= levelHistoryRight.size();
-
-	if (smoothedLeft > currentAudioLevelLeft)
+	if (levels.left > currentAudioLevelLeft)
 	{
-		currentAudioLevelLeft = smoothedLeft;
+		currentAudioLevelLeft = levels.left;
 	}
 	else
 	{
-		currentAudioLevelLeft = currentAudioLevelLeft * 0.85f + smoothedLeft * 0.15f;
+		currentAudioLevelLeft = currentAudioLevelLeft * 0.92f + levels.left * 0.08f;
 	}
 
 	if (currentAudioLevelLeft > peakHoldLeft)
 	{
 		peakHoldLeft = currentAudioLevelLeft;
-		peakHoldTimerLeft = 30;
+		peakHoldTimerLeft = 45;
 	}
 
-	if (smoothedRight > currentAudioLevelRight)
+	if (levels.right > currentAudioLevelRight)
 	{
-		currentAudioLevelRight = smoothedRight;
+		currentAudioLevelRight = levels.right;
 	}
 	else
 	{
-		currentAudioLevelRight = currentAudioLevelRight * 0.85f + smoothedRight * 0.15f;
+		currentAudioLevelRight = currentAudioLevelRight * 0.92f + levels.right * 0.08f;
 	}
 
 	if (currentAudioLevelRight > peakHoldRight)
 	{
 		peakHoldRight = currentAudioLevelRight;
-		peakHoldTimerRight = 30;
+		peakHoldTimerRight = 45;
 	}
 }
 
 StereoLevel MixerChannel::calculateInstantLevel()
 {
+
 	if (!track || track->numSamples == 0)
 		return { 0.0f, 0.0f };
 
@@ -915,39 +898,48 @@ StereoLevel MixerChannel::calculateInstantLevel()
 	if (sampleIndex >= 0 && sampleIndex < track->numSamples)
 	{
 		int numChannels = track->audioBuffer.getNumChannels();
-		int samples = std::min(32, track->numSamples - sampleIndex);
+		int windowSize = 8;
+		int endSample = std::min(sampleIndex + windowSize, track->numSamples);
 
-		float levelLeft = 0.0f;
-		float levelRight = 0.0f;
+		float peakLeft = 0.0f;
+		float peakRight = 0.0f;
 
-		for (int i = 0; i < samples; ++i)
+		for (int i = sampleIndex; i < endSample; ++i)
 		{
 			if (numChannels >= 1)
 			{
-				float sample = track->audioBuffer.getSample(0, sampleIndex + i);
-				levelLeft += std::abs(sample);
+				peakLeft = std::max(peakLeft, std::abs(track->audioBuffer.getSample(0, i)));
 			}
+
 			if (numChannels >= 2)
 			{
-				float sample = track->audioBuffer.getSample(1, sampleIndex + i);
-				levelRight += std::abs(sample);
+				peakRight = std::max(peakRight, std::abs(track->audioBuffer.getSample(1, i)));
 			}
 			else
 			{
-				levelRight = levelLeft;
+				peakRight = peakLeft;
 			}
 		}
 
-		levelLeft /= samples;
-		levelRight /= samples;
-
 		float volume = track->volume.load();
-		levelLeft *= volume;
-		levelRight *= volume;
+		peakLeft *= volume;
+		peakRight *= volume;
+
+		auto linearToDb = [](float linear) -> float
+			{
+				if (linear <= 0.00001f)
+					return -100.0f;
+				return 20.0f * std::log10f(linear);
+			};
+
+		auto dbToNormalized = [](float db) -> float
+			{
+				return juce::jlimit(0.0f, 1.0f, (db + 60.0f) / 60.0f);
+			};
 
 		return {
-			juce::jlimit(0.0f, 1.0f, levelLeft * 3.0f),
-			juce::jlimit(0.0f, 1.0f, levelRight * 3.0f)
+			dbToNormalized(linearToDb(peakLeft)),
+			dbToNormalized(linearToDb(peakRight))
 		};
 	}
 

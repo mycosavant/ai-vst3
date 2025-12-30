@@ -380,9 +380,9 @@ void MasterChannel::fillMasterMeterSegment(juce::Graphics& g, juce::Rectangle<fl
 		vuArea.getX() + 1, segmentY, vuArea.getWidth() - 2, segmentHeight - 1);
 
 	juce::Colour segmentColour;
-	if (segmentLevel < 0.7f)
+	if (segmentLevel < 0.67f)
 		segmentColour = ColourPalette::vuGreen;
-	else if (segmentLevel < 0.9f)
+	else if (segmentLevel < 0.90f)
 		segmentColour = ColourPalette::vuOrange;
 	else
 		segmentColour = ColourPalette::vuRed;
@@ -394,7 +394,7 @@ void MasterChannel::fillMasterMeterSegment(juce::Graphics& g, juce::Rectangle<fl
 	}
 	else
 	{
-		g.setColour(segmentColour.withAlpha(0.05f));
+		g.setColour(segmentColour.withAlpha(0.1f));
 		g.fillRoundedRectangle(segmentRect, 1.0f);
 	}
 }
@@ -439,37 +439,37 @@ void MasterChannel::resized()
 	masterPanKnob.setBounds(knobZone.reduced(2));
 }
 
+inline float linearToDb(float linear)
+{
+	if (linear <= 0.0f)
+		return -96.0f;
+
+	return 20.0f * std::log10(linear);
+}
+
+inline float dbToNormalized(float db, float minDb = -60.0f, float maxDb = 0.0f)
+{
+	return juce::jlimit(0.0f, 1.0f, (db - minDb) / (maxDb - minDb));
+}
+
 void MasterChannel::updateMasterLevels()
 {
-	float instantLevelLeft;
-	float instantLevelRight;
-
-	if (hasRealAudio)
-	{
-		instantLevelLeft = realAudioLevelLeft;
-		instantLevelRight = realAudioLevelRight;
-	}
-	else
-	{
-		static float phase = 0.0f;
-		phase += 0.05f;
-		instantLevelLeft = (std::sin(phase) * 0.3f + 0.3f) * 0.5f;
-		instantLevelRight = (std::sin(phase + 0.3f) * 0.3f + 0.3f) * 0.5f;
-	}
+	float instantLevelLeft = realAudioLevelLeft;
+	float instantLevelRight = realAudioLevelRight;
 
 	if (instantLevelLeft > masterLevelLeft)
 	{
-		masterLevelLeft = masterLevelLeft * 0.7f + instantLevelLeft * 0.3f;
+		masterLevelLeft = instantLevelLeft;
 	}
 	else
 	{
-		masterLevelLeft = masterLevelLeft * 0.90f + instantLevelLeft * 0.10f;
+		masterLevelLeft = masterLevelLeft * 0.92f + instantLevelLeft * 0.08f;
 	}
 
 	if (masterLevelLeft > masterPeakHoldLeft)
 	{
 		masterPeakHoldLeft = masterLevelLeft;
-		masterPeakHoldTimerLeft = 60;
+		masterPeakHoldTimerLeft = 45;
 	}
 	else if (masterPeakHoldTimerLeft > 0)
 	{
@@ -482,17 +482,17 @@ void MasterChannel::updateMasterLevels()
 
 	if (instantLevelRight > masterLevelRight)
 	{
-		masterLevelRight = masterLevelRight * 0.7f + instantLevelRight * 0.3f;
+		masterLevelRight = instantLevelRight;
 	}
 	else
 	{
-		masterLevelRight = masterLevelRight * 0.90f + instantLevelRight * 0.10f;
+		masterLevelRight = masterLevelRight * 0.92f + instantLevelRight * 0.08f;
 	}
 
 	if (masterLevelRight > masterPeakHoldRight)
 	{
 		masterPeakHoldRight = masterLevelRight;
-		masterPeakHoldTimerRight = 60;
+		masterPeakHoldTimerRight = 45;
 	}
 	else if (masterPeakHoldTimerRight > 0)
 	{
@@ -503,7 +503,7 @@ void MasterChannel::updateMasterLevels()
 		masterPeakHoldRight *= 0.98f;
 	}
 
-	isClipping = (masterPeakHoldLeft >= 0.95f || masterPeakHoldRight >= 0.95f);
+	isClipping = (masterPeakHoldLeft >= 0.98f || masterPeakHoldRight >= 0.98f);
 
 	juce::MessageManager::callAsync([this]()
 		{ repaint(); });
