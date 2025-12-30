@@ -7,8 +7,15 @@ import random
 import gc
 import librosa
 import soundfile as sf
-from diffusers import BitsAndBytesConfig as DiffusersBitsAndBytesConfig, StableAudioDiTModel, StableAudioPipeline
-from transformers import BitsAndBytesConfig as TransformersBitsAndBytesConfig, T5EncoderModel
+from diffusers import (
+    BitsAndBytesConfig as DiffusersBitsAndBytesConfig,
+    StableAudioDiTModel,
+    StableAudioPipeline,
+)
+from transformers import (
+    BitsAndBytesConfig as TransformersBitsAndBytesConfig,
+    T5EncoderModel,
+)
 
 
 class MusicGenerator:
@@ -27,15 +34,17 @@ class MusicGenerator:
 
         if device == "cuda" and self.model_id == "stabilityai/stable-audio-open-1.0":
             print("🎯 Loading with 8-bit quantization...")
-            
-            text_encoder_quant_config = TransformersBitsAndBytesConfig(load_in_8bit=True)
+
+            text_encoder_quant_config = TransformersBitsAndBytesConfig(
+                load_in_8bit=True
+            )
             text_encoder_8bit = T5EncoderModel.from_pretrained(
                 self.model_id,
                 subfolder="text_encoder",
                 quantization_config=text_encoder_quant_config,
                 torch_dtype=torch.float16,
             )
-            
+
             transformer_quant_config = DiffusersBitsAndBytesConfig(load_in_8bit=True)
             transformer_8bit = StableAudioDiTModel.from_pretrained(
                 self.model_id,
@@ -43,7 +52,7 @@ class MusicGenerator:
                 quantization_config=transformer_quant_config,
                 torch_dtype=torch.float16,
             )
-            
+
             self.pipeline = StableAudioPipeline.from_pretrained(
                 self.model_id,
                 text_encoder=text_encoder_8bit,
@@ -83,7 +92,7 @@ class MusicGenerator:
 
             num_inference_steps = 50
             cfg_scale = 7.0
-            
+
             if "small" in self.model_id.lower():
                 num_inference_steps = 8
                 cfg_scale = 1.0
@@ -91,10 +100,12 @@ class MusicGenerator:
             seed_value = random.randint(0, 2**31 - 1)
             generator = torch.Generator(device=self.device).manual_seed(seed_value)
 
-            print(f"⚙️  Stable Audio: steps={num_inference_steps}, cfg_scale={cfg_scale}")
+            print(
+                f"⚙️  Stable Audio: steps={num_inference_steps}, cfg_scale={cfg_scale}"
+            )
 
             start_gen = time.time()
-            
+
             result = self.pipeline(
                 musicgen_prompt,
                 negative_prompt="Low quality, distorted, noise",
@@ -110,10 +121,14 @@ class MusicGenerator:
             start_post = time.time()
 
             output = result.audios[0].float().cpu().numpy()
-            
-            sample_audio = output[0] 
+            sample_audio = output
 
-            print(f"🎵 Mono audio: {len(sample_audio)} samples")
+            if len(sample_audio.shape) > 1:
+                print(
+                    f"🎵 Stereo audio: {sample_audio.shape[0]} channels, {sample_audio.shape[1]} samples"
+                )
+            else:
+                print(f"🎵 Mono audio: {len(sample_audio)} samples")
             print(f"⏱️  Total post-processing: {time.time() - start_post:.2f}s")
             print(f"✅ Generation complete!")
 
@@ -138,15 +153,31 @@ class MusicGenerator:
             else:
                 temp_dir = tempfile.gettempdir()
                 path = os.path.join(temp_dir, filename)
-            
+
             if not isinstance(sample_audio, np.ndarray):
                 sample_audio = np.array(sample_audio)
-            
+
+            is_stereo = len(sample_audio.shape) > 1 and sample_audio.shape[0] == 2
+            if is_stereo:
+                sample_audio = sample_audio.T
+
             if self.sample_rate != sample_rate:
                 print(f"🔄 Resampling {self.sample_rate}Hz → {sample_rate}Hz")
-                sample_audio = librosa.resample(
-                    sample_audio, orig_sr=self.sample_rate, target_sr=sample_rate
-                )
+                if is_stereo:
+                    resampled = []
+                    for channel in range(sample_audio.shape[1]):
+                        resampled.append(
+                            librosa.resample(
+                                sample_audio[:, channel],
+                                orig_sr=self.sample_rate,
+                                target_sr=sample_rate,
+                            )
+                        )
+                    sample_audio = np.column_stack(resampled)
+                else:
+                    sample_audio = librosa.resample(
+                        sample_audio, orig_sr=self.sample_rate, target_sr=sample_rate
+                    )
                 save_sample_rate = sample_rate
             else:
                 save_sample_rate = self.sample_rate

@@ -54,32 +54,46 @@ float MixerPanel::getMasterPan() const
 
 void MixerPanel::calculateMasterLevel()
 {
-	float totalLevel = 0.0f;
-	float maxLevel = 0.0f;
-	int activeChannels = 0;
+	float maxPeakLeft = 0.0f;
+	float maxPeakRight = 0.0f;
 
 	for (auto& channel : mixerChannels)
 	{
-		float channelLevel = channel->getCurrentAudioLevel();
-		if (channelLevel > 0.01f)
-		{
-			totalLevel += channelLevel * channelLevel;
-			maxLevel = std::max(maxLevel, channelLevel);
-			activeChannels++;
-		}
+		float channelPeakLeft = channel->getCurrentAudioLevelLeft();
+		float channelPeakRight = channel->getCurrentAudioLevelRight();
+
+		maxPeakLeft = std::max(maxPeakLeft, channelPeakLeft);
+		maxPeakRight = std::max(maxPeakRight, channelPeakRight);
 	}
 
-	if (activeChannels > 0)
-	{
-		float rmsLevel = std::sqrt(totalLevel / activeChannels);
-		float finalLevel = (rmsLevel * 0.7f) + (maxLevel * 0.3f);
-		finalLevel *= masterVolume;
-		masterChannel->setRealAudioLevel(finalLevel);
-	}
-	else
-	{
-		masterChannel->setRealAudioLevel(0.0f);
-	}
+	auto dbToLinear = [](float normalized) -> float
+		{
+			float db = -60.0f + normalized * 60.0f;
+			return std::pow(10.0f, db / 20.0f);
+		};
+
+	auto linearToDb = [](float linear) -> float
+		{
+			if (linear <= 0.00001f)
+				return -100.0f;
+			return 20.0f * std::log10f(linear);
+		};
+
+	auto dbToNormalized = [](float db) -> float
+		{
+			return juce::jlimit(0.0f, 1.0f, (db + 60.0f) / 60.0f);
+		};
+
+	float linearLeft = dbToLinear(maxPeakLeft);
+	float linearRight = dbToLinear(maxPeakRight);
+
+	linearLeft *= masterVolume;
+	linearRight *= masterVolume;
+
+	masterChannel->setRealAudioLevelStereo(
+		dbToNormalized(linearToDb(linearLeft)),
+		dbToNormalized(linearToDb(linearRight))
+	);
 }
 
 void MixerPanel::refreshMixerChannels()

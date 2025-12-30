@@ -270,103 +270,108 @@ void MasterChannel::paint(juce::Graphics& g)
 	g.fillRoundedRectangle(bounds.toFloat(), 8.0f);
 	g.setColour(ColourPalette::playArmed);
 	g.drawRoundedRectangle(bounds.toFloat().reduced(1), 8.0f, 2.0f);
-	drawMasterVUMeter(g, bounds);
+	drawMasterVUMeterStereo(g, bounds);
 }
 
-void MasterChannel::resized()
-{
-	auto area = getLocalBounds().reduced(4);
-	int width = area.getWidth();
-
-	masterLabel.setBounds(area.removeFromTop(20));
-	area.removeFromTop(10);
-
-	auto eqArea = area.removeFromTop(100);
-	int knobSize = 35;
-
-	auto highRow = eqArea.removeFromTop(50);
-	highLabel.setBounds((width - 50) / 2, highRow.getY(), 50, 12);
-	highKnob.setBounds((width - knobSize) / 2, highRow.getY() + 15, knobSize, knobSize);
-
-	eqArea.removeFromTop(5);
-
-	auto bottomRow = eqArea.removeFromTop(50);
-	int spacing = width / 4;
-
-	midLabel.setBounds(spacing - 25, bottomRow.getY(), 50, 12);
-	midKnob.setBounds(spacing - knobSize / 2, bottomRow.getY() + 15, knobSize, knobSize);
-
-	lowLabel.setBounds(width - spacing - 25, bottomRow.getY(), 50, 12);
-	lowKnob.setBounds(width - spacing - knobSize / 2, bottomRow.getY() + 15, knobSize, knobSize);
-
-	auto volumeArea = area.removeFromTop(372);
-	int faderWidth = width / 3;
-	int centerX = (width - faderWidth) / 2;
-	masterVolumeSlider.setBounds(centerX, volumeArea.getY() + 5, faderWidth, volumeArea.getHeight() - 10);
-
-	area.removeFromTop(5);
-
-	auto panArea = area.removeFromTop(60);
-	auto vuZone = panArea.removeFromRight(10);
-	auto knobZone = panArea;
-	panLabel.setBounds(knobZone.removeFromTop(12));
-	masterPanKnob.setBounds(knobZone.reduced(2));
-}
-
-void MasterChannel::drawMasterVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds) const
+void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<int> bounds) const
 {
 	float width = static_cast<float>(bounds.getWidth());
 	float height = static_cast<float>(bounds.getHeight());
-	auto vuArea = juce::Rectangle<float>(width - 12.0f, 40.0f, 6.0f, height - 80.0f);
+	float meterWidth = 5.0f;
+	float meterSpacing = 2.0f;
+	float totalWidth = meterWidth * 2 + meterSpacing;
+	float startX = width - totalWidth - 5;
+
+	auto vuAreaLeft = juce::Rectangle<float>(
+		startX,
+		50.0f,
+		meterWidth,
+		static_cast<float>(bounds.getHeight() - 60));
+
+	auto vuAreaRight = juce::Rectangle<float>(
+		startX + meterWidth + meterSpacing,
+		50.0f,
+		meterWidth,
+		static_cast<float>(bounds.getHeight() - 60));
+
 	g.setColour(ColourPalette::backgroundDeep);
-	g.fillRoundedRectangle(vuArea, 2.0f);
+	g.fillRoundedRectangle(vuAreaLeft, 2.0f);
+	g.fillRoundedRectangle(vuAreaRight, 2.0f);
+
 	g.setColour(ColourPalette::playArmed);
-	g.drawRoundedRectangle(vuArea, 2.0f, 1.0f);
+	g.drawRoundedRectangle(vuAreaLeft, 2.0f, 0.5f);
+	g.drawRoundedRectangle(vuAreaRight, 2.0f, 0.5f);
 
 	int numSegments = 25;
-	float segmentHeight = (vuArea.getHeight() - 4) / numSegments;
+	float segmentHeight = (vuAreaLeft.getHeight() - 4) / numSegments;
 
 	for (int i = 0; i < numSegments; ++i)
 	{
-		drawMasterChanelSegments(vuArea, i, segmentHeight, numSegments, g);
+		fillMasterMeterSegment(g, vuAreaLeft, i, segmentHeight, numSegments, masterLevelLeft);
 	}
 
-	if (masterPeakHold > 0.0f)
+	if (masterPeakHoldLeft > 0.0f)
 	{
-		drawPeakHoldLine(numSegments, vuArea, segmentHeight, g);
+		int peakSegment = (int)(masterPeakHoldLeft * numSegments);
+		if (peakSegment < numSegments)
+		{
+			float peakY = vuAreaLeft.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
+			juce::Rectangle<float> peakRect(vuAreaLeft.getX() + 1, peakY,
+				vuAreaLeft.getWidth() - 2, 2);
+			g.setColour(ColourPalette::vuPeak);
+			g.fillRect(peakRect);
+		}
 	}
 
-	if (masterPeakHold >= 0.98f)
+	for (int i = 0; i < numSegments; ++i)
 	{
-		drawMasterClipping(vuArea, g);
+		fillMasterMeterSegment(g, vuAreaRight, i, segmentHeight, numSegments, masterLevelRight);
 	}
+
+	if (masterPeakHoldRight > 0.0f)
+	{
+		int peakSegment = (int)(masterPeakHoldRight * numSegments);
+		if (peakSegment < numSegments)
+		{
+			float peakY = vuAreaRight.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
+			juce::Rectangle<float> peakRect(vuAreaRight.getX() + 1, peakY,
+				vuAreaRight.getWidth() - 2, 2);
+			g.setColour(ColourPalette::vuPeak);
+			g.fillRect(peakRect);
+		}
+	}
+
+	if (masterPeakHoldLeft >= 0.98f || masterPeakHoldRight >= 0.98f)
+	{
+		auto clipRect = juce::Rectangle<float>(
+			startX - 2,
+			vuAreaLeft.getY() - 12,
+			totalWidth + 4,
+			8);
+
+		g.setColour(isClipping && (juce::Time::getCurrentTime().toMilliseconds() % 500 < 250)
+			? ColourPalette::buttonDangerLight
+			: ColourPalette::buttonDangerDark);
+		g.fillRoundedRectangle(clipRect, 4.0f);
+
+		g.setColour(ColourPalette::textPrimary);
+		g.setFont(juce::FontOptions(8.0f, juce::Font::bold));
+		g.drawText("CLIP", clipRect, juce::Justification::centred);
+	}
+
+	g.setColour(ColourPalette::textSecondary.withAlpha(0.7f));
+	g.setFont(juce::FontOptions(8.0f));
+	g.drawText("L", static_cast<int>(vuAreaLeft.getX()) - 8,
+		static_cast<int>(vuAreaLeft.getY()) - 18, 12, 10,
+		juce::Justification::centred);
+	g.drawText("R", static_cast<int>(vuAreaRight.getX()) - 2,
+		static_cast<int>(vuAreaRight.getY()) - 18, 12, 10,
+		juce::Justification::centred);
 }
 
-void MasterChannel::drawPeakHoldLine(int numSegments, juce::Rectangle<float>& vuArea, float segmentHeight, juce::Graphics& g) const
-{
-	int peakSegment = (int)(masterPeakHold * numSegments);
-	if (peakSegment < numSegments)
-	{
-		float peakY = vuArea.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
-		juce::Rectangle<float> peakRect(vuArea.getX() + 1, peakY, vuArea.getWidth() - 2, 3);
-		g.setColour(ColourPalette::vuPeak);
-		g.fillRect(peakRect);
-	}
-}
-
-void MasterChannel::drawMasterClipping(juce::Rectangle<float>& vuArea, juce::Graphics& g) const
-{
-	auto clipRect = juce::Rectangle<float>(vuArea.getX() - 2, vuArea.getY() - 12, vuArea.getWidth() + 4, 8);
-	g.setColour(isClipping && (juce::Time::getCurrentTime().toMilliseconds() % 500 < 250)
-		? ColourPalette::buttonDangerLight
-		: ColourPalette::buttonDangerDark);
-	g.fillRoundedRectangle(clipRect, 4.0f);
-	g.setColour(ColourPalette::textPrimary);
-	g.setFont(juce::FontOptions(8.0f, juce::Font::bold));
-	g.drawText("CLIP", clipRect, juce::Justification::centred);
-}
-
-void MasterChannel::drawMasterChanelSegments(juce::Rectangle<float>& vuArea, int i, float segmentHeight, int numSegments, juce::Graphics& g) const
+void MasterChannel::fillMasterMeterSegment(juce::Graphics& g, juce::Rectangle<float>& vuArea,
+	int i, float segmentHeight, int numSegments,
+	float currentLevel) const
 {
 	float segmentY = vuArea.getBottom() - 2 - (i + 1) * segmentHeight;
 	float segmentLevel = (float)i / numSegments;
@@ -375,75 +380,140 @@ void MasterChannel::drawMasterChanelSegments(juce::Rectangle<float>& vuArea, int
 		vuArea.getX() + 1, segmentY, vuArea.getWidth() - 2, segmentHeight - 1);
 
 	juce::Colour segmentColour;
-	if (segmentLevel < 0.7f)
+	if (segmentLevel < 0.67f)
 		segmentColour = ColourPalette::vuGreen;
-	else if (segmentLevel < 0.9f)
+	else if (segmentLevel < 0.90f)
 		segmentColour = ColourPalette::vuOrange;
 	else
 		segmentColour = ColourPalette::vuRed;
 
-	if (masterLevel >= segmentLevel)
+	if (currentLevel >= segmentLevel)
 	{
 		g.setColour(segmentColour);
 		g.fillRoundedRectangle(segmentRect, 1.0f);
 	}
 	else
 	{
-		g.setColour(segmentColour.withAlpha(0.05f));
+		g.setColour(segmentColour.withAlpha(0.1f));
 		g.fillRoundedRectangle(segmentRect, 1.0f);
 	}
 }
 
-void MasterChannel::setRealAudioLevel(float level)
+void MasterChannel::resized()
 {
-	realAudioLevel = juce::jlimit(0.0f, 1.0f, level);
-	hasRealAudio = true;
+	auto area = getLocalBounds().reduced(4);
+	int width = area.getWidth();
+
+	masterLabel.setBounds(area.removeFromTop(20));
+	area.removeFromTop(5);
+
+	int knobSize = 28;
+	int eqColumnWidth = 40;
+
+	auto eqArea = area.removeFromTop(120);
+
+	int eqStartX = (width - eqColumnWidth) / 2;
+
+	highLabel.setBounds(eqStartX, eqArea.getY(), eqColumnWidth, 10);
+	highKnob.setBounds(eqStartX + (eqColumnWidth - knobSize) / 2,
+		eqArea.getY() + 12, knobSize, knobSize);
+
+	midLabel.setBounds(eqStartX, eqArea.getY() + 45, eqColumnWidth, 10);
+	midKnob.setBounds(eqStartX + (eqColumnWidth - knobSize) / 2,
+		eqArea.getY() + 57, knobSize, knobSize);
+
+	lowLabel.setBounds(eqStartX, eqArea.getY() + 90, eqColumnWidth, 10);
+	lowKnob.setBounds(eqStartX + (eqColumnWidth - knobSize) / 2,
+		eqArea.getY() + 102, knobSize, knobSize);
+
+	area.removeFromTop(5);
+
+	auto volumeArea = area.removeFromTop(372);
+	int faderWidth = width / 3;
+	int centerX = (width - faderWidth) / 2;
+	masterVolumeSlider.setBounds(centerX, volumeArea.getY() + 5,
+		faderWidth, volumeArea.getHeight() - 10);
+
+	area.removeFromTop(5);
+
+	auto panArea = area.removeFromTop(60);
+	panLabel.setBounds(panArea.removeFromTop(12));
+
+	int panKnobSize = 40;
+	int panCenterX = (width - panKnobSize) / 2;
+	masterPanKnob.setBounds(panCenterX, panArea.getY(),
+		panKnobSize, panKnobSize);
+}
+
+inline float linearToDb(float linear)
+{
+	if (linear <= 0.0f)
+		return -96.0f;
+
+	return 20.0f * std::log10(linear);
+}
+
+inline float dbToNormalized(float db, float minDb = -60.0f, float maxDb = 0.0f)
+{
+	return juce::jlimit(0.0f, 1.0f, (db - minDb) / (maxDb - minDb));
 }
 
 void MasterChannel::updateMasterLevels()
 {
-	float instantLevel;
+	float instantLevelLeft = realAudioLevelLeft;
+	float instantLevelRight = realAudioLevelRight;
 
-	if (hasRealAudio)
+	if (instantLevelLeft > masterLevelLeft)
 	{
-		instantLevel = realAudioLevel;
+		masterLevelLeft = instantLevelLeft;
 	}
 	else
 	{
-		static float phase = 0.0f;
-		phase += 0.05f;
-		instantLevel = (std::sin(phase) * 0.3f + 0.3f) * 0.5f;
+		masterLevelLeft = masterLevelLeft * 0.92f + instantLevelLeft * 0.08f;
 	}
 
-	if (instantLevel > masterLevel)
+	if (masterLevelLeft > masterPeakHoldLeft)
 	{
-		masterLevel = masterLevel * 0.7f + instantLevel * 0.3f;
+		masterPeakHoldLeft = masterLevelLeft;
+		masterPeakHoldTimerLeft = 45;
+	}
+	else if (masterPeakHoldTimerLeft > 0)
+	{
+		masterPeakHoldTimerLeft--;
 	}
 	else
 	{
-		masterLevel = masterLevel * 0.95f + instantLevel * 0.05f;
+		masterPeakHoldLeft *= 0.98f;
 	}
 
-	if (masterLevel > masterPeakHold)
+	if (instantLevelRight > masterLevelRight)
 	{
-		masterPeakHold = masterLevel;
-		masterPeakHoldTimer = 60;
-	}
-	else if (masterPeakHoldTimer > 0)
-	{
-		masterPeakHoldTimer--;
+		masterLevelRight = instantLevelRight;
 	}
 	else
 	{
-		masterPeakHold *= 0.98f;
+		masterLevelRight = masterLevelRight * 0.92f + instantLevelRight * 0.08f;
 	}
 
-	isClipping = (masterPeakHold >= 0.95f);
+	if (masterLevelRight > masterPeakHoldRight)
+	{
+		masterPeakHoldRight = masterLevelRight;
+		masterPeakHoldTimerRight = 45;
+	}
+	else if (masterPeakHoldTimerRight > 0)
+	{
+		masterPeakHoldTimerRight--;
+	}
+	else
+	{
+		masterPeakHoldRight *= 0.98f;
+	}
+
+	isClipping = (masterPeakHoldLeft >= 0.98f || masterPeakHoldRight >= 0.98f);
 
 	juce::MessageManager::callAsync([this]()
 		{ repaint(); });
 }
-
 
 void MasterChannel::learn(juce::String param, juce::String description, MidiLearnableBase* component, std::function<void(float)> uiCallback)
 {
@@ -464,6 +534,13 @@ void MasterChannel::removeMidiMapping(const juce::String& param)
 {
 
 	audioProcessor.getMidiLearnManager().removeMappingForParameter(param);
+}
+
+void MasterChannel::setRealAudioLevelStereo(float levelLeft, float levelRight)
+{
+	realAudioLevelLeft = juce::jlimit(0.0f, 1.0f, levelLeft);
+	realAudioLevelRight = juce::jlimit(0.0f, 1.0f, levelRight);
+	hasRealAudio = true;
 }
 
 void MasterChannel::setupMidiLearn()

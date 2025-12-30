@@ -404,7 +404,7 @@ void SampleBankItem::loadAudioData()
 
 void SampleBankItem::drawMiniWaveform(juce::Graphics& g)
 {
-	if (thumbnail.empty() || waveformBounds.isEmpty())
+	if (thumbnailLeft.empty() || thumbnailRight.empty() || waveformBounds.isEmpty())
 		return;
 
 	g.saveState();
@@ -416,46 +416,96 @@ void SampleBankItem::drawMiniWaveform(juce::Graphics& g)
 	g.setColour(ColourPalette::backgroundMid);
 	g.fillRoundedRectangle(waveformBounds.toFloat(), 4.0f);
 
-	g.setColour(ColourPalette::buttonDanger);
-
-	juce::Path waveformPath;
-	juce::Path bottomPath;
-	bool topPathStarted = false;
-	bool bottomPathStarted = false;
+	size_t thumbnailSize = juce::jmin(thumbnailLeft.size(), thumbnailRight.size());
+	float pixelsPerPoint = static_cast<float>(waveformBounds.getWidth()) / static_cast<float>(thumbnailSize);
 
 	float centerY = static_cast<float>(waveformBounds.getCentreY());
-	float pixelsPerPoint = static_cast<float>(waveformBounds.getWidth()) / static_cast<float>(thumbnail.size());
+	float quarterY = waveformBounds.getY() + waveformBounds.getHeight() * 0.25f;
+	float threeQuarterY = waveformBounds.getY() + waveformBounds.getHeight() * 0.75f;
+	float halfHeight = waveformBounds.getHeight() * 0.25f * 0.9f;
 
-	for (size_t i = 0; i < thumbnail.size(); ++i)
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.3f));
+	g.drawLine(static_cast<float>(waveformBounds.getX()),
+		centerY,
+		static_cast<float>(waveformBounds.getRight()),
+		centerY,
+		0.5f);
+
+	g.setColour(ColourPalette::buttonDanger);
+
+	juce::Path leftPathTop, leftPathBottom;
+	bool leftTopStarted = false, leftBottomStarted = false;
+
+	for (size_t i = 0; i < thumbnailSize; ++i)
 	{
 		float x = waveformBounds.getX() + (i * pixelsPerPoint);
-		float amplitude = thumbnail[i];
-		float waveHeight = amplitude * (waveformBounds.getHeight() * 0.4f);
+		float amplitude = thumbnailLeft[i];
+		float waveHeight = amplitude * halfHeight;
 
-		float topY = centerY - waveHeight;
-		float bottomY = centerY + waveHeight;
+		float topY = quarterY - waveHeight;
+		float bottomY = quarterY + waveHeight;
 
-		if (!topPathStarted)
+		if (!leftTopStarted)
 		{
-			waveformPath.startNewSubPath(x, centerY);
-			topPathStarted = true;
+			leftPathTop.startNewSubPath(x, quarterY);
+			leftTopStarted = true;
 		}
-		waveformPath.lineTo(x, topY);
+		leftPathTop.lineTo(x, topY);
 
-		if (!bottomPathStarted)
+		if (!leftBottomStarted)
 		{
-			bottomPath.startNewSubPath(x, centerY);
-			bottomPathStarted = true;
+			leftPathBottom.startNewSubPath(x, quarterY);
+			leftBottomStarted = true;
 		}
-		bottomPath.lineTo(x, bottomY);
+		leftPathBottom.lineTo(x, bottomY);
 	}
 
-	g.strokePath(waveformPath, juce::PathStrokeType(1.0f));
-	g.strokePath(bottomPath, juce::PathStrokeType(1.0f));
+	g.strokePath(leftPathTop, juce::PathStrokeType(1.0f));
+	g.strokePath(leftPathBottom, juce::PathStrokeType(1.0f));
 
-	g.setColour(juce::Colours::lightblue.withAlpha(0.3f));
-	g.drawLine(static_cast<float>(waveformBounds.getX()), centerY,
-		static_cast<float>(waveformBounds.getRight()), centerY, 0.5f);
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.2f));
+	g.drawLine(static_cast<float>(waveformBounds.getX()), quarterY,
+		static_cast<float>(waveformBounds.getRight()), quarterY, 0.5f);
+
+	g.setColour(ColourPalette::buttonDanger);
+	juce::Path rightPathTop, rightPathBottom;
+	bool rightTopStarted = false, rightBottomStarted = false;
+
+	for (size_t i = 0; i < thumbnailSize; ++i)
+	{
+		float x = waveformBounds.getX() + (i * pixelsPerPoint);
+		float amplitude = thumbnailRight[i];
+		float waveHeight = amplitude * halfHeight;
+
+		float topY = threeQuarterY - waveHeight;
+		float bottomY = threeQuarterY + waveHeight;
+
+		if (!rightTopStarted)
+		{
+			rightPathTop.startNewSubPath(x, threeQuarterY);
+			rightTopStarted = true;
+		}
+		rightPathTop.lineTo(x, topY);
+
+		if (!rightBottomStarted)
+		{
+			rightPathBottom.startNewSubPath(x, threeQuarterY);
+			rightBottomStarted = true;
+		}
+		rightPathBottom.lineTo(x, bottomY);
+	}
+
+	g.strokePath(rightPathTop, juce::PathStrokeType(1.0f));
+	g.strokePath(rightPathBottom, juce::PathStrokeType(1.0f));
+
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.2f));
+	g.drawLine(static_cast<float>(waveformBounds.getX()), threeQuarterY,
+		static_cast<float>(waveformBounds.getRight()), threeQuarterY, 0.5f);
+
+	g.setColour(ColourPalette::textSecondary.withAlpha(0.5f));
+	g.setFont(juce::FontOptions(8.0f));
+	g.drawText("L", waveformBounds.getX() + 2, waveformBounds.getY() + 2, 10, 10, juce::Justification::centred);
+	g.drawText("R", waveformBounds.getX() + 2, static_cast<int>(centerY) + 2, 10, 10, juce::Justification::centred);
 
 	if (isPlaying && sampleEntry)
 	{
@@ -479,44 +529,54 @@ void SampleBankItem::drawMiniWaveform(juce::Graphics& g)
 
 void SampleBankItem::generateThumbnail()
 {
-	thumbnail.clear();
+	thumbnailLeft.clear();
+	thumbnailRight.clear();
 
 	if (audioBuffer.getNumSamples() == 0)
 		return;
 
-	int targetPoints = waveformBounds.getWidth();
-	if (targetPoints <= 0)
-		targetPoints = 100;
+	int numSamples = audioBuffer.getNumSamples();
+	int numChannels = audioBuffer.getNumChannels();
+	bool isMono = (numChannels == 1);
 
-	int samplesPerPoint = juce::jmax(1, audioBuffer.getNumSamples() / targetPoints);
+	int waveformWidth = waveformBounds.getWidth() - 20;
+	if (waveformWidth <= 0)
+		return;
 
-	for (int point = 0; point < targetPoints; ++point)
+	int samplesPerPoint = juce::jmax(1, numSamples / waveformWidth);
+
+	for (int point = 0; point < waveformWidth; ++point)
 	{
 		int sampleStart = point * samplesPerPoint;
-		int sampleEnd = std::min(sampleStart + samplesPerPoint, audioBuffer.getNumSamples());
+		int sampleEnd = juce::jmin(sampleStart + samplesPerPoint, numSamples);
 
-		if (sampleStart >= audioBuffer.getNumSamples())
-			break;
-
-		float rmsSum = 0.0f;
-		float peak = 0.0f;
+		float rmsSumLeft = 0.0f;
+		float rmsSumRight = 0.0f;
+		float peakLeft = 0.0f;
+		float peakRight = 0.0f;
 		int count = 0;
 
 		for (int sample = sampleStart; sample < sampleEnd; ++sample)
 		{
-			for (int ch = 0; ch < audioBuffer.getNumChannels(); ++ch)
-			{
-				float val = audioBuffer.getSample(ch, sample);
-				rmsSum += val * val;
-				peak = std::max(peak, std::abs(val));
-				count++;
-			}
+			float valLeft = audioBuffer.getSample(0, sample);
+			rmsSumLeft += valLeft * valLeft;
+			peakLeft = juce::jmax(peakLeft, std::abs(valLeft));
+
+			float valRight = isMono ? valLeft : audioBuffer.getSample(1, sample);
+			rmsSumRight += valRight * valRight;
+			peakRight = juce::jmax(peakRight, std::abs(valRight));
+
+			count++;
 		}
 
-		float rms = count > 0 ? std::sqrt(rmsSum / count) : 0.0f;
-		float finalValue = (rms * 0.7f) + (peak * 0.3f);
+		float rmsLeft = count > 0 ? std::sqrt(rmsSumLeft / count) : 0.0f;
+		float rmsRight = count > 0 ? std::sqrt(rmsSumRight / count) : 0.0f;
 
-		thumbnail.push_back(finalValue);
+		float finalLeft = (rmsLeft * 0.7f) + (peakLeft * 0.3f);
+		float finalRight = (rmsRight * 0.7f) + (peakRight * 0.3f);
+
+		thumbnailLeft.push_back(finalLeft);
+		thumbnailRight.push_back(finalRight);
 	}
 }
 
