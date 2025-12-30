@@ -284,15 +284,15 @@ void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<i
 
 	auto vuAreaLeft = juce::Rectangle<float>(
 		startX,
-		40.0f,
+		50.0f,
 		meterWidth,
-		height - 80.0f);
+		static_cast<float>(bounds.getHeight() - 60));
 
 	auto vuAreaRight = juce::Rectangle<float>(
 		startX + meterWidth + meterSpacing,
-		40.0f,
+		50.0f,
 		meterWidth,
-		height - 80.0f);
+		static_cast<float>(bounds.getHeight() - 60));
 
 	g.setColour(ColourPalette::backgroundDeep);
 	g.fillRoundedRectangle(vuAreaLeft, 2.0f);
@@ -405,38 +405,44 @@ void MasterChannel::resized()
 	int width = area.getWidth();
 
 	masterLabel.setBounds(area.removeFromTop(20));
-	area.removeFromTop(10);
+	area.removeFromTop(5);
 
-	auto eqArea = area.removeFromTop(100);
-	int knobSize = 35;
+	int knobSize = 28;
+	int eqColumnWidth = 40;
 
-	auto highRow = eqArea.removeFromTop(50);
-	highLabel.setBounds((width - 50) / 2, highRow.getY(), 50, 12);
-	highKnob.setBounds((width - knobSize) / 2, highRow.getY() + 15, knobSize, knobSize);
+	auto eqArea = area.removeFromTop(120);
 
-	eqArea.removeFromTop(5);
+	int eqStartX = (width - eqColumnWidth) / 2;
 
-	auto bottomRow = eqArea.removeFromTop(50);
-	int spacing = width / 4;
+	highLabel.setBounds(eqStartX, eqArea.getY(), eqColumnWidth, 10);
+	highKnob.setBounds(eqStartX + (eqColumnWidth - knobSize) / 2,
+		eqArea.getY() + 12, knobSize, knobSize);
 
-	midLabel.setBounds(spacing - 25, bottomRow.getY(), 50, 12);
-	midKnob.setBounds(spacing - knobSize / 2, bottomRow.getY() + 15, knobSize, knobSize);
+	midLabel.setBounds(eqStartX, eqArea.getY() + 45, eqColumnWidth, 10);
+	midKnob.setBounds(eqStartX + (eqColumnWidth - knobSize) / 2,
+		eqArea.getY() + 57, knobSize, knobSize);
 
-	lowLabel.setBounds(width - spacing - 25, bottomRow.getY(), 50, 12);
-	lowKnob.setBounds(width - spacing - knobSize / 2, bottomRow.getY() + 15, knobSize, knobSize);
+	lowLabel.setBounds(eqStartX, eqArea.getY() + 90, eqColumnWidth, 10);
+	lowKnob.setBounds(eqStartX + (eqColumnWidth - knobSize) / 2,
+		eqArea.getY() + 102, knobSize, knobSize);
+
+	area.removeFromTop(5);
 
 	auto volumeArea = area.removeFromTop(372);
 	int faderWidth = width / 3;
 	int centerX = (width - faderWidth) / 2;
-	masterVolumeSlider.setBounds(centerX, volumeArea.getY() + 5, faderWidth, volumeArea.getHeight() - 10);
+	masterVolumeSlider.setBounds(centerX, volumeArea.getY() + 5,
+		faderWidth, volumeArea.getHeight() - 10);
 
 	area.removeFromTop(5);
 
 	auto panArea = area.removeFromTop(60);
-	auto vuZone = panArea.removeFromRight(10);
-	auto knobZone = panArea;
-	panLabel.setBounds(knobZone.removeFromTop(12));
-	masterPanKnob.setBounds(knobZone.reduced(2));
+	panLabel.setBounds(panArea.removeFromTop(12));
+
+	int panKnobSize = 40;
+	int panCenterX = (width - panKnobSize) / 2;
+	masterPanKnob.setBounds(panCenterX, panArea.getY(),
+		panKnobSize, panKnobSize);
 }
 
 inline float linearToDb(float linear)
