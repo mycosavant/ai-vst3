@@ -270,7 +270,133 @@ void MasterChannel::paint(juce::Graphics& g)
 	g.fillRoundedRectangle(bounds.toFloat(), 8.0f);
 	g.setColour(ColourPalette::playArmed);
 	g.drawRoundedRectangle(bounds.toFloat().reduced(1), 8.0f, 2.0f);
-	drawMasterVUMeter(g, bounds);
+	drawMasterVUMeterStereo(g, bounds);
+}
+
+void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<int> bounds) const
+{
+	float width = static_cast<float>(bounds.getWidth());
+	float height = static_cast<float>(bounds.getHeight());
+	float meterWidth = 5.0f;
+	float meterSpacing = 2.0f;
+	float totalWidth = meterWidth * 2 + meterSpacing;
+	float startX = width - totalWidth - 5;
+
+	auto vuAreaLeft = juce::Rectangle<float>(
+		startX,
+		40.0f,
+		meterWidth,
+		height - 80.0f);
+
+	auto vuAreaRight = juce::Rectangle<float>(
+		startX + meterWidth + meterSpacing,
+		40.0f,
+		meterWidth,
+		height - 80.0f);
+
+	g.setColour(ColourPalette::backgroundDeep);
+	g.fillRoundedRectangle(vuAreaLeft, 2.0f);
+	g.fillRoundedRectangle(vuAreaRight, 2.0f);
+
+	g.setColour(ColourPalette::playArmed);
+	g.drawRoundedRectangle(vuAreaLeft, 2.0f, 0.5f);
+	g.drawRoundedRectangle(vuAreaRight, 2.0f, 0.5f);
+
+	int numSegments = 25;
+	float segmentHeight = (vuAreaLeft.getHeight() - 4) / numSegments;
+
+	for (int i = 0; i < numSegments; ++i)
+	{
+		fillMasterMeterSegment(g, vuAreaLeft, i, segmentHeight, numSegments, masterLevelLeft);
+	}
+
+	if (masterPeakHoldLeft > 0.0f)
+	{
+		int peakSegment = (int)(masterPeakHoldLeft * numSegments);
+		if (peakSegment < numSegments)
+		{
+			float peakY = vuAreaLeft.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
+			juce::Rectangle<float> peakRect(vuAreaLeft.getX() + 1, peakY,
+				vuAreaLeft.getWidth() - 2, 2);
+			g.setColour(ColourPalette::vuPeak);
+			g.fillRect(peakRect);
+		}
+	}
+
+	for (int i = 0; i < numSegments; ++i)
+	{
+		fillMasterMeterSegment(g, vuAreaRight, i, segmentHeight, numSegments, masterLevelRight);
+	}
+
+	if (masterPeakHoldRight > 0.0f)
+	{
+		int peakSegment = (int)(masterPeakHoldRight * numSegments);
+		if (peakSegment < numSegments)
+		{
+			float peakY = vuAreaRight.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
+			juce::Rectangle<float> peakRect(vuAreaRight.getX() + 1, peakY,
+				vuAreaRight.getWidth() - 2, 2);
+			g.setColour(ColourPalette::vuPeak);
+			g.fillRect(peakRect);
+		}
+	}
+
+	if (masterPeakHoldLeft >= 0.98f || masterPeakHoldRight >= 0.98f)
+	{
+		auto clipRect = juce::Rectangle<float>(
+			startX - 2,
+			vuAreaLeft.getY() - 12,
+			totalWidth + 4,
+			8);
+
+		g.setColour(isClipping && (juce::Time::getCurrentTime().toMilliseconds() % 500 < 250)
+			? ColourPalette::buttonDangerLight
+			: ColourPalette::buttonDangerDark);
+		g.fillRoundedRectangle(clipRect, 4.0f);
+
+		g.setColour(ColourPalette::textPrimary);
+		g.setFont(juce::FontOptions(8.0f, juce::Font::bold));
+		g.drawText("CLIP", clipRect, juce::Justification::centred);
+	}
+
+	g.setColour(ColourPalette::textSecondary.withAlpha(0.7f));
+	g.setFont(juce::FontOptions(8.0f));
+	g.drawText("L", static_cast<int>(vuAreaLeft.getX()) - 8,
+		static_cast<int>(vuAreaLeft.getY()) - 18, 12, 10,
+		juce::Justification::centred);
+	g.drawText("R", static_cast<int>(vuAreaRight.getX()) - 2,
+		static_cast<int>(vuAreaRight.getY()) - 18, 12, 10,
+		juce::Justification::centred);
+}
+
+void MasterChannel::fillMasterMeterSegment(juce::Graphics& g, juce::Rectangle<float>& vuArea,
+	int i, float segmentHeight, int numSegments,
+	float currentLevel) const
+{
+	float segmentY = vuArea.getBottom() - 2 - (i + 1) * segmentHeight;
+	float segmentLevel = (float)i / numSegments;
+
+	juce::Rectangle<float> segmentRect(
+		vuArea.getX() + 1, segmentY, vuArea.getWidth() - 2, segmentHeight - 1);
+
+	juce::Colour segmentColour;
+	if (segmentLevel < 0.7f)
+		segmentColour = ColourPalette::vuGreen;
+	else if (segmentLevel < 0.9f)
+		segmentColour = ColourPalette::vuOrange;
+	else
+		segmentColour = ColourPalette::vuRed;
+
+	if (currentLevel >= segmentLevel)
+	{
+		g.setColour(segmentColour);
+		g.fillRoundedRectangle(segmentRect, 1.0f);
+	}
+	else
+	{
+		g.setColour(segmentColour.withAlpha(0.05f));
+		g.fillRoundedRectangle(segmentRect, 1.0f);
+	}
 }
 
 void MasterChannel::resized()
@@ -313,137 +439,75 @@ void MasterChannel::resized()
 	masterPanKnob.setBounds(knobZone.reduced(2));
 }
 
-void MasterChannel::drawMasterVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds) const
-{
-	float width = static_cast<float>(bounds.getWidth());
-	float height = static_cast<float>(bounds.getHeight());
-	auto vuArea = juce::Rectangle<float>(width - 12.0f, 40.0f, 6.0f, height - 80.0f);
-	g.setColour(ColourPalette::backgroundDeep);
-	g.fillRoundedRectangle(vuArea, 2.0f);
-	g.setColour(ColourPalette::playArmed);
-	g.drawRoundedRectangle(vuArea, 2.0f, 1.0f);
-
-	int numSegments = 25;
-	float segmentHeight = (vuArea.getHeight() - 4) / numSegments;
-
-	for (int i = 0; i < numSegments; ++i)
-	{
-		drawMasterChanelSegments(vuArea, i, segmentHeight, numSegments, g);
-	}
-
-	if (masterPeakHold > 0.0f)
-	{
-		drawPeakHoldLine(numSegments, vuArea, segmentHeight, g);
-	}
-
-	if (masterPeakHold >= 0.98f)
-	{
-		drawMasterClipping(vuArea, g);
-	}
-}
-
-void MasterChannel::drawPeakHoldLine(int numSegments, juce::Rectangle<float>& vuArea, float segmentHeight, juce::Graphics& g) const
-{
-	int peakSegment = (int)(masterPeakHold * numSegments);
-	if (peakSegment < numSegments)
-	{
-		float peakY = vuArea.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
-		juce::Rectangle<float> peakRect(vuArea.getX() + 1, peakY, vuArea.getWidth() - 2, 3);
-		g.setColour(ColourPalette::vuPeak);
-		g.fillRect(peakRect);
-	}
-}
-
-void MasterChannel::drawMasterClipping(juce::Rectangle<float>& vuArea, juce::Graphics& g) const
-{
-	auto clipRect = juce::Rectangle<float>(vuArea.getX() - 2, vuArea.getY() - 12, vuArea.getWidth() + 4, 8);
-	g.setColour(isClipping && (juce::Time::getCurrentTime().toMilliseconds() % 500 < 250)
-		? ColourPalette::buttonDangerLight
-		: ColourPalette::buttonDangerDark);
-	g.fillRoundedRectangle(clipRect, 4.0f);
-	g.setColour(ColourPalette::textPrimary);
-	g.setFont(juce::FontOptions(8.0f, juce::Font::bold));
-	g.drawText("CLIP", clipRect, juce::Justification::centred);
-}
-
-void MasterChannel::drawMasterChanelSegments(juce::Rectangle<float>& vuArea, int i, float segmentHeight, int numSegments, juce::Graphics& g) const
-{
-	float segmentY = vuArea.getBottom() - 2 - (i + 1) * segmentHeight;
-	float segmentLevel = (float)i / numSegments;
-
-	juce::Rectangle<float> segmentRect(
-		vuArea.getX() + 1, segmentY, vuArea.getWidth() - 2, segmentHeight - 1);
-
-	juce::Colour segmentColour;
-	if (segmentLevel < 0.7f)
-		segmentColour = ColourPalette::vuGreen;
-	else if (segmentLevel < 0.9f)
-		segmentColour = ColourPalette::vuOrange;
-	else
-		segmentColour = ColourPalette::vuRed;
-
-	if (masterLevel >= segmentLevel)
-	{
-		g.setColour(segmentColour);
-		g.fillRoundedRectangle(segmentRect, 1.0f);
-	}
-	else
-	{
-		g.setColour(segmentColour.withAlpha(0.05f));
-		g.fillRoundedRectangle(segmentRect, 1.0f);
-	}
-}
-
-void MasterChannel::setRealAudioLevel(float level)
-{
-	realAudioLevel = juce::jlimit(0.0f, 1.0f, level);
-	hasRealAudio = true;
-}
-
 void MasterChannel::updateMasterLevels()
 {
-	float instantLevel;
+	float instantLevelLeft;
+	float instantLevelRight;
 
 	if (hasRealAudio)
 	{
-		instantLevel = realAudioLevel;
+		instantLevelLeft = realAudioLevelLeft;
+		instantLevelRight = realAudioLevelRight;
 	}
 	else
 	{
 		static float phase = 0.0f;
 		phase += 0.05f;
-		instantLevel = (std::sin(phase) * 0.3f + 0.3f) * 0.5f;
+		instantLevelLeft = (std::sin(phase) * 0.3f + 0.3f) * 0.5f;
+		instantLevelRight = (std::sin(phase + 0.3f) * 0.3f + 0.3f) * 0.5f;
 	}
 
-	if (instantLevel > masterLevel)
+	if (instantLevelLeft > masterLevelLeft)
 	{
-		masterLevel = masterLevel * 0.7f + instantLevel * 0.3f;
+		masterLevelLeft = masterLevelLeft * 0.7f + instantLevelLeft * 0.3f;
 	}
 	else
 	{
-		masterLevel = masterLevel * 0.95f + instantLevel * 0.05f;
+		masterLevelLeft = masterLevelLeft * 0.90f + instantLevelLeft * 0.10f;
 	}
 
-	if (masterLevel > masterPeakHold)
+	if (masterLevelLeft > masterPeakHoldLeft)
 	{
-		masterPeakHold = masterLevel;
-		masterPeakHoldTimer = 60;
+		masterPeakHoldLeft = masterLevelLeft;
+		masterPeakHoldTimerLeft = 60;
 	}
-	else if (masterPeakHoldTimer > 0)
+	else if (masterPeakHoldTimerLeft > 0)
 	{
-		masterPeakHoldTimer--;
+		masterPeakHoldTimerLeft--;
 	}
 	else
 	{
-		masterPeakHold *= 0.98f;
+		masterPeakHoldLeft *= 0.98f;
 	}
 
-	isClipping = (masterPeakHold >= 0.95f);
+	if (instantLevelRight > masterLevelRight)
+	{
+		masterLevelRight = masterLevelRight * 0.7f + instantLevelRight * 0.3f;
+	}
+	else
+	{
+		masterLevelRight = masterLevelRight * 0.90f + instantLevelRight * 0.10f;
+	}
+
+	if (masterLevelRight > masterPeakHoldRight)
+	{
+		masterPeakHoldRight = masterLevelRight;
+		masterPeakHoldTimerRight = 60;
+	}
+	else if (masterPeakHoldTimerRight > 0)
+	{
+		masterPeakHoldTimerRight--;
+	}
+	else
+	{
+		masterPeakHoldRight *= 0.98f;
+	}
+
+	isClipping = (masterPeakHoldLeft >= 0.95f || masterPeakHoldRight >= 0.95f);
 
 	juce::MessageManager::callAsync([this]()
 		{ repaint(); });
 }
-
 
 void MasterChannel::learn(juce::String param, juce::String description, MidiLearnableBase* component, std::function<void(float)> uiCallback)
 {
@@ -464,6 +528,13 @@ void MasterChannel::removeMidiMapping(const juce::String& param)
 {
 
 	audioProcessor.getMidiLearnManager().removeMappingForParameter(param);
+}
+
+void MasterChannel::setRealAudioLevelStereo(float levelLeft, float levelRight)
+{
+	realAudioLevelLeft = juce::jlimit(0.0f, 1.0f, levelLeft);
+	realAudioLevelRight = juce::jlimit(0.0f, 1.0f, levelRight);
+	hasRealAudio = true;
 }
 
 void MasterChannel::setupMidiLearn()

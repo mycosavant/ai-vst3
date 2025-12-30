@@ -54,31 +54,43 @@ float MixerPanel::getMasterPan() const
 
 void MixerPanel::calculateMasterLevel()
 {
-	float totalLevel = 0.0f;
-	float maxLevel = 0.0f;
+	float totalLevelLeft = 0.0f;
+	float totalLevelRight = 0.0f;
+	float maxLevelLeft = 0.0f;
+	float maxLevelRight = 0.0f;
 	int activeChannels = 0;
 
 	for (auto& channel : mixerChannels)
 	{
-		float channelLevel = channel->getCurrentAudioLevel();
-		if (channelLevel > 0.01f)
+		float channelLevelLeft = channel->getCurrentAudioLevelLeft();
+		float channelLevelRight = channel->getCurrentAudioLevelRight();
+
+		if (channelLevelLeft > 0.01f || channelLevelRight > 0.01f)
 		{
-			totalLevel += channelLevel * channelLevel;
-			maxLevel = std::max(maxLevel, channelLevel);
+			totalLevelLeft += channelLevelLeft * channelLevelLeft;
+			totalLevelRight += channelLevelRight * channelLevelRight;
+			maxLevelLeft = std::max(maxLevelLeft, channelLevelLeft);
+			maxLevelRight = std::max(maxLevelRight, channelLevelRight);
 			activeChannels++;
 		}
 	}
 
 	if (activeChannels > 0)
 	{
-		float rmsLevel = std::sqrt(totalLevel / activeChannels);
-		float finalLevel = (rmsLevel * 0.7f) + (maxLevel * 0.3f);
-		finalLevel *= masterVolume;
-		masterChannel->setRealAudioLevel(finalLevel);
+		float rmsLevelLeft = std::sqrt(totalLevelLeft / activeChannels);
+		float rmsLevelRight = std::sqrt(totalLevelRight / activeChannels);
+
+		float finalLevelLeft = (rmsLevelLeft * 0.7f) + (maxLevelLeft * 0.3f);
+		float finalLevelRight = (rmsLevelRight * 0.7f) + (maxLevelRight * 0.3f);
+
+		finalLevelLeft *= masterVolume;
+		finalLevelRight *= masterVolume;
+
+		masterChannel->setRealAudioLevelStereo(finalLevelLeft, finalLevelRight);
 	}
 	else
 	{
-		masterChannel->setRealAudioLevel(0.0f);
+		masterChannel->setRealAudioLevelStereo(0.0f, 0.0f);
 	}
 }
 

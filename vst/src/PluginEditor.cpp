@@ -114,6 +114,7 @@ void DjIaVstEditor::updateMidiIndicator(const juce::String& noteInfo)
 					});
 			} });
 }
+
 void DjIaVstEditor::updateUIComponents()
 {
 	if (!isGenerating.load() && audioProcessor.getIsGenerating())

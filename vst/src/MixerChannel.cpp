@@ -639,46 +639,126 @@ void MixerChannel::paint(juce::Graphics& g)
 
 void MixerChannel::drawVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds)
 {
-	auto vuArea = juce::Rectangle<float>(
-		static_cast<float>(bounds.getWidth() - 10),
+	float meterWidth = 5.0f;
+	float meterSpacing = 2.0f;
+	float totalWidth = meterWidth * 2 + meterSpacing;
+	float startX = bounds.getWidth() - totalWidth - 5;
+
+	auto vuAreaLeft = juce::Rectangle<float>(
+		startX,
 		110.0f,
-		6.0f,
+		meterWidth,
 		static_cast<float>(bounds.getHeight() - 120));
+
+	auto vuAreaRight = juce::Rectangle<float>(
+		startX + meterWidth + meterSpacing,
+		110.0f,
+		meterWidth,
+		static_cast<float>(bounds.getHeight() - 120));
+
 	g.setColour(ColourPalette::backgroundDeep);
-	g.fillRoundedRectangle(vuArea, 2.0f);
+	g.fillRoundedRectangle(vuAreaLeft, 2.0f);
+	g.fillRoundedRectangle(vuAreaRight, 2.0f);
+
 	g.setColour(ColourPalette::backgroundLight);
-	g.drawRoundedRectangle(vuArea, 2.0f, 0.5f);
+	g.drawRoundedRectangle(vuAreaLeft, 2.0f, 0.5f);
+	g.drawRoundedRectangle(vuAreaRight, 2.0f, 0.5f);
 
 	if (!track)
 		return;
 
-	float currentLevel = getCurrentAudioLevel();
-	float peakLevel = getPeakLevel();
 	int numSegments = 20;
-	float segmentHeight = (vuArea.getHeight() - 4) / numSegments;
+	float segmentHeight = (vuAreaLeft.getHeight() - 4) / numSegments;
 
 	for (int i = 0; i < numSegments; ++i)
 	{
-		fillMeters(vuArea, i, segmentHeight, numSegments, currentLevel, g);
+		fillMeterSegment(g, vuAreaLeft, i, segmentHeight, numSegments, currentAudioLevelLeft);
 	}
 
-	if (peakLevel > 0.0f)
+	if (peakHoldLeft > 0.0f)
 	{
-		int peakSegment = (int)(peakLevel * numSegments);
+		int peakSegment = (int)(peakHoldLeft * numSegments);
 		if (peakSegment < numSegments)
 		{
-			float peakY = vuArea.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
+			float peakY = vuAreaLeft.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
 			juce::Rectangle<float> peakRect(
-				vuArea.getX() + 1, peakY, vuArea.getWidth() - 2, 2);
+				vuAreaLeft.getX() + 1, peakY, vuAreaLeft.getWidth() - 2, 2);
 			g.setColour(ColourPalette::vuPeak);
 			g.fillRect(peakRect);
 		}
 	}
-	if (peakLevel >= 0.95f)
+
+	if (peakHoldLeft >= 0.95f)
 	{
-		auto clipRect = juce::Rectangle<float>(vuArea.getX(), vuArea.getY() - 8, vuArea.getWidth(), 4);
+		auto clipRect = juce::Rectangle<float>(vuAreaLeft.getX(), vuAreaLeft.getY() - 8,
+			vuAreaLeft.getWidth(), 4);
 		g.setColour(ColourPalette::vuClipping);
 		g.fillRoundedRectangle(clipRect, 2.0f);
+	}
+
+	for (int i = 0; i < numSegments; ++i)
+	{
+		fillMeterSegment(g, vuAreaRight, i, segmentHeight, numSegments, currentAudioLevelRight);
+	}
+
+	if (peakHoldRight > 0.0f)
+	{
+		int peakSegment = (int)(peakHoldRight * numSegments);
+		if (peakSegment < numSegments)
+		{
+			float peakY = vuAreaRight.getBottom() - 2 - (peakSegment + 1) * segmentHeight;
+			juce::Rectangle<float> peakRect(
+				vuAreaRight.getX() + 1, peakY, vuAreaRight.getWidth() - 2, 2);
+			g.setColour(ColourPalette::vuPeak);
+			g.fillRect(peakRect);
+		}
+	}
+
+	if (peakHoldRight >= 0.95f)
+	{
+		auto clipRect = juce::Rectangle<float>(vuAreaRight.getX(), vuAreaRight.getY() - 8,
+			vuAreaRight.getWidth(), 4);
+		g.setColour(ColourPalette::vuClipping);
+		g.fillRoundedRectangle(clipRect, 2.0f);
+	}
+
+	g.setColour(ColourPalette::textSecondary.withAlpha(0.7f));
+	g.setFont(juce::FontOptions(8.0f));
+	g.drawText("L", static_cast<int>(vuAreaLeft.getX()) - 8,
+		static_cast<int>(vuAreaLeft.getY()) - 15, 12, 10,
+		juce::Justification::centred);
+	g.drawText("R", static_cast<int>(vuAreaRight.getX()) - 2,
+		static_cast<int>(vuAreaRight.getY()) - 15, 12, 10,
+		juce::Justification::centred);
+}
+
+void MixerChannel::fillMeterSegment(juce::Graphics& g, juce::Rectangle<float>& vuArea,
+	int i, float segmentHeight, int numSegments,
+	float currentLevel)
+{
+	float segmentY = vuArea.getBottom() - 2 - (i + 1) * segmentHeight;
+	float segmentLevel = (float)i / numSegments;
+
+	juce::Rectangle<float> segmentRect(
+		vuArea.getX() + 1, segmentY, vuArea.getWidth() - 2, segmentHeight - 1);
+
+	juce::Colour segmentColour;
+	if (segmentLevel < 0.7f)
+		segmentColour = ColourPalette::vuGreen;
+	else if (segmentLevel < 0.9f)
+		segmentColour = ColourPalette::vuOrange;
+	else
+		segmentColour = ColourPalette::vuRed;
+
+	if (currentLevel >= segmentLevel)
+	{
+		g.setColour(segmentColour);
+		g.fillRoundedRectangle(segmentRect, 1.0f);
+	}
+	else
+	{
+		g.setColour(segmentColour.withAlpha(0.1f));
+		g.fillRoundedRectangle(segmentRect, 1.0f);
 	}
 }
 
@@ -754,72 +834,124 @@ void MixerChannel::updateVUMeter()
 {
 	if (!track || !track->isPlaying.load())
 	{
-		currentAudioLevel *= 0.95f;
-		if (peakHoldTimer > 0)
+		currentAudioLevelLeft *= 0.95f;
+		currentAudioLevelRight *= 0.95f;
+
+		if (peakHoldTimerLeft > 0)
 		{
-			peakHoldTimer--;
-			if (peakHoldTimer == 0)
-				peakHold *= 0.9f;
+			peakHoldTimerLeft--;
+			if (peakHoldTimerLeft == 0)
+				peakHoldLeft *= 0.9f;
+		}
+
+		if (peakHoldTimerRight > 0)
+		{
+			peakHoldTimerRight--;
+			if (peakHoldTimerRight == 0)
+				peakHoldRight *= 0.9f;
 		}
 		return;
 	}
 
-	float instantLevel = calculateInstantLevel();
+	auto levels = calculateInstantLevel();
 
-	levelHistory.push_back(instantLevel);
-	if (levelHistory.size() > 5)
-		levelHistory.erase(levelHistory.begin());
+	levelHistoryLeft.push_back(levels.left);
+	if (levelHistoryLeft.size() > 5)
+		levelHistoryLeft.erase(levelHistoryLeft.begin());
 
-	float smoothedLevel = 0.0f;
-	for (float level : levelHistory)
-		smoothedLevel += level;
-	smoothedLevel /= levelHistory.size();
+	float smoothedLeft = 0.0f;
+	for (float level : levelHistoryLeft)
+		smoothedLeft += level;
+	smoothedLeft /= levelHistoryLeft.size();
 
-	if (smoothedLevel > currentAudioLevel)
+	levelHistoryRight.push_back(levels.right);
+	if (levelHistoryRight.size() > 5)
+		levelHistoryRight.erase(levelHistoryRight.begin());
+
+	float smoothedRight = 0.0f;
+	for (float level : levelHistoryRight)
+		smoothedRight += level;
+	smoothedRight /= levelHistoryRight.size();
+
+	if (smoothedLeft > currentAudioLevelLeft)
 	{
-		currentAudioLevel = smoothedLevel;
+		currentAudioLevelLeft = smoothedLeft;
 	}
 	else
 	{
-		currentAudioLevel = currentAudioLevel * 0.85f + smoothedLevel * 0.15f;
+		currentAudioLevelLeft = currentAudioLevelLeft * 0.85f + smoothedLeft * 0.15f;
 	}
 
-	if (currentAudioLevel > peakHold)
+	if (currentAudioLevelLeft > peakHoldLeft)
 	{
-		peakHold = currentAudioLevel;
-		peakHoldTimer = 30;
+		peakHoldLeft = currentAudioLevelLeft;
+		peakHoldTimerLeft = 30;
+	}
+
+	if (smoothedRight > currentAudioLevelRight)
+	{
+		currentAudioLevelRight = smoothedRight;
+	}
+	else
+	{
+		currentAudioLevelRight = currentAudioLevelRight * 0.85f + smoothedRight * 0.15f;
+	}
+
+	if (currentAudioLevelRight > peakHoldRight)
+	{
+		peakHoldRight = currentAudioLevelRight;
+		peakHoldTimerRight = 30;
 	}
 }
 
-float MixerChannel::calculateInstantLevel()
+StereoLevel MixerChannel::calculateInstantLevel()
 {
 	if (!track || track->numSamples == 0)
-		return 0.0f;
+		return { 0.0f, 0.0f };
 
 	double readPos = track->readPosition.load();
 	int sampleIndex = (int)(readPos);
 
 	if (sampleIndex >= 0 && sampleIndex < track->numSamples)
 	{
-		float level = 0.0f;
+		int numChannels = track->audioBuffer.getNumChannels();
 		int samples = std::min(32, track->numSamples - sampleIndex);
+
+		float levelLeft = 0.0f;
+		float levelRight = 0.0f;
 
 		for (int i = 0; i < samples; ++i)
 		{
-			for (int ch = 0; ch < track->audioBuffer.getNumChannels(); ++ch)
+			if (numChannels >= 1)
 			{
-				float sample = track->audioBuffer.getSample(ch, sampleIndex + i);
-				level += std::abs(sample);
+				float sample = track->audioBuffer.getSample(0, sampleIndex + i);
+				levelLeft += std::abs(sample);
+			}
+			if (numChannels >= 2)
+			{
+				float sample = track->audioBuffer.getSample(1, sampleIndex + i);
+				levelRight += std::abs(sample);
+			}
+			else
+			{
+				levelRight = levelLeft;
 			}
 		}
 
-		level /= (samples * track->audioBuffer.getNumChannels());
-		level *= track->volume.load();
+		levelLeft /= samples;
+		levelRight /= samples;
 
-		return juce::jlimit(0.0f, 1.0f, level * 3.0f);
+		float volume = track->volume.load();
+		levelLeft *= volume;
+		levelRight *= volume;
+
+		return {
+			juce::jlimit(0.0f, 1.0f, levelLeft * 3.0f),
+			juce::jlimit(0.0f, 1.0f, levelRight * 3.0f)
+		};
 	}
 
-	return 0.0f;
+	return { 0.0f, 0.0f };
 }
 
 void MixerChannel::setSelected(bool selected)
