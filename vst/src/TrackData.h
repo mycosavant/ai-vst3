@@ -2,6 +2,25 @@
 #include <JuceHeader.h>
 #include "DjIaClient.h"
 
+struct SequencerData
+{
+	bool steps[4][16] = {};
+	float velocities[4][16] = {};
+	bool isPlaying = false;
+	int currentStep = 0;
+	int currentMeasure = 0;
+	int numMeasures = 1;
+	int beatsPerMeasure = 4;
+	double stepAccumulator = 0.0;
+	double samplesPerStep = 0.0;
+
+	SequencerData()
+	{
+		steps[0][0] = true;
+		velocities[0][0] = 0.8f;
+	}
+};
+
 struct TrackPage
 {
 	juce::AudioSampleBuffer audioBuffer;
@@ -80,6 +99,19 @@ struct TrackPage
 		originalStagingBuffer.setSize(0, 0);
 		isLoaded = false;
 		isLoading = false;
+	}
+
+	SequencerData sequences[8];
+	int currentSequenceIndex = 0;
+
+	SequencerData& getCurrentSequence()
+	{
+		return sequences[currentSequenceIndex];
+	}
+
+	const SequencerData& getCurrentSequence() const
+	{
+		return sequences[currentSequenceIndex];
 	}
 };
 
@@ -190,24 +222,29 @@ struct TrackData
 
 	PendingAction pendingAction = PendingAction::None;
 
-	struct SequencerData
+	SequencerData& getCurrentSequencerData()
 	{
-		bool steps[4][16] = {};
-		float velocities[4][16] = {};
-		bool isPlaying = false;
-		int currentStep = 0;
-		int currentMeasure = 0;
-		int numMeasures = 1;
-		int beatsPerMeasure = 4;
-		double stepAccumulator = 0.0;
-		double samplesPerStep = 0.0;
-
-		SequencerData()
+		if (usePages)
 		{
-			steps[0][0] = true;
-			velocities[0][0] = 0.8f;
+			return getCurrentPage().getCurrentSequence();
 		}
-	} sequencerData{};
+		else
+		{
+			return pages[0].sequences[0];
+		}
+	}
+
+	const SequencerData& getCurrentSequencerData() const
+	{
+		if (usePages)
+		{
+			return getCurrentPage().getCurrentSequence();
+		}
+		else
+		{
+			return pages[0].sequences[0];
+		}
+	}
 
 	TrackData() : trackId(juce::Uuid().toString())
 	{

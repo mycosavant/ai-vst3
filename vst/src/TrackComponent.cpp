@@ -583,7 +583,9 @@ void TrackComponent::resized()
 			area.removeFromTop(5);
 		else
 			area.removeFromTop(15);
-		sequencer->setBounds(area.removeFromTop(SEQUENCER_HEIGHT));
+
+		auto sequencerArea = area.removeFromTop(SEQUENCER_HEIGHT);
+		sequencer->setBounds(sequencerArea);
 		sequencer->setVisible(true);
 	}
 	else if (sequencer)

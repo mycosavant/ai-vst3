@@ -164,6 +164,8 @@ public:
 		}
 	}
 
+
+
 	juce::ValueTree saveState() const
 	{
 		juce::ValueTree state("TrackManager");
@@ -248,6 +250,34 @@ public:
 				pageState.setProperty("canvasData", page.canvasData, nullptr);
 				pageState.setProperty("canvasState", page.canvasState, nullptr);
 				pageState.setProperty("selectedKeywords", page.selectedKeywords.joinIntoString("|"), nullptr);
+				pageState.setProperty("currentSequenceIndex", page.currentSequenceIndex, nullptr);
+
+				for (int seqIdx = 0; seqIdx < 8; ++seqIdx)
+				{
+					juce::ValueTree sequencerState("Sequence");
+					const auto& seq = page.sequences[seqIdx];
+
+					sequencerState.setProperty("index", seqIdx, nullptr);
+					sequencerState.setProperty("isPlaying", seq.isPlaying, nullptr);
+					sequencerState.setProperty("currentStep", seq.currentStep, nullptr);
+					sequencerState.setProperty("currentMeasure", seq.currentMeasure, nullptr);
+					sequencerState.setProperty("numMeasures", seq.numMeasures, nullptr);
+					sequencerState.setProperty("beatsPerMeasure", seq.beatsPerMeasure, nullptr);
+
+					for (int m = 0; m < 4; ++m)
+					{
+						for (int s = 0; s < 16; ++s)
+						{
+							juce::String stepKey = "step_" + juce::String(m) + "_" + juce::String(s);
+							sequencerState.setProperty(stepKey, seq.steps[m][s], nullptr);
+
+							juce::String velocityKey = "velocity_" + juce::String(m) + "_" + juce::String(s);
+							sequencerState.setProperty(velocityKey, seq.velocities[m][s], nullptr);
+						}
+					}
+
+					pageState.appendChild(sequencerState, nullptr);
+				}
 
 				trackState.appendChild(pageState, nullptr);
 			}
@@ -259,24 +289,27 @@ public:
 				trackState.setProperty("numSamples", track->numSamples, nullptr);
 				trackState.setProperty("numChannels", track->audioBuffer.getNumChannels(), nullptr);
 			}
-			juce::ValueTree sequencerState("Sequencer");
-			sequencerState.setProperty("isPlaying", track->sequencerData.isPlaying, nullptr);
-			sequencerState.setProperty("currentStep", track->sequencerData.currentStep, nullptr);
-			sequencerState.setProperty("currentMeasure", track->sequencerData.currentMeasure, nullptr);
-			sequencerState.setProperty("numMeasures", track->sequencerData.numMeasures, nullptr);
-			sequencerState.setProperty("beatsPerMeasure", track->sequencerData.beatsPerMeasure, nullptr);
+
+			juce::ValueTree legacySequencerState("Sequencer");
+			auto& currentSeq = track->getCurrentSequencerData();
+			legacySequencerState.setProperty("isPlaying", currentSeq.isPlaying, nullptr);
+			legacySequencerState.setProperty("currentStep", currentSeq.currentStep, nullptr);
+			legacySequencerState.setProperty("currentMeasure", currentSeq.currentMeasure, nullptr);
+			legacySequencerState.setProperty("numMeasures", currentSeq.numMeasures, nullptr);
+			legacySequencerState.setProperty("beatsPerMeasure", currentSeq.beatsPerMeasure, nullptr);
 			for (int m = 0; m < 4; ++m)
 			{
 				for (int s = 0; s < 16; ++s)
 				{
 					juce::String stepKey = "step_" + juce::String(m) + "_" + juce::String(s);
-					sequencerState.setProperty(stepKey, track->sequencerData.steps[m][s], nullptr);
+					legacySequencerState.setProperty(stepKey, currentSeq.steps[m][s], nullptr);
 
 					juce::String velocityKey = "velocity_" + juce::String(m) + "_" + juce::String(s);
-					sequencerState.setProperty(velocityKey, track->sequencerData.velocities[m][s], nullptr);
+					legacySequencerState.setProperty(velocityKey, currentSeq.velocities[m][s], nullptr);
 				}
 			}
-			trackState.appendChild(sequencerState, nullptr);
+			trackState.appendChild(legacySequencerState, nullptr);
+
 			state.appendChild(trackState, nullptr);
 		}
 
@@ -289,6 +322,7 @@ public:
 		tracks.clear();
 		trackOrder.clear();
 		usedSlots.fill(false);
+
 		for (int i = 0; i < state.getNumChildren(); ++i)
 		{
 			auto trackState = state.getChild(i);
@@ -403,6 +437,57 @@ public:
 						}
 
 						page.isLoaded = false;
+						page.currentSequenceIndex = pageState.getProperty("currentSequenceIndex", 0);
+
+						for (int seqIdx = 0; seqIdx < 8; ++seqIdx)
+						{
+							juce::ValueTree sequencerState;
+
+							for (int childIndex = 0; childIndex < pageState.getNumChildren(); ++childIndex)
+							{
+								auto child = pageState.getChild(childIndex);
+								if (child.hasType("Sequence"))
+								{
+									int storedSeqIndex = child.getProperty("index", -1);
+									if (storedSeqIndex == seqIdx)
+									{
+										sequencerState = child;
+										break;
+									}
+								}
+							}
+
+							if (sequencerState.isValid())
+							{
+								auto& seq = page.sequences[seqIdx];
+								seq.isPlaying = sequencerState.getProperty("isPlaying", false);
+								seq.currentStep = 0;
+								seq.currentMeasure = 0;
+								seq.numMeasures = sequencerState.getProperty("numMeasures", 1);
+								seq.beatsPerMeasure = sequencerState.getProperty("beatsPerMeasure", 4);
+
+								for (int m = 0; m < 4; ++m)
+								{
+									for (int s = 0; s < 16; ++s)
+									{
+										juce::String stepKey = "step_" + juce::String(m) + "_" + juce::String(s);
+										seq.steps[m][s] = sequencerState.getProperty(stepKey, false);
+
+										juce::String velocityKey = "velocity_" + juce::String(m) + "_" + juce::String(s);
+										seq.velocities[m][s] = sequencerState.getProperty(velocityKey, 0.8f);
+									}
+								}
+							}
+							else
+							{
+								auto& seq = page.sequences[seqIdx];
+								if (seqIdx == 0)
+								{
+									seq.steps[0][0] = true;
+									seq.velocities[0][0] = 0.8f;
+								}
+							}
+						}
 
 						if (!page.audioFilePath.isEmpty())
 						{
@@ -441,33 +526,11 @@ public:
 											fileToLoad = originalFile;
 											DBG("Loading ORIGINAL version for page " << (char)('A' + pageIndex) << ": " << originalFile.getFullPathName());
 										}
-										else
-										{
-											DBG("Original file not found: " << originalFile.getFullPathName());
-										}
 									}
 								}
 
 								DBG("Loading page " << (char)('A' + pageIndex) << " from: " << fileToLoad.getFullPathName());
 								loadAudioFileForPage(track.get(), pageIndex, fileToLoad);
-							}
-							else
-							{
-								DBG("Page " << (char)('A' + pageIndex) << " file not found: " << page.audioFilePath);
-								juce::String fileName = audioFile.getFileName();
-								if (fileName.contains("_" + juce::String('A' + pageIndex)))
-								{
-									char pageName = static_cast<char>('A' + pageIndex);
-									juce::String newFileName = fileName.replace("_" + juce::String('A' + pageIndex), "_" + juce::String(pageName));
-									juce::File newFile = audioFile.getParentDirectory().getChildFile(newFileName);
-
-									if (newFile.existsAsFile())
-									{
-										DBG("Found file with new naming: " << newFile.getFullPathName());
-										loadAudioFileForPage(track.get(), pageIndex, newFile);
-										page.audioFilePath = newFile.getFullPathName();
-									}
-								}
 							}
 						}
 					}
@@ -487,10 +550,8 @@ public:
 				if (audioFilePath.isNotEmpty())
 				{
 					juce::File audioFile(audioFilePath);
-					DBG("LOADING STATE - audioFilePath: " + audioFilePath.toStdString());
 					if (audioFile.existsAsFile())
 					{
-						DBG("File exists: YES");
 						track->audioFilePath = audioFilePath;
 						track->sampleRate = trackState.getProperty("sampleRate", 48000.0);
 						track->numSamples = trackState.getProperty("numSamples", 0);
@@ -503,22 +564,11 @@ public:
 							if (originalFile.existsAsFile())
 							{
 								fileToLoad = originalFile;
-								DBG("Loading original version: " + originalPath.toStdString());
 							}
 						}
 
 						loadAudioFileForTrack(track.get(), fileToLoad);
-						DBG("Loaded track audio from: " + fileToLoad.getFullPathName().toStdString());
 					}
-					else
-					{
-						DBG("File exists: NO");
-						DBG("Audio file not found: " + audioFilePath.toStdString());
-					}
-				}
-				else
-				{
-					DBG("No audioFilePath in state for track with slot index: " << juce::String(track->slotIndex));
 				}
 			}
 
@@ -526,27 +576,65 @@ public:
 			{
 				track->lastPpqPosition = -1.0;
 				track->customStepCounter = 0;
-				track->sequencerData.stepAccumulator = 0.0;
+				track->getCurrentSequencerData().stepAccumulator = 0.0;
 			}
 
-			auto sequencerState = trackState.getChildWithName("Sequencer");
-			if (sequencerState.isValid())
+			auto legacySequencerState = trackState.getChildWithName("Sequencer");
+			if (legacySequencerState.isValid())
 			{
-				track->sequencerData.isPlaying = sequencerState.getProperty("isPlaying", false);
-				track->sequencerData.currentStep = 0;
-				track->sequencerData.currentMeasure = 0;
-				track->sequencerData.numMeasures = sequencerState.getProperty("numMeasures", 1);
-				track->sequencerData.beatsPerMeasure = sequencerState.getProperty("beatsPerMeasure", 4);
+				SequencerData tempSeqData;
+				tempSeqData.isPlaying = legacySequencerState.getProperty("isPlaying", false);
+				tempSeqData.currentStep = 0;
+				tempSeqData.currentMeasure = 0;
+				tempSeqData.numMeasures = legacySequencerState.getProperty("numMeasures", 1);
+				tempSeqData.beatsPerMeasure = legacySequencerState.getProperty("beatsPerMeasure", 4);
+
 				for (int m = 0; m < 4; ++m)
 				{
 					for (int s = 0; s < 16; ++s)
 					{
 						juce::String stepKey = "step_" + juce::String(m) + "_" + juce::String(s);
-						track->sequencerData.steps[m][s] = sequencerState.getProperty(stepKey, false);
+						tempSeqData.steps[m][s] = legacySequencerState.getProperty(stepKey, false);
 
 						juce::String velocityKey = "velocity_" + juce::String(m) + "_" + juce::String(s);
-						track->sequencerData.velocities[m][s] = sequencerState.getProperty(velocityKey, 0.8f);
+						tempSeqData.velocities[m][s] = legacySequencerState.getProperty(velocityKey, 0.8f);
 					}
+				}
+
+				DBG("Found legacy Sequencer data - migrating to new system");
+
+				if (track->usePages.load())
+				{
+					auto& currentPage = track->pages[track->currentPageIndex];
+					auto& seq = currentPage.sequences[0];
+
+					bool isEmpty = true;
+					for (int m = 0; m < 4 && isEmpty; ++m)
+					{
+						for (int s = 0; s < 16 && isEmpty; ++s)
+						{
+							if (seq.steps[m][s])
+							{
+								isEmpty = false;
+							}
+						}
+					}
+
+					if (isEmpty)
+					{
+						seq = tempSeqData;
+						DBG("Migrated legacy sequencer to page " << (char)('A' + track->currentPageIndex) << " sequence 0");
+					}
+					else
+					{
+						DBG("Skipped migration - sequence 0 already has data from new format");
+					}
+				}
+				else
+				{
+					auto& seq = track->pages[0].sequences[0];
+					seq = tempSeqData;
+					DBG("Migrated legacy sequencer to page 0 sequence 0 (legacy mode)");
 				}
 			}
 
