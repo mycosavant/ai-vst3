@@ -44,7 +44,8 @@ private:
 	juce::TextButton deleteButton;
 
 	juce::Rectangle<int> waveformBounds;
-	std::vector<float> thumbnail;
+	std::vector<float> thumbnailLeft;
+	std::vector<float> thumbnailRight;
 	juce::AudioBuffer<float> audioBuffer;
 	std::shared_ptr<std::atomic<bool>> validityFlag;
 	std::atomic<bool> isDestroyed{ false };

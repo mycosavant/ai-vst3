@@ -8,11 +8,7 @@ class MasterChannel : public juce::Component, public juce::AudioProcessorParamet
 public:
 	MasterChannel(DjIaVstProcessor& processor);
 	~MasterChannel();
-	void drawMasterVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds) const;
-	void drawPeakHoldLine(int numSegments, juce::Rectangle<float>& vuArea, float segmentHeight, juce::Graphics& g) const;
-	void drawMasterClipping(juce::Rectangle<float>& vuArea, juce::Graphics& g) const;
-	void drawMasterChanelSegments(juce::Rectangle<float>& vuArea, int i, float segmentHeight, int numSegments, juce::Graphics& g) const;
-	void setRealAudioLevel(float level);
+	void setRealAudioLevelStereo(float levelLeft, float levelRight);
 	void updateMasterLevels();
 
 	std::function<void(float)> onMasterVolumeChanged;
@@ -39,6 +35,16 @@ private:
 	int masterPeakHoldTimer = 0;
 	bool isClipping = false;
 
+	float masterLevelLeft = 0.0f;
+	float masterLevelRight = 0.0f;
+	float masterPeakHoldLeft = 0.0f;
+	float masterPeakHoldRight = 0.0f;
+	int masterPeakHoldTimerLeft = 0;
+	int masterPeakHoldTimerRight = 0;
+
+	float realAudioLevelLeft = 0.0f;
+	float realAudioLevelRight = 0.0f;
+
 	void setupUI();
 	void paint(juce::Graphics& g) override;
 	void resized() override;
@@ -52,6 +58,10 @@ private:
 	void addEventListeners();
 	void setSliderParameter(juce::String name, juce::Slider& slider);
 	void updateUIFromParameter(const juce::String& paramName, float newValue);
+	void drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<int> bounds) const;
+	void fillMasterMeterSegment(juce::Graphics& g, juce::Rectangle<float>& vuArea,
+		int i, float segmentHeight, int numSegments,
+		float currentLevel) const;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MasterChannel)
 };

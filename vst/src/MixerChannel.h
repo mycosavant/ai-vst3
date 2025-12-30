@@ -3,6 +3,12 @@
 #include "PluginProcessor.h"
 #include "MidiLearnableComponents.h"
 
+struct StereoLevel
+{
+	float left;
+	float right;
+};
+
 class MixerChannel : public juce::Component, public juce::Timer, public juce::AudioProcessorParameter::Listener
 {
 public:
@@ -22,6 +28,8 @@ public:
 	void addEventListeners();
 	void startGeneratingAnimation();
 	void stopGeneratingAnimation();
+	float getCurrentAudioLevelLeft() const { return currentAudioLevelLeft; }
+	float getCurrentAudioLevelRight() const { return currentAudioLevelRight; }
 
 private:
 	DjIaVstProcessor& audioProcessor;
@@ -58,12 +66,22 @@ private:
 	MidiLearnableSlider panKnob;
 	juce::Label panLabel;
 
+	float currentAudioLevelLeft = 0.0f;
+	float currentAudioLevelRight = 0.0f;
+	float peakHoldLeft = 0.0f;
+	float peakHoldRight = 0.0f;
+	int peakHoldTimerLeft = 0;
+	int peakHoldTimerRight = 0;
+
+	std::vector<float> levelHistoryLeft;
+	std::vector<float> levelHistoryRight;
+
 	void paint(juce::Graphics& g) override;
 	void drawVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds);
 	void fillMeters(juce::Rectangle<float>& vuArea, int i, float segmentHeight, int numSegments, float currentLevel, juce::Graphics& g);
 	void resized() override;
 	void updateVUMeter();
-	float calculateInstantLevel();
+	StereoLevel calculateInstantLevel();
 	void setCurrentLevel(float level);
 	void timerCallback() override;
 	void setupMidiLearn();
@@ -81,6 +99,9 @@ private:
 		float newValue);
 	void removeMidiMapping(const juce::String& param);
 	void stopTrackImmediatly();
+	void fillMeterSegment(juce::Graphics& g, juce::Rectangle<float>& vuArea,
+		int i, float segmentHeight, int numSegments,
+		float currentLevel);
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MixerChannel);
 	JUCE_DECLARE_WEAK_REFERENCEABLE(MixerChannel);

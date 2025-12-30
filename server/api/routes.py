@@ -218,9 +218,26 @@ async def generate_loop(
         try:
             tempo, _ = librosa.beat.beat_track(y=audio_data, sr=sr)
             detected_bpm = float(tempo)
+
+            expected_bpm = request.bpm
+
+            direct_diff = abs(detected_bpm - expected_bpm)
+            half_diff = abs(detected_bpm / 2.0 - expected_bpm)
+            double_diff = abs(detected_bpm * 2.0 - expected_bpm)
+
+            tolerance = 30.0
+
+            if half_diff < direct_diff and half_diff <= tolerance:
+                detected_bpm = detected_bpm / 2.0
+                print(f"🔧 BPM correction: divided by 2 → {detected_bpm:.2f} BPM")
+            elif double_diff < direct_diff and double_diff <= tolerance:
+                detected_bpm = detected_bpm * 2.0
+                print(f"🔧 BPM correction: multiplied by 2 → {detected_bpm:.2f} BPM")
+
             print(
                 f"🎯 BPM detected by librosa: {detected_bpm:.2f} BPM (expected: {request.bpm} BPM)"
             )
+
         except Exception as e:
             print(f"⚠️ BPM detection failure: {e}")
             detected_bpm = None
