@@ -42,7 +42,8 @@ void WaveformDisplay::setAudioData(const juce::AudioBuffer<float>& newAudioBuffe
 	{
 		audioBuffer.setSize(0, 0);
 		sampleRate = newSampleRate;
-		thumbnail.clear();
+		thumbnailLeft.clear();
+		thumbnailRight.clear();
 		repaint();
 		return;
 	}
@@ -67,7 +68,8 @@ void WaveformDisplay::setAudioData(const juce::AudioBuffer<float>& newAudioBuffe
 	{
 		audioBuffer.setSize(0, 0);
 		sampleRate = newSampleRate;
-		thumbnail.clear();
+		thumbnailLeft.clear();
+		thumbnailRight.clear();
 		repaint();
 	}
 }
@@ -115,7 +117,7 @@ void WaveformDisplay::paint(juce::Graphics& g)
 	g.setColour(ColourPalette::backgroundMid);
 	g.fillRect(bounds);
 
-	if (thumbnail.empty())
+	if (thumbnailLeft.empty() && thumbnailRight.empty())
 	{
 		g.setColour(ColourPalette::textSecondary);
 		g.setFont(12.0f);
@@ -132,7 +134,6 @@ void WaveformDisplay::paint(juce::Graphics& g)
 	drawLoopMarkers(g);
 	drawBeatMarkers(g);
 	drawPlaybackHead(g);
-
 	drawVisibleBarLabels(g);
 
 	if (zoomFactor > 1.0)
@@ -391,7 +392,8 @@ float WaveformDisplay::getHostBpm() const
 
 void WaveformDisplay::generateThumbnail()
 {
-	thumbnail.clear();
+	thumbnailLeft.clear();
+	thumbnailRight.clear();
 
 	if (audioBuffer.getNumSamples() == 0)
 		return;
@@ -418,53 +420,62 @@ void WaveformDisplay::generateThumbnail()
 	for (int point = 0; point < targetPoints; ++point)
 	{
 		int retFlag;
-		feedThumbnail(startSample, point, samplesPerPoint, retFlag);
+		feedThumbnailStereo(startSample, point, samplesPerPoint, retFlag);
 		if (retFlag == 2)
 			break;
 	}
 }
 
-void WaveformDisplay::feedThumbnail(int startSample, int point, int samplesPerPoint, int& retFlag)
+void WaveformDisplay::feedThumbnailStereo(int startSample, int point, int samplesPerPoint, int& retFlag)
 {
 	retFlag = 1;
 	int sampleStart = startSample + (point * samplesPerPoint);
 	int sampleEnd = std::min(sampleStart + samplesPerPoint, audioBuffer.getNumSamples());
+
 	if (sampleStart >= audioBuffer.getNumSamples())
 	{
-		{
-			retFlag = 2;
-			return;
-		};
+		retFlag = 2;
+		return;
 	}
-	float rmsSum = 0.0f;
-	float peak = 0.0f;
+
+	float rmsSumLeft = 0.0f;
+	float rmsSumRight = 0.0f;
+	float peakLeft = 0.0f;
+	float peakRight = 0.0f;
 	int count = 0;
+
+	int numChannels = audioBuffer.getNumChannels();
+	bool isMono = (numChannels == 1);
 
 	for (int sample = sampleStart; sample < sampleEnd; ++sample)
 	{
-
 		if (sample >= audioBuffer.getNumSamples())
-		{
 			break;
-		}
-		for (int ch = 0; ch < audioBuffer.getNumChannels(); ++ch)
-		{
-			float val = audioBuffer.getSample(ch, sample);
-			rmsSum += val * val;
-			peak = std::max(peak, std::abs(val));
-			count++;
-		}
+
+		float valLeft = audioBuffer.getSample(0, sample);
+		rmsSumLeft += valLeft * valLeft;
+		peakLeft = std::max(peakLeft, std::abs(valLeft));
+
+		float valRight = isMono ? valLeft : audioBuffer.getSample(1, sample);
+		rmsSumRight += valRight * valRight;
+		peakRight = std::max(peakRight, std::abs(valRight));
+
+		count++;
 	}
 
-	float rms = count > 0 ? std::sqrt(rmsSum / count) : 0.0f;
-	float finalValue = (rms * 0.7f) + (peak * 0.3f);
+	float rmsLeft = count > 0 ? std::sqrt(rmsSumLeft / count) : 0.0f;
+	float rmsRight = count > 0 ? std::sqrt(rmsSumRight / count) : 0.0f;
 
-	thumbnail.push_back(finalValue);
+	float finalLeft = (rmsLeft * 0.7f) + (peakLeft * 0.3f);
+	float finalRight = (rmsRight * 0.7f) + (peakRight * 0.3f);
+
+	thumbnailLeft.push_back(finalLeft);
+	thumbnailRight.push_back(finalRight);
 }
 
 void WaveformDisplay::drawWaveform(juce::Graphics& g)
 {
-	if (thumbnail.empty())
+	if (thumbnailLeft.empty() || thumbnailRight.empty())
 		return;
 
 	juce::Colour waveformColor;
@@ -472,33 +483,128 @@ void WaveformDisplay::drawWaveform(juce::Graphics& g)
 
 	g.setColour(waveformColor);
 
-	juce::Path waveformPath;
-	bool pathStarted = false;
-
-	size_t thumbnailSize = thumbnail.size();
+	size_t thumbnailSize = std::min(thumbnailLeft.size(), thumbnailRight.size());
 	float pixelsPerPoint = static_cast<float>(getWidth()) / static_cast<float>(thumbnailSize);
 
-	for (int i = 0; i < thumbnailSize; ++i)
+	float centerY = getHeight() * 0.5f;
+	float quarterY = getHeight() * 0.25f;
+	float threeQuarterY = getHeight() * 0.75f;
+
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.5f));
+	g.drawLine(0.0f, centerY, static_cast<float>(getWidth()), centerY, 1.0f);
+
+	juce::Path leftPathTop, leftPathBottom;
+	bool leftTopStarted = false, leftBottomStarted = false;
+
+	for (size_t i = 0; i < thumbnailSize; ++i)
 	{
-		generateTopHalfPath(i, pixelsPerPoint, pathStarted, waveformPath, static_cast<int>(thumbnailSize));
+		float x = i * pixelsPerPoint;
+		float amplitude = thumbnailLeft[i];
+		float waveHeight = amplitude * quarterY * 0.9f;
+
+		float topY = quarterY - waveHeight;
+		float bottomY = quarterY + waveHeight;
+
+		if (!leftTopStarted)
+		{
+			leftPathTop.startNewSubPath(x, quarterY);
+			leftTopStarted = true;
+		}
+		if (i > 0 && i < thumbnailSize - 1)
+		{
+			float prevX = (i - 1) * pixelsPerPoint;
+			float nextX = (i + 1) * pixelsPerPoint;
+			float controlX = (prevX + nextX) * 0.5f;
+			leftPathTop.quadraticTo(controlX, topY, x, topY);
+		}
+		else
+		{
+			leftPathTop.lineTo(x, topY);
+		}
+
+		if (!leftBottomStarted)
+		{
+			leftPathBottom.startNewSubPath(x, quarterY);
+			leftBottomStarted = true;
+		}
+		if (i > 0 && i < thumbnailSize - 1)
+		{
+			float prevX = (i - 1) * pixelsPerPoint;
+			float nextX = (i + 1) * pixelsPerPoint;
+			float controlX = (prevX + nextX) * 0.5f;
+			leftPathBottom.quadraticTo(controlX, bottomY, x, bottomY);
+		}
+		else
+		{
+			leftPathBottom.lineTo(x, bottomY);
+		}
 	}
 
-	g.strokePath(waveformPath, juce::PathStrokeType(1.5f, juce::PathStrokeType::curved));
-
-	juce::Path bottomPath;
-	pathStarted = false;
-
-	for (int i = 0; i < thumbnailSize; ++i)
-	{
-		generateBottomHalfPath(i, pixelsPerPoint, pathStarted, bottomPath, static_cast<int>(thumbnailSize));
-	}
-
-	g.strokePath(bottomPath, juce::PathStrokeType(1.5f, juce::PathStrokeType::curved));
+	g.setColour(waveformColor);
+	g.strokePath(leftPathTop, juce::PathStrokeType(1.5f, juce::PathStrokeType::curved));
+	g.strokePath(leftPathBottom, juce::PathStrokeType(1.5f, juce::PathStrokeType::curved));
 
 	g.setColour(ColourPalette::backgroundLight.withAlpha(0.3f));
-	float centerY = getHeight() * 0.5f;
-	float width = static_cast<float>(getWidth());
-	g.drawLine(0.0f, centerY, width, centerY, 0.5f);
+	g.drawLine(0.0f, quarterY, static_cast<float>(getWidth()), quarterY, 0.5f);
+
+	juce::Path rightPathTop, rightPathBottom;
+	bool rightTopStarted = false, rightBottomStarted = false;
+
+	for (size_t i = 0; i < thumbnailSize; ++i)
+	{
+		float x = i * pixelsPerPoint;
+		float amplitude = thumbnailRight[i];
+		float waveHeight = amplitude * quarterY * 0.9f;
+
+		float topY = threeQuarterY - waveHeight;
+		float bottomY = threeQuarterY + waveHeight;
+
+		if (!rightTopStarted)
+		{
+			rightPathTop.startNewSubPath(x, threeQuarterY);
+			rightTopStarted = true;
+		}
+		if (i > 0 && i < thumbnailSize - 1)
+		{
+			float prevX = (i - 1) * pixelsPerPoint;
+			float nextX = (i + 1) * pixelsPerPoint;
+			float controlX = (prevX + nextX) * 0.5f;
+			rightPathTop.quadraticTo(controlX, topY, x, topY);
+		}
+		else
+		{
+			rightPathTop.lineTo(x, topY);
+		}
+
+		if (!rightBottomStarted)
+		{
+			rightPathBottom.startNewSubPath(x, threeQuarterY);
+			rightBottomStarted = true;
+		}
+		if (i > 0 && i < thumbnailSize - 1)
+		{
+			float prevX = (i - 1) * pixelsPerPoint;
+			float nextX = (i + 1) * pixelsPerPoint;
+			float controlX = (prevX + nextX) * 0.5f;
+			rightPathBottom.quadraticTo(controlX, bottomY, x, bottomY);
+		}
+		else
+		{
+			rightPathBottom.lineTo(x, bottomY);
+		}
+	}
+
+	g.setColour(waveformColor);
+	g.strokePath(rightPathTop, juce::PathStrokeType(1.5f, juce::PathStrokeType::curved));
+	g.strokePath(rightPathBottom, juce::PathStrokeType(1.5f, juce::PathStrokeType::curved));
+
+	g.setColour(ColourPalette::backgroundLight.withAlpha(0.3f));
+	g.drawLine(0.0f, threeQuarterY, static_cast<float>(getWidth()), threeQuarterY, 0.5f);
+
+	g.setColour(ColourPalette::textSecondary.withAlpha(0.7f));
+	g.setFont(juce::FontOptions(10.0f, juce::Font::bold));
+	g.drawText("L", 5, 5, 15, 15, juce::Justification::centred);
+	g.drawText("R", 5, static_cast<int>(centerY) + 5, 15, 15, juce::Justification::centred);
 }
 
 void WaveformDisplay::setColorDependingTimeStretchRatio(juce::Colour& waveformColor) const
@@ -534,63 +640,6 @@ void WaveformDisplay::setColorDependingTimeStretchRatio(juce::Colour& waveformCo
 		{
 			waveformColor = juce::Colour(0xff6B3535);
 		}
-	}
-}
-
-void WaveformDisplay::generateBottomHalfPath(int i, float pixelsPerPoint, bool& pathStarted, juce::Path& bottomPath, int thumbnailSize)
-{
-	float x = i * pixelsPerPoint;
-	float amplitude = thumbnail[i];
-
-	float centerY = getHeight() * 0.5f;
-	float waveHeight = amplitude * centerY * 0.8f;
-	float bottomY = centerY + waveHeight;
-
-	if (!pathStarted)
-	{
-		bottomPath.startNewSubPath(x, centerY);
-		pathStarted = true;
-	}
-
-	if (i > 0 && i < thumbnailSize - 1)
-	{
-		float prevX = (i - 1) * pixelsPerPoint;
-		float nextX = (i + 1) * pixelsPerPoint;
-		float controlX = (prevX + nextX) * 0.5f;
-		bottomPath.quadraticTo(controlX, bottomY, x, bottomY);
-	}
-	else
-	{
-		bottomPath.lineTo(x, bottomY);
-	}
-}
-
-void WaveformDisplay::generateTopHalfPath(int i, float pixelsPerPoint, bool& pathStarted, juce::Path& waveformPath, int thumbnailSize)
-{
-	float x = i * pixelsPerPoint;
-	float amplitude = thumbnail[i];
-
-	float centerY = getHeight() * 0.5f;
-	float waveHeight = amplitude * centerY * 0.8f;
-
-	float topY = centerY - waveHeight;
-
-	if (!pathStarted)
-	{
-		waveformPath.startNewSubPath(x, centerY);
-		pathStarted = true;
-	}
-	if (i > 0 && i < thumbnailSize - 1)
-	{
-		float prevX = (i - 1) * pixelsPerPoint;
-		float nextX = (i + 1) * pixelsPerPoint;
-
-		float controlX = (prevX + nextX) * 0.5f;
-		waveformPath.quadraticTo(controlX, topY, x, topY);
-	}
-	else
-	{
-		waveformPath.lineTo(x, topY);
 	}
 }
 
@@ -763,7 +812,7 @@ float WaveformDisplay::timeToX(double time)
 
 void WaveformDisplay::drawBeatMarkers(juce::Graphics& g)
 {
-	if (thumbnail.empty())
+	if (thumbnailLeft.empty() || thumbnailRight.empty())
 		return;
 	float hostBpm = getHostBpm();
 	if (hostBpm <= 0.0f)
