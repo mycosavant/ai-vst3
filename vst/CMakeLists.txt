@@ -216,10 +216,11 @@ elseif(APPLE)
 elseif(UNIX AND NOT APPLE)
     target_compile_options(ObsidianNeuralVST PRIVATE -fPIC)
     target_compile_options(ObsidianNeuralVST PRIVATE 
-        -Wno-macro-redefined
-        -Wno-builtin-macro-redefined
-        -Wno-shadow  
-        -Wno-error=shadow 
+        -fPIC
+        -Wno-shadow
+        -Wno-sign-conversion
+        -Wno-float-equal
+        -Wno-error
     )
     target_link_libraries(ObsidianNeuralVST PRIVATE 
         pthread 
