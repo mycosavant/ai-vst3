@@ -217,10 +217,7 @@ elseif(UNIX AND NOT APPLE)
     target_compile_options(ObsidianNeuralVST PRIVATE -fPIC)
     target_compile_options(ObsidianNeuralVST PRIVATE 
         -fPIC
-        -Wno-shadow
-        -Wno-sign-conversion
-        -Wno-float-equal
-        -Wno-error
+        -w 
     )
     target_link_libraries(ObsidianNeuralVST PRIVATE 
         pthread 
