@@ -276,7 +276,6 @@ void MasterChannel::paint(juce::Graphics& g)
 void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<int> bounds) const
 {
 	float width = static_cast<float>(bounds.getWidth());
-	float height = static_cast<float>(bounds.getHeight());
 	float meterWidth = 5.0f;
 	float meterSpacing = 2.0f;
 	float totalWidth = meterWidth * 2 + meterSpacing;
@@ -341,7 +340,7 @@ void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<i
 		}
 	}
 
-	if (masterPeakHoldLeft >= 0.98f || masterPeakHoldRight >= 0.98f)
+	if (masterLevelLeft >= 0.98f || masterLevelRight >= 0.98f)
 	{
 		auto clipRect = juce::Rectangle<float>(
 			startX - 2,
@@ -349,7 +348,7 @@ void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<i
 			totalWidth + 4,
 			8);
 
-		g.setColour(isClipping && (juce::Time::getCurrentTime().toMilliseconds() % 500 < 250)
+		g.setColour((juce::Time::getCurrentTime().toMilliseconds() % 500 < 250)
 			? ColourPalette::buttonDangerLight
 			: ColourPalette::buttonDangerDark);
 		g.fillRoundedRectangle(clipRect, 4.0f);
@@ -358,15 +357,6 @@ void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<i
 		g.setFont(juce::FontOptions(8.0f, juce::Font::bold));
 		g.drawText("CLIP", clipRect, juce::Justification::centred);
 	}
-
-	g.setColour(ColourPalette::textSecondary.withAlpha(0.7f));
-	g.setFont(juce::FontOptions(8.0f));
-	g.drawText("L", static_cast<int>(vuAreaLeft.getX()) - 8,
-		static_cast<int>(vuAreaLeft.getY()) - 18, 12, 10,
-		juce::Justification::centred);
-	g.drawText("R", static_cast<int>(vuAreaRight.getX()) - 2,
-		static_cast<int>(vuAreaRight.getY()) - 18, 12, 10,
-		juce::Justification::centred);
 }
 
 void MasterChannel::fillMasterMeterSegment(juce::Graphics& g, juce::Rectangle<float>& vuArea,
@@ -508,8 +498,6 @@ void MasterChannel::updateMasterLevels()
 	{
 		masterPeakHoldRight *= 0.98f;
 	}
-
-	isClipping = (masterPeakHoldLeft >= 0.98f || masterPeakHoldRight >= 0.98f);
 
 	juce::MessageManager::callAsync([this]()
 		{ repaint(); });

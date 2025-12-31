@@ -24,7 +24,6 @@ private:
 
 	std::atomic<bool> isDestroyed{ false };
 
-	float realAudioLevel = 0.0f;
 	bool hasRealAudio = false;
 
 	juce::Label masterLabel;
@@ -32,18 +31,17 @@ private:
 
 	float masterLevel = 0.0f;
 	float masterPeakHold = 0.0f;
-	int masterPeakHoldTimer = 0;
-	bool isClipping = false;
-
 	float masterLevelLeft = 0.0f;
 	float masterLevelRight = 0.0f;
 	float masterPeakHoldLeft = 0.0f;
-	float masterPeakHoldRight = 0.0f;
-	int masterPeakHoldTimerLeft = 0;
-	int masterPeakHoldTimerRight = 0;
-
 	float realAudioLevelLeft = 0.0f;
 	float realAudioLevelRight = 0.0f;
+	float masterPeakHoldRight = 0.0f;
+	float realAudioLevel = 0.0f;
+
+	int masterPeakHoldTimerLeft = 0;
+	int masterPeakHoldTimerRight = 0;
+	int masterPeakHoldTimer = 0;
 
 	void setupUI();
 	void paint(juce::Graphics& g) override;

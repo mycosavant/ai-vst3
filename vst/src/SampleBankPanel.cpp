@@ -931,7 +931,7 @@ void SampleBankPanel::drawEmptyState(juce::Graphics& g)
 
 	g.setColour(ColourPalette::backgroundLight.withAlpha(0.3f));
 	g.setFont(juce::FontOptions(60.0f));
-	g.drawText(juce::String::fromUTF8("♪"),
+	g.drawText(juce::String::fromUTF8("\xE2\x99\xAA"),
 		bounds.withSizeKeepingCentre(80, 80),
 		juce::Justification::centred);
 

@@ -451,6 +451,36 @@ void MidiLearnManager::processMidiMappings(const juce::MidiMessage& message)
 
 				continue;
 			}
+			if (mapping.parameterName.contains("slot") && mapping.parameterName.contains("Seq"))
+			{
+				if (message.isNoteOn())
+				{
+					auto* param = mapping.processor->getParameterTreeState().getParameter(mapping.parameterName);
+					if (param)
+					{
+						param->setValueNotifyingHost(1.0f);
+
+						juce::String slotStr = mapping.parameterName.substring(4, 5);
+						juce::String seqStr = mapping.parameterName.fromLastOccurrenceOf("Seq", false, false);
+
+						statusMessage += " (Sequence " + seqStr + " selected)";
+
+						juce::MessageManager::callAsync([mapping, statusMessage]()
+							{
+								if (auto* editor = dynamic_cast<DjIaVstEditor*>(mapping.processor->getActiveEditor()))
+								{
+									editor->statusLabel.setText(statusMessage, juce::dontSendNotification);
+									juce::Timer::callAfterDelay(2000, [mapping]() {
+										if (auto* editor = dynamic_cast<DjIaVstEditor*>(mapping.processor->getActiveEditor())) {
+											editor->statusLabel.setText("Ready", juce::dontSendNotification);
+										}
+										});
+								}
+							});
+					}
+				}
+				continue;
+			}
 			if (mapping.parameterName == "generate")
 			{
 				if (message.isNoteOn() && isBooleanParameter(mapping.parameterName))
