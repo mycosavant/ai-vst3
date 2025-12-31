@@ -340,7 +340,7 @@ void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<i
 		}
 	}
 
-	if (masterPeakHoldLeft >= 0.98f || masterPeakHoldRight >= 0.98f)
+	if (masterLevelLeft >= 0.98f || masterLevelRight >= 0.98f)
 	{
 		auto clipRect = juce::Rectangle<float>(
 			startX - 2,
@@ -348,7 +348,7 @@ void MasterChannel::drawMasterVUMeterStereo(juce::Graphics& g, juce::Rectangle<i
 			totalWidth + 4,
 			8);
 
-		g.setColour(isClipping && (juce::Time::getCurrentTime().toMilliseconds() % 500 < 250)
+		g.setColour((juce::Time::getCurrentTime().toMilliseconds() % 500 < 250)
 			? ColourPalette::buttonDangerLight
 			: ColourPalette::buttonDangerDark);
 		g.fillRoundedRectangle(clipRect, 4.0f);
@@ -498,8 +498,6 @@ void MasterChannel::updateMasterLevels()
 	{
 		masterPeakHoldRight *= 0.98f;
 	}
-
-	isClipping = (masterPeakHoldLeft >= 0.98f || masterPeakHoldRight >= 0.98f);
 
 	juce::MessageManager::callAsync([this]()
 		{ repaint(); });

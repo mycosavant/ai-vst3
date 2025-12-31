@@ -696,7 +696,7 @@ void MixerChannel::drawVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds)
 		}
 	}
 
-	if (peakHoldLeft >= 0.95f)
+	if (currentAudioLevelLeft >= 0.95f)
 	{
 		auto clipRect = juce::Rectangle<float>(vuAreaLeft.getX(), vuAreaLeft.getY() - 8,
 			vuAreaLeft.getWidth(), 4);
@@ -722,7 +722,7 @@ void MixerChannel::drawVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds)
 		}
 	}
 
-	if (peakHoldRight >= 0.95f)
+	if (currentAudioLevelRight >= 0.95f)
 	{
 		auto clipRect = juce::Rectangle<float>(vuAreaRight.getX(), vuAreaRight.getY() - 8,
 			vuAreaRight.getWidth(), 4);
