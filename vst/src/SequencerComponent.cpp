@@ -529,6 +529,7 @@ void SequencerComponent::updateFromTrackData()
 			currentPlayingMeasureLabel.setText("M " + juce::String(seqData.currentMeasure + 1),
 				juce::dontSendNotification);
 		}
+		updateSequenceButtonsDisplay();
 		repaint();
 	}
 }

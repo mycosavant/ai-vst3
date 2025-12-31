@@ -380,6 +380,15 @@ void DjIaVstProcessor::loadParameters()
 		}
 	}
 
+	for (int slot = 1; slot <= 8; ++slot)
+	{
+		for (int seq = 1; seq <= 8; ++seq)
+		{
+			juce::String paramName = "slot" + juce::String(slot) + "Seq" + juce::String(seq);
+			parameters.addParameterListener(paramName, this);
+		}
+	}
+
 	nextTrackParam = parameters.getRawParameterValue("nextTrack");
 	prevTrackParam = parameters.getRawParameterValue("prevTrack");
 
@@ -3343,6 +3352,11 @@ void DjIaVstProcessor::handleSequenceChange(const juce::String& parameterID)
 			currentPage.currentSequenceIndex = seqNumber - 1;
 
 			DBG("Switched to sequence " << seqNumber << " for slot " << slotNumber);
+			juce::MessageManager::callAsync([this]()
+				{
+					if (onUIUpdateNeeded)
+						onUIUpdateNeeded();
+				});
 			break;
 		}
 	}
