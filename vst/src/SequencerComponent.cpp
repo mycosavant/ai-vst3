@@ -24,6 +24,8 @@ void SequencerComponent::setupUI()
 	measureSlider.setColour(juce::Slider::textBoxBackgroundColourId, ColourPalette::backgroundDark);
 	measureSlider.setColour(juce::Slider::textBoxOutlineColourId, ColourPalette::backgroundDark.darker(0.3f).withAlpha(0.3f));
 
+	measureSlider.setTooltip("Number of measures (1-4) - Extends the pattern length");
+
 	measureSlider.onValueChange = [this]()
 		{
 			isEditing = true;
@@ -69,6 +71,9 @@ void SequencerComponent::setupUI()
 	currentPlayingMeasureLabel.setColour(juce::Label::backgroundColourId, ColourPalette::trackSelected.withAlpha(0.1f));
 	currentPlayingMeasureLabel.setJustificationType(juce::Justification::centred);
 	currentPlayingMeasureLabel.setFont(juce::FontOptions(11.0f, juce::Font::bold));
+
+	prevMeasureButton.setTooltip("Previous measure - Navigate to edit earlier patterns");
+	nextMeasureButton.setTooltip("Next measure - Navigate to edit later patterns");
 }
 
 void SequencerComponent::setupSequenceButtons()
@@ -144,15 +149,20 @@ void SequencerComponent::updateSequenceButtonsDisplay()
 
 void SequencerComponent::layoutSequenceButtons(juce::Rectangle<int> area)
 {
-	int buttonWidth = 28;
-	int buttonHeight = 30;
-	int spacing = 2;
+	int totalWidth = area.getWidth() - 8;
+	int numButtons = 8;
+	int totalSpacing = (numButtons - 1) * 2;
+	int availableWidth = totalWidth - totalSpacing;
+	int buttonWidth = availableWidth / numButtons;
+	int buttonHeight = 28;
 
 	for (int i = 0; i < 8; ++i)
 	{
 		auto buttonBounds = area.removeFromLeft(buttonWidth).withHeight(buttonHeight);
 		sequenceButtons[i].setBounds(buttonBounds);
-		area.removeFromLeft(spacing);
+
+		if (i < 7)
+			area.removeFromLeft(2);
 	}
 }
 
@@ -318,18 +328,6 @@ void SequencerComponent::paint(juce::Graphics& g)
 			g.drawText(juce::String(i + 1), stepBounds, juce::Justification::centred);
 		}
 	}
-
-	if (isPlaying)
-	{
-		auto ledBounds = juce::Rectangle<int>(bounds.getWidth() - 30, 12, 15, 15);
-		float pulseIntensity = 0.6f + 0.4f * std::sin(juce::Time::getMillisecondCounter() * 0.008f);
-		juce::Colour ledColour = ColourPalette::playActive.withAlpha(pulseIntensity);
-
-		g.setColour(ledColour);
-		g.fillEllipse(ledBounds.toFloat());
-		g.setColour(ColourPalette::textPrimary.withAlpha(0.8f));
-		g.drawEllipse(ledBounds.toFloat(), 1.0f);
-	}
 }
 
 juce::Rectangle<int> SequencerComponent::getStepBounds(int step)
@@ -340,6 +338,7 @@ juce::Rectangle<int> SequencerComponent::getStepBounds(int step)
 	float marginPercent = 0.005f;
 
 	int componentWidth = getWidth();
+	int componentHeight = getHeight();
 
 	int availableWidth = static_cast<int>(componentWidth * stepsAreaWidthPercent);
 
@@ -351,7 +350,8 @@ juce::Rectangle<int> SequencerComponent::getStepBounds(int step)
 
 	int totalUsedWidth = totalSteps * stepWidth + (totalSteps - 1) * marginPixels;
 	int startX = (componentWidth - totalUsedWidth) / 2;
-	int startY = 50;
+	int availableHeight = componentHeight - 30 - 10;
+	int startY = (availableHeight - stepHeight) / 2;
 
 	int x = startX + step * (stepWidth + marginPixels);
 	int y = startY;
@@ -429,30 +429,29 @@ void SequencerComponent::resized()
 	auto bounds = getLocalBounds();
 	bounds.removeFromTop(10);
 	bounds.removeFromLeft(13);
-	auto topArea = bounds.removeFromTop(30);
-	auto controlArea = topArea.removeFromLeft(juce::jmin(controlsWidth, bounds.getWidth() / 2));
+	auto controlsArea = bounds.removeFromBottom(40);
+	controlsArea = controlsArea.reduced(3);
+	controlsArea.removeFromBottom(5);
+	auto controlArea = controlsArea.removeFromLeft(juce::jmin(controlsWidth, controlsArea.getWidth() / 2));
 
 	auto pageArea = controlArea.removeFromLeft(120);
 	prevMeasureButton.setBounds(pageArea.removeFromLeft(25));
 	measureLabel.setBounds(pageArea.removeFromLeft(40));
 	nextMeasureButton.setBounds(pageArea.removeFromLeft(25));
 
-	if (topArea.getWidth() > 50)
+	if (controlsArea.getWidth() > 50)
 	{
-		currentPlayingMeasureLabel.setBounds(topArea.removeFromLeft(50));
+		currentPlayingMeasureLabel.setBounds(controlsArea.removeFromLeft(50));
 	}
 
-	topArea.removeFromLeft(10);
-	if (topArea.getWidth() > 260)
-	{
-		auto seqButtonsArea = topArea.removeFromLeft(260);
-		layoutSequenceButtons(seqButtonsArea);
-	}
+	controlsArea.removeFromLeft(10);
 
-	if (controlArea.getWidth() > 80)
+	auto seqButtonsArea = controlsArea;
+	layoutSequenceButtons(seqButtonsArea);
+
+	if (controlArea.getWidth() > 120)
 	{
-		controlArea.removeFromLeft(5);
-		measureSlider.setBounds(controlArea.removeFromLeft(80));
+		measureSlider.setBounds(controlArea.removeFromLeft(120));
 	}
 }
 
