@@ -500,11 +500,10 @@ void DjIaVstProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
 	auto currentPlayHead = getPlayHead();
 	double hostBpm = 126.0;
 	double hostPpqPosition = 0.0;
-	if (currentPlayHead)
-	{
-		getDawInformations(currentPlayHead, hostIsPlaying, hostBpm, hostPpqPosition);
-		lastHostBpmForQuantization.store(hostBpm);
-	}
+
+	getDawInformations(currentPlayHead, hostIsPlaying, hostBpm, hostPpqPosition);
+	lastHostBpmForQuantization.store(hostBpm);
+
 	handleSequencerPlayState(hostIsPlaying);
 	updateSequencers(hostIsPlaying);
 	checkBeatRepeatWithSampleCounter();
@@ -771,9 +770,12 @@ void DjIaVstProcessor::getDawInformations(juce::AudioPlayHead* currentPlayHead, 
 		{
 			double newBpm = *bpm;
 			hostBpm = newBpm;
-			if (std::abs(newBpm - cachedHostBpm.load()) > 0.1)
+
+			double oldBpm = cachedHostBpm.load();
+			cachedHostBpm.store(newBpm);
+
+			if (std::abs(newBpm - oldBpm) > 0.1)
 			{
-				cachedHostBpm = newBpm;
 				if (onHostBpmChanged)
 				{
 					onHostBpmChanged(newBpm);
@@ -1146,19 +1148,20 @@ void DjIaVstProcessor::generateLoopFromMidi(const juce::String& trackId)
 
 						DjIaClient::LoopRequest request;
 						request.generationDuration = static_cast<float>(getGlobalDuration());
+						float currentHostBpm = static_cast<float>(getHostBpm());
 
 						if (track->usePages.load()) {
 							auto& currentPage = track->getCurrentPage();
 
 							if (!currentPage.selectedPrompt.isEmpty()) {
 								request.prompt = currentPage.selectedPrompt;
-								request.bpm = currentPage.generationBpm > 0 ? currentPage.generationBpm : static_cast<float>(getHostBpm());
+								request.bpm = currentHostBpm;
 								request.key = !currentPage.generationKey.isEmpty() ? currentPage.generationKey : getGlobalKey();
 							}
 							else {
 								request = createGlobalLoopRequest();
 								currentPage.selectedPrompt = request.prompt;
-								currentPage.generationBpm = request.bpm;
+								currentPage.generationBpm = currentHostBpm;
 								currentPage.generationKey = request.key;
 							}
 
@@ -1167,11 +1170,12 @@ void DjIaVstProcessor::generateLoopFromMidi(const juce::String& trackId)
 						else {
 							if (!track->selectedPrompt.isEmpty()) {
 								request.prompt = track->selectedPrompt;
-								request.bpm = static_cast<float>(getHostBpm());
+								request.bpm = currentHostBpm;
 								request.key = getGlobalKey();
 							}
 							else {
 								request = createGlobalLoopRequest();
+								request.bpm = currentHostBpm;
 							}
 							track->updateFromRequest(request);
 						}
