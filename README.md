@@ -13,7 +13,7 @@
 
 **⚡ Quick Start:** [Get your API key](https://obsidian-neural.com) and start generating in minutes — no GPU or setup required.
 
-🎁 **30-Day FREE Trial** - Try any plan risk-free with no credit card required to start!
+🎁 **7-Day FREE Trial** - Try any plan risk-free with no credit card required to start!
 
 📄 **[Late Breaking Paper - AIMLA 2025](https://drive.google.com/file/d/1cwqmrV0_qC462LLQgQUz-5Cd422gL-8F/view)** - Presented at the first AES International Conference on Artificial Intelligence and Machine Learning for Audio (Queen Mary University London, Sept 8-10, 2025)  
 🎓 **[Tutorial](https://youtu.be/-qdFo_PcKoY)** - From DAW setup to live performance (French + English subtitles)
@@ -195,12 +195,14 @@ This feature bridges the gap between visual creativity and sonic experimentation
 
 Each generation costs **1 credit** (1 LLM generation + 1 audio generation). Samples up to 30 seconds, ~20s generation time.
 
-🎁 **First Month FREE on All Plans:**
+**🎁 7-Day FREE Trial on All Plans:**
 
-- Every plan includes a 30-day free trial
+- Every plan includes a 7-day free trial
+- Trial credits: Base (50), Starter (100), Pro (150)
+- After trial: Full monthly credits (200/500/1500)
 - No credit card required to start - just your email
 - Cancel anytime - zero risk, zero commitment
-- Add payment details anytime during the trial to continue after 30 days
+- Add payment details during trial to continue after 7 days
 - If you don't add payment, your subscription automatically cancels - no surprises
 
 **Benefits:**
